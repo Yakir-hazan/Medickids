@@ -1,6 +1,6 @@
 {
-  "name": "מד חום משפחתי",
-  "short_name": "מד חום",
+  "name": "Medickids",
+  "short_name": "Medickids",
   "description": "יומן תרופות, מעקב חום ותזכורות למשפחה",
   "start_url": "./index.html",
   "scope": "./",
