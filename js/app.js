@@ -351,6 +351,98 @@ const App = (() => {
     renderPickList();
   }
 
+
+  /* ---------- dose calculator ---------- */
+  const DOSE_DB = {
+    'אקמול / נובימול': {
+      mgPerKg: 15,
+      interval: '4–6 שעות',
+      concentrations: [
+        { label: 'טיפות 100 מ"ג/מ"ל', mgPerMl: 100, unit: 'מ"ל', syringeml: 1 },
+        { label: 'סירופ 120 מ"ג/5מ"ל', mgPerMl: 24, unit: 'מ"ל', syringeml: 1 },
+        { label: 'סירופ 250 מ"ג/5מ"ל', mgPerMl: 50, unit: 'מ"ל', syringeml: 1 },
+      ]
+    },
+    'נורופן': {
+      mgPerKg: 7.5,
+      interval: '6–8 שעות',
+      concentrations: [
+        { label: 'סירופ 100 מ"ג/5מ"ל', mgPerMl: 20, unit: 'מ"ל', syringeml: 1 },
+        { label: 'פורטה 200 מ"ג/5מ"ל', mgPerMl: 40, unit: 'מ"ל', syringeml: 1 },
+      ]
+    },
+  };
+
+  let doseMedSel = 'אקמול / נובימול';
+  let doseConcIdx = 0;
+
+  function openDoseSheet() {
+    const state = DB.get();
+    // pre-fill weight from first child if available
+    const firstChild = state.children[0];
+    const weightInput = document.getElementById('dose-weight');
+    if (firstChild && firstChild.weight) weightInput.value = firstChild.weight;
+    else weightInput.value = '';
+
+    doseMedSel = 'אקמול / נובימול';
+    doseConcIdx = 0;
+    _renderDoseMedChips();
+    _renderDoseConcChips();
+    calcDose();
+    openSheet('sheet-dose');
+  }
+
+  function _renderDoseMedChips() {
+    document.getElementById('dose-med-chips').innerHTML = Object.keys(DOSE_DB).map((m) =>
+      `<button type="button" class="chip ${m === doseMedSel ? 'sel' : ''}" onclick="App.pickDoseMed('${m}')">${m}</button>`
+    ).join('');
+  }
+
+  function _renderDoseConcChips() {
+    const concs = DOSE_DB[doseMedSel].concentrations;
+    document.getElementById('dose-conc-chips').innerHTML = concs.map((c, i) =>
+      `<button type="button" class="chip ${i === doseConcIdx ? 'sel' : ''}" onclick="App.pickDoseConc(${i})">${c.label}</button>`
+    ).join('');
+  }
+
+  function pickDoseMed(name) {
+    doseMedSel = name;
+    doseConcIdx = 0;
+    _renderDoseMedChips();
+    _renderDoseConcChips();
+    calcDose();
+  }
+
+  function pickDoseConc(idx) {
+    doseConcIdx = idx;
+    _renderDoseConcChips();
+    calcDose();
+  }
+
+  function calcDose() {
+    const weight = parseFloat(document.getElementById('dose-weight').value);
+    const box = document.getElementById('dose-result');
+    if (!weight || weight < 1 || weight > 60) { box.style.display = 'none'; return; }
+
+    const drug = DOSE_DB[doseMedSel];
+    const conc = drug.concentrations[doseConcIdx];
+    const mgDose = drug.mgPerKg * weight;
+    const mlDose = mgDose / conc.mgPerMl;
+    const mlRounded = Math.round(mlDose * 2) / 2; // round to nearest 0.5
+    const syringes = mlRounded / conc.syringeml;
+    const syringesTxt = syringes === 1 ? 'מזרק אחד (1 מ"ל)' :
+                        syringes % 1 === 0 ? `${syringes} מזרקים` :
+                        `${Math.floor(syringes)} מזרק וחצי`;
+
+    box.style.display = 'block';
+    box.innerHTML = \`
+      <div class="dose-result-title">המינון המומלץ</div>
+      <div class="dose-result-ml">\${mlRounded.toFixed(1)} מ"ל</div>
+      <div class="dose-result-sub">\${syringesTxt} · כל \${drug.interval}</div>
+      <div class="dose-result-detail">\${mgDose.toFixed(0)} מ"ג (\${drug.mgPerKg} מ"ג × \${weight} ק"ג ÷ \${conc.mgPerMl} מ"ג/מ"ל)</div>
+    \`;
+  }
+
   /* ---------- settings ---------- */
   function renderSettings() {
     const on = DB.get().settings.notifications;
@@ -386,6 +478,7 @@ const App = (() => {
     setHistFilter, setTempFilter, openTempSheet, pickTempChild, saveTemp,
     openEditKid, saveKid, toggleNotif, init,
     installNow, skipLanding,
+    openDoseSheet, pickDoseMed, pickDoseConc, calcDose,
   };
 })();
 
