@@ -132,6 +132,7 @@
         <div class="set-group">
           <button class="set-row" id="row-notif" onclick="App.toggleNotif()">🔔 התראות ותזכורות<div class="toggle" id="toggle-notif"></div></button>
           <button class="set-row">💊 תרופות מועדפות<span class="chev">‹</span></button>
+          <button class="set-row" onclick="App.goto('screen-medinfo')">🌡️ מידע על תרופות להורדת חום<span class="chev">‹</span></button>
         </div>
         <div class="set-group">
           <button class="set-row" onclick="App.goto('screen-kids')">👨‍👩‍👧‍👦 ניהול ילדים<span class="chev">‹</span></button>
@@ -158,6 +159,61 @@
       <div class="scroll" style="padding-top:6px;">
         <div id="kids-list"></div>
         <button class="add-kid" onclick="App.openEditKid(null)">+ הוספת ילד/ה</button>
+      </div>
+    </div>
+
+    <!-- MEDICINE INFO -->
+    <div class="screen" id="screen-medinfo">
+      <div class="scr-head">
+        <button class="back-btn" onclick="App.goto('screen-settings')">→</button>
+        <h2>מידע על תרופות להורדת חום</h2>
+      </div>
+      <div class="scroll" style="padding-top:6px;">
+
+        <div class="info-warn">
+          ⚠️ המידע כאן הוא כללי בלבד ואינו תחליף לרופא/ה או רוקח/ת. תמיד יש לחשב מינון לפי <b>המשקל העדכני</b> של הילד/ה, לקרוא את העלון לצרכן של המוצר הספציפי שברשותכם (ריכוזים שונים בין מוצרים!), ובכל ספק — להתקשר לרופא/ה, לרוקח/ת או למוקד המידע התרופתי.
+        </div>
+
+        <div class="info-card">
+          <h3>💊 אקמול / נובימול (החומר הפעיל: פרצטמול)</h3>
+          <div class="sub">גם: דקסמול, אברול, פראמול, רוקמול, פנדול, מכבימול — כולם אותו חומר פעיל</div>
+          <div class="info-row"><span>מינון למנה</span><b>10–15 מ"ג לכל ק"ג משקל</b></div>
+          <div class="info-row"><span>מרווח בין מנות</span><b>4–6 שעות (מינימום 4)</b></div>
+          <div class="info-row"><span>מקסימום ביממה</span><b>4 מנות, עד 60–75 מ"ג/ק"ג/יום</b></div>
+          <div class="info-row"><span>גיל מינימלי</span><b>מכל גיל, אך מתחת ל-3 חודשים רק בהנחיית רופא</b></div>
+          <div style="margin-top:10px;">
+            <span class="info-tag">טיפות 100 מ"ג/מ"ל</span>
+            <span class="info-tag">סירופ 120 מ"ג/5מ"ל</span>
+            <span class="info-tag">סירופ 250 מ"ג/5מ"ל</span>
+            <span class="info-tag">נרות 80 מ"ג</span>
+            <span class="info-tag">נרות 125 מ"ג</span>
+            <span class="info-tag">נרות 150 מ"ג</span>
+            <span class="info-tag">נרות 250 מ"ג</span>
+          </div>
+          <div class="info-note">אין קשר בין פרצטמול לאיבופרופן — ניתן לשלב/להחליף ביניהם ללא זמן המתנה מיוחד, לפי הנחיית רופא.</div>
+        </div>
+
+        <div class="info-card">
+          <h3>💊 נורופן (החומר הפעיל: איבופרופן)</h3>
+          <div class="sub">גם: אדוויל, איבו — אותו חומר פעיל</div>
+          <div class="info-row"><span>מינון למנה</span><b>5–10 מ"ג לכל ק"ג משקל</b></div>
+          <div class="info-row"><span>מרווח בין מנות</span><b>6–8 שעות</b></div>
+          <div class="info-row"><span>מקסימום ביממה</span><b>עד 40 מ"ג/ק"ג/יום</b></div>
+          <div class="info-row"><span>גיל/משקל מינימלי</span><b>מגיל 6 חודשים ומעל 5 ק"ג (3–6 חודשים רק במרשם רופא)</b></div>
+          <div style="margin-top:10px;">
+            <span class="info-tag">סירופ 100 מ"ג/5מ"ל</span>
+            <span class="info-tag">פורטה 200 מ"ג/5מ"ל (ריכוז כפול!)</span>
+            <span class="info-tag">נרות 60 מ"ג</span>
+            <span class="info-tag">נרות 125 מ"ג</span>
+            <span class="info-tag">נרות 150 מ"ג</span>
+            <span class="info-tag">נרות 250 מ"ג</span>
+          </div>
+          <div class="info-note">⚠️ שימו לב: תרחיף "פורטה" מרוכז פי 2 מהרגיל — כלל אצבע של "חצי מ״ל לכל ק״ג" לא תקף בגרסה זו. בדקו את הריכוז שרשום על האריזה שלכם לפני מדידה. אין לתת לתינוקות עם אסתמה, בעיות קיבה או כליות ללא אישור רופא.</div>
+        </div>
+
+        <div class="info-note" style="text-align:center;padding:0 6px 20px;">
+          מקורות: עלוני יצרן, אתר משרד הבריאות ומחשבוני מינון רפואיים מוכרים. המידע עודכן בהתאם למקורות אלה, אך תרופות ועלונים מתעדכנים מעת לעת — יש לבדוק תמיד מול העלון העדכני שבקופסה.
+        </div>
       </div>
     </div>
 
