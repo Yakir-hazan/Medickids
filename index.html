@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#7C6FF0">
+<title>מד חום משפחתי</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+  <div class="statusbar"><span id="clock">--:--</span><span>🔋 📶</span></div>
+
+  <div class="body-area">
+
+    <!-- LANDING / ADD TO HOME SCREEN -->
+    <div class="screen active" id="screen-landing">
+      <div class="scroll" style="padding-top:14px;">
+        <div style="text-align:center;padding:10px 6px 22px;">
+          <div class="splash-icon" style="margin:0 auto 16px;">🌡️</div>
+          <div class="pick-title" style="margin-bottom:8px;">כמעט מוכנים</div>
+          <div class="pick-sub" style="font-size:13.5px;line-height:1.7;">
+            כדי שהאפליקציה תיפתח מהר, בלי דפדפן, ותוכל לשלוח לכם תזכורות —
+            כדאי להוסיף אותה למסך הבית. לוקח 10 שניות.
+          </div>
+        </div>
+
+        <!-- iOS instructions -->
+        <div id="landing-ios" style="display:none;">
+          <div class="a2hs-step"><div class="a2hs-num">1</div><div>הקישו על כפתור השיתוף <span class="a2hs-ic">⬆️</span> בתחתית מסך ה־Safari</div></div>
+          <div class="a2hs-step"><div class="a2hs-num">2</div><div>גללו למטה ובחרו <b>"הוספה למסך הבית"</b> <span class="a2hs-ic">➕</span></div></div>
+          <div class="a2hs-step"><div class="a2hs-num">3</div><div>לחצו <b>"הוספה"</b> — והאייקון יופיע כמו כל אפליקציה אחרת 🎉</div></div>
+        </div>
+
+        <!-- Android / Chrome instructions -->
+        <div id="landing-android" style="display:none;">
+          <button class="btn-primary" id="btn-install" onclick="App.installNow()">📲 התקנה למסך הבית</button>
+          <div class="a2hs-step" style="margin-top:16px;"><div class="a2hs-num">i</div><div>אם הכפתור לא הופיע: פתחו את התפריט <b>⋮</b> בדפדפן ובחרו <b>"התקן אפליקציה"</b></div></div>
+        </div>
+
+        <!-- Desktop fallback -->
+        <div id="landing-desktop" style="display:none;">
+          <div class="a2hs-step"><div class="a2hs-num">i</div><div>מומלץ לפתוח את הקישור מהנייד כדי להוסיף למסך הבית. אפשר גם להמשיך כאן בדפדפן.</div></div>
+        </div>
+
+        <div class="pick-both" style="margin-top:22px;" onclick="App.skipLanding()">להמשיך בדפדפן בלי התקנה</div>
+      </div>
+    </div>
+
+    <!-- SPLASH -->
+    <div class="screen" id="screen-splash">
+      <div class="scroll">
+        <div class="splash-icon">🌡️</div>
+        <div class="splash-title">מד חום משפחתי</div>
+        <div class="splash-sub">כל התרופות, כל המדידות, במקום אחד רגוע —<br>גם ב־3 בלילה.</div>
+        <button class="btn-primary" onclick="App.goto('screen-pick')">בואו נתחיל</button>
+      </div>
+    </div>
+
+    <!-- SELECT CHILD -->
+    <div class="screen" id="screen-pick">
+      <div class="scroll" style="padding-top:26px;">
+        <div class="pick-title">את מי בודקים עכשיו?</div>
+        <div class="pick-sub">אפשר גם לראות את שני הילדים יחד בדשבורד.</div>
+        <div id="pick-list"></div>
+        <div class="pick-both" onclick="App.tab('screen-dash')">👨‍👩‍👧‍👦 הצגת כל הילדים יחד</div>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="screen" id="screen-dash">
+      <div class="scroll">
+        <div class="app-header">
+          <div class="fam" id="fam-name">משפחה</div>
+          <div class="sub" id="fam-sub"></div>
+        </div>
+        <div id="dash-children"></div>
+      </div>
+      <button class="fab" onclick="App.openMedSheet()">➕ נתתי תרופה</button>
+      <div class="navbar">
+        <button class="navitem" data-nav="screen-dash" onclick="App.tab('screen-dash')"><span class="ic">🏠</span>בית</button>
+        <button class="navitem" data-nav="screen-hist" onclick="App.tab('screen-hist')"><span class="ic">🕒</span>היסטוריה</button>
+        <button class="navitem" data-nav="screen-temp" onclick="App.tab('screen-temp')"><span class="ic">📈</span>חום</button>
+        <button class="navitem" data-nav="screen-settings" onclick="App.tab('screen-settings')"><span class="ic">⚙️</span>הגדרות</button>
+      </div>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="screen" id="screen-hist">
+      <div class="scroll">
+        <div class="scr-head" style="padding-inline-start:0;"><h2>היסטוריה</h2></div>
+        <div class="filter-row" id="hist-filters"></div>
+        <div id="hist-list"></div>
+      </div>
+      <div class="navbar">
+        <button class="navitem" data-nav="screen-dash" onclick="App.tab('screen-dash')"><span class="ic">🏠</span>בית</button>
+        <button class="navitem" data-nav="screen-hist" onclick="App.tab('screen-hist')"><span class="ic">🕒</span>היסטוריה</button>
+        <button class="navitem" data-nav="screen-temp" onclick="App.tab('screen-temp')"><span class="ic">📈</span>חום</button>
+        <button class="navitem" data-nav="screen-settings" onclick="App.tab('screen-settings')"><span class="ic">⚙️</span>הגדרות</button>
+      </div>
+    </div>
+
+    <!-- TEMPERATURE -->
+    <div class="screen" id="screen-temp">
+      <div class="scroll">
+        <div class="scr-head" style="padding-inline-start:0;"><h2>מעקב חום</h2></div>
+        <div class="filter-row" id="temp-filters"></div>
+        <div class="chart-card">
+          <div class="chart-top"><span class="cur" id="temp-current">--°</span><span class="lbl" id="temp-current-lbl">אין מדידות עדיין</span></div>
+          <svg id="temp-svg" viewBox="0 0 300 100" width="100%" height="90"></svg>
+        </div>
+        <div id="temp-list"></div>
+      </div>
+      <button class="fab" onclick="App.openTempSheet()">➕ הוספת מדידה</button>
+      <div class="navbar">
+        <button class="navitem" data-nav="screen-dash" onclick="App.tab('screen-dash')"><span class="ic">🏠</span>בית</button>
+        <button class="navitem" data-nav="screen-hist" onclick="App.tab('screen-hist')"><span class="ic">🕒</span>היסטוריה</button>
+        <button class="navitem" data-nav="screen-temp" onclick="App.tab('screen-temp')"><span class="ic">📈</span>חום</button>
+        <button class="navitem" data-nav="screen-settings" onclick="App.tab('screen-settings')"><span class="ic">⚙️</span>הגדרות</button>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="screen" id="screen-settings">
+      <div class="scroll">
+        <div class="scr-head" style="padding-inline-start:0;"><h2>הגדרות</h2></div>
+        <div class="set-group">
+          <button class="set-row" id="row-notif" onclick="App.toggleNotif()">🔔 התראות ותזכורות<div class="toggle" id="toggle-notif"></div></button>
+          <button class="set-row">💊 תרופות מועדפות<span class="chev">‹</span></button>
+        </div>
+        <div class="set-group">
+          <button class="set-row" onclick="App.goto('screen-kids')">👨‍👩‍👧‍👦 ניהול ילדים<span class="chev">‹</span></button>
+          <button class="set-row">🏡 הגדרות משפחה<span class="chev">‹</span></button>
+        </div>
+        <div class="set-group">
+          <button class="set-row">ℹ️ אודות האפליקציה<span class="chev">‹</span></button>
+        </div>
+      </div>
+      <div class="navbar">
+        <button class="navitem" data-nav="screen-dash" onclick="App.tab('screen-dash')"><span class="ic">🏠</span>בית</button>
+        <button class="navitem" data-nav="screen-hist" onclick="App.tab('screen-hist')"><span class="ic">🕒</span>היסטוריה</button>
+        <button class="navitem" data-nav="screen-temp" onclick="App.tab('screen-temp')"><span class="ic">📈</span>חום</button>
+        <button class="navitem" data-nav="screen-settings" onclick="App.tab('screen-settings')"><span class="ic">⚙️</span>הגדרות</button>
+      </div>
+    </div>
+
+    <!-- CHILDREN MANAGEMENT -->
+    <div class="screen" id="screen-kids">
+      <div class="scr-head">
+        <button class="back-btn" onclick="App.goto('screen-settings')">→</button>
+        <h2>ניהול ילדים</h2>
+      </div>
+      <div class="scroll" style="padding-top:6px;">
+        <div id="kids-list"></div>
+        <button class="add-kid" onclick="App.openEditKid(null)">+ הוספת ילד/ה</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- SHEET: add medication -->
+  <div class="sheet-overlay" id="sheet-med" onclick="if(event.target===this)App.closeSheet('sheet-med')">
+    <div class="sheet">
+      <button class="close-sheet" onclick="App.closeSheet('sheet-med')">סגור ✕</button>
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">נתתי תרופה</div>
+      <div class="field-label">ילד</div>
+      <div class="chip-row" id="med-child-chips"></div>
+      <div class="field-label">תרופה</div>
+      <div class="chip-row" id="med-medicine-chips"></div>
+      <div class="field-label">שעה</div>
+      <input class="field-input" id="med-time" type="time">
+      <div class="field-label">מינון שניתן</div>
+      <input class="field-input" id="med-dose" placeholder="___ מ״ל (למילוי לפי עלון היצרן)">
+      <div class="field-label">הערה (אופציונלי)</div>
+      <input class="field-input" id="med-note" placeholder="לדוגמה: אחרי אמבטיה פושרת">
+      <button class="sheet-cta" onclick="App.saveMed()">שמירה</button>
+    </div>
+  </div>
+
+  <!-- SHEET: add temperature -->
+  <div class="sheet-overlay" id="sheet-temp" onclick="if(event.target===this)App.closeSheet('sheet-temp')">
+    <div class="sheet">
+      <button class="close-sheet" onclick="App.closeSheet('sheet-temp')">סגור ✕</button>
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">הוספת מדידת חום</div>
+      <div class="field-label">ילד</div>
+      <div class="chip-row" id="temp-child-chips"></div>
+      <div class="field-label">טמפרטורה</div>
+      <input class="field-input" id="temp-value" type="number" step="0.1" min="30" max="43" placeholder="לדוגמה: 38.4">
+      <div class="field-error" id="temp-error">נא להזין ערך בין 30° ל־43°</div>
+      <div class="field-label">שעה</div>
+      <input class="field-input" id="temp-time" type="time">
+      <button class="sheet-cta" onclick="App.saveTemp()">שמירה</button>
+    </div>
+  </div>
+
+  <!-- SHEET: edit / add child -->
+  <div class="sheet-overlay" id="sheet-editkid" onclick="if(event.target===this)App.closeSheet('sheet-editkid')">
+    <div class="sheet">
+      <button class="close-sheet" onclick="App.closeSheet('sheet-editkid')">סגור ✕</button>
+      <div class="sheet-handle"></div>
+      <div class="sheet-title" id="editkid-title">עריכת פרטי ילד/ה</div>
+      <div class="field-label">שם</div>
+      <input class="field-input" id="kid-name" placeholder="שם הילד/ה">
+      <div class="field-label">משקל עדכני (ק״ג)</div>
+      <input class="field-input" id="kid-weight" type="number" step="0.1" placeholder="לדוגמה: 18">
+      <div class="field-label">שנת לידה (אופציונלי)</div>
+      <input class="field-input" id="kid-birth" type="number" placeholder="לדוגמה: 2021">
+      <button class="sheet-cta" onclick="App.saveKid()">שמירה</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script src="js/db.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
