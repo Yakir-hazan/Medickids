@@ -6,30 +6,12 @@ const DB = (() => {
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 
   function seed() {
-    const now = Date.now();
-    const h = (n) => now - n * 3600 * 1000;
-    const children = [
-      { id: 'c1', name: 'נויה', emoji: '👧', color: 'a1', weight: 18, birthYear: 2021 },
-      { id: 'c2', name: 'שירה', emoji: '👦', color: 'a2', weight: 24, birthYear: 2019 },
-    ];
-    const medEntries = [
-      { id: uid(), childId: 'c1', medicine: 'אקמול ילדים', dose: '', note: '', time: h(2.25) },
-      { id: uid(), childId: 'c1', medicine: 'אקמול ילדים', dose: '', note: 'אחרי אמבטיה פושרת', time: h(23.5) },
-      { id: uid(), childId: 'c2', medicine: 'נורופן', dose: '', note: '', time: h(13.5) },
-    ];
-    const tempEntries = [
-      { id: uid(), childId: 'c1', value: 38.5, time: h(2.35) },
-      { id: uid(), childId: 'c1', value: 38.9, time: h(5.6) },
-      { id: uid(), childId: 'c1', value: 38.2, time: h(9.6) },
-      { id: uid(), childId: 'c1', value: 38.7, time: h(19.5) },
-      { id: uid(), childId: 'c2', value: 37.1, time: h(3.2) },
-    ];
     return {
-      family: 'משפחת כהן',
-      children,
+      family: '',
+      children: [],
       medicines: ['אקמול ילדים', 'נורופן'],
-      medEntries,
-      tempEntries,
+      medEntries: [],
+      tempEntries: [],
       settings: { notifications: true },
     };
   }
