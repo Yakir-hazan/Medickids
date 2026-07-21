@@ -1,4 +1,4 @@
-const CACHE_NAME = 'madhom-v3';
+const CACHE_NAME = 'madhom-v4';
 const APP_SHELL = [
   './',
   './index.html',
