@@ -111,6 +111,11 @@ const App = (() => {
   function renderPickList() {
     const wrap = document.getElementById('pick-list');
     const state = DB.get();
+    if (!state.children.length) {
+      wrap.innerHTML = `<div class="empty-state"><div class="ic">👶</div><div class="t">עדיין לא הוספת ילדים</div><div class="s">אפשר להוסיף ילד/ה עכשיו</div></div>
+        <button class="btn-primary" onclick="App.goto('screen-kids')">➕ הוספת ילד/ה</button>`;
+      return;
+    }
     wrap.innerHTML = state.children.map((c) => {
       const lastTemp = DB.lastTempFor(c.id);
       return `<div class="pick-card" onclick="App.tab('screen-dash')">
