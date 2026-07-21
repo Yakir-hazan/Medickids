@@ -25,6 +25,19 @@ body{
 .back-btn{width:32px;height:32px;border-radius:50%;background:var(--line);display:flex;align-items:center;justify-content:center;
   font-size:14px;cursor:pointer;flex-shrink:0;border:none;}
 
+/* medicine info screen */
+.info-warn{background:var(--coral-soft);border:1px solid var(--coral);border-radius:16px;padding:14px 16px;
+  font-size:12.5px;line-height:1.7;color:#B8502F;margin-bottom:18px;font-weight:600;}
+.info-card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px;}
+.info-card h3{font-size:15.5px;font-weight:800;margin-bottom:4px;}
+.info-card .sub{font-size:12px;color:var(--ink-soft);margin-bottom:12px;}
+.info-row{display:flex;justify-content:space-between;font-size:12.5px;padding:7px 0;border-bottom:1px solid var(--line);}
+.info-row:last-child{border-bottom:none;}
+.info-row b{font-weight:700;}
+.info-tag{display:inline-block;background:var(--tint);color:var(--gold-deep);font-size:11px;font-weight:700;
+  padding:3px 9px;border-radius:20px;margin:2px 4px 2px 0;}
+.info-note{font-size:11.5px;color:var(--ink-soft);line-height:1.6;margin-top:8px;}
+
 /* splash */
 #screen-splash .scroll{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 30px;}
 .splash-icon{width:88px;height:88px;border-radius:28px;background:linear-gradient(145deg,var(--gold),#9B8EFF);
