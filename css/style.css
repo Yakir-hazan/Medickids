@@ -166,3 +166,63 @@ body{
 .toast{position:absolute;bottom:110px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;
   padding:10px 20px;border-radius:14px;font-size:12.5px;font-weight:600;opacity:0;pointer-events:none;transition:.25s;z-index:20;white-space:nowrap;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+
+/* === dose calculator card === */
+.dose-calc-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 16px 18px;
+  margin: 10px 0 4px;
+  box-shadow: 0 2px 10px rgba(124,111,240,.10);
+  cursor: pointer;
+  border: 1.5px solid #ede9ff;
+  transition: box-shadow .15s;
+}
+.dose-calc-card:active { box-shadow: 0 1px 4px rgba(124,111,240,.15); }
+.dose-calc-icon { font-size: 22px; }
+.dose-calc-label {
+  flex: 1;
+  font-weight: 600;
+  font-size: 15px;
+  color: #2d2060;
+}
+.dose-calc-card .chev { color: #b0a8e0; font-size: 20px; }
+
+/* === dose result box === */
+.dose-result-box {
+  background: linear-gradient(135deg, #ede9ff, #f5f3ff);
+  border-radius: 16px;
+  padding: 20px;
+  margin-top: 18px;
+  text-align: center;
+  border: 1.5px solid #c9c0f8;
+}
+.dose-result-title {
+  font-size: 12px;
+  color: #7C6FF0;
+  font-weight: 600;
+  letter-spacing: .5px;
+  margin-bottom: 8px;
+}
+.dose-result-ml {
+  font-size: 48px;
+  font-weight: 800;
+  color: #2d2060;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.dose-result-sub {
+  font-size: 15px;
+  color: #5a4fa8;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.dose-result-detail {
+  font-size: 12px;
+  color: #9b90cc;
+  direction: ltr;
+}
