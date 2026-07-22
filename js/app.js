@@ -435,12 +435,12 @@ const App = (() => {
                         `${Math.floor(syringes)} מזרק וחצי`;
 
     box.style.display = 'block';
-    box.innerHTML = \`
+    box.innerHTML = `
       <div class="dose-result-title">המינון המומלץ</div>
-      <div class="dose-result-ml">\${mlRounded.toFixed(1)} מ"ל</div>
-      <div class="dose-result-sub">\${syringesTxt} · כל \${drug.interval}</div>
-      <div class="dose-result-detail">\${mgDose.toFixed(0)} מ"ג (\${drug.mgPerKg} מ"ג × \${weight} ק"ג ÷ \${conc.mgPerMl} מ"ג/מ"ל)</div>
-    \`;
+      <div class="dose-result-ml">${mlRounded.toFixed(1)} מ"ל</div>
+      <div class="dose-result-sub">${syringesTxt} · כל ${drug.interval}</div>
+      <div class="dose-result-detail">${mgDose.toFixed(0)} מ"ג (${drug.mgPerKg} מ"ג × ${weight} ק"ג ÷ ${conc.mgPerMl} מ"ג/מ"ל)</div>
+    `;
   }
 
   /* ---------- settings ---------- */
