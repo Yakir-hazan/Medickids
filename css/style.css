@@ -226,3 +226,23 @@ body{
   color: #9b90cc;
   direction: ltr;
 }
+
+/* === dose warnings === */
+.dose-warning {
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-top: 14px;
+  font-size: 13px;
+  line-height: 1.6;
+  font-weight: 500;
+}
+.dose-warning-alert {
+  background: #fff4e5;
+  border: 1.5px solid #ffcf8a;
+  color: #8a5a00;
+}
+.dose-warning-block {
+  background: #ffeceb;
+  border: 1.5px solid #ffb3ae;
+  color: #9c1c14;
+}
