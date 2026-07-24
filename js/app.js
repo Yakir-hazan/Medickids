@@ -355,28 +355,43 @@ const App = (() => {
   /* ---------- dose calculator ---------- */
   const DOSE_DB = {
     'אקמול / נובימול': {
-      mgPerKg: 15,
       interval: '4–6 שעות',
       intervalHours: 4,
       maxDosesPerDay: 5,
-      minWeightKg: 3,
       matchNames: ['אקמול', 'נובימול', 'פארמול', 'דקסמול'],
       concentrations: [
-        { label: 'טיפות 100 מ"ג/מ"ל', mgPerMl: 100, unit: 'מ"ל', syringeml: 1 },
-        { label: 'סירופ 120 מ"ג/5מ"ל', mgPerMl: 24, unit: 'מ"ל', syringeml: 1 },
-        { label: 'סירופ 250 מ"ג/5מ"ל', mgPerMl: 50, unit: 'מ"ל', syringeml: 1 },
+        {
+          label: 'טיפות 100 מ"ג/מ"ל (נובימול/טיפטיפות)',
+          mgPerMl: 100,
+          // exact table from the official patient leaflet — no formula, no rounding
+          doseTable: [
+            { kg: 3,  mg: 45,  ml: 0.45 },
+            { kg: 4,  mg: 60,  ml: 0.60 },
+            { kg: 5,  mg: 75,  ml: 0.75 },
+            { kg: 6,  mg: 90,  ml: 0.90 },
+            { kg: 7,  mg: 105, ml: 1.05 },
+            { kg: 8,  mg: 120, ml: 1.20 },
+            { kg: 9,  mg: 135, ml: 1.35 },
+            { kg: 10, mg: 150, ml: 1.50 },
+            { kg: 11, mg: 165, ml: 1.65 },
+            { kg: 12, mg: 180, ml: 1.80 },
+            { kg: 13, mg: 195, ml: 1.95 },
+            { kg: 14, mg: 210, ml: 2.10 },
+            { kg: 15, mg: 225, ml: 2.25 },
+          ],
+        },
+        { label: 'סירופ 120 מ"ג/5מ"ל', mgPerMl: 24, pendingLeaflet: true },
+        { label: 'סירופ 250 מ"ג/5מ"ל', mgPerMl: 50, pendingLeaflet: true },
       ]
     },
     'נורופן': {
-      mgPerKg: 7.5,
       interval: '6–8 שעות',
       intervalHours: 6,
       maxDosesPerDay: 4,
-      minWeightKg: 5,
       matchNames: ['נורופן', 'איבופרופן', 'אדוויל'],
       concentrations: [
-        { label: 'סירופ 100 מ"ג/5מ"ל', mgPerMl: 20, unit: 'מ"ל', syringeml: 1 },
-        { label: 'פורטה 200 מ"ג/5מ"ל', mgPerMl: 40, unit: 'מ"ל', syringeml: 1 },
+        { label: 'סירופ 100 מ"ג/5מ"ל', mgPerMl: 20, pendingLeaflet: true },
+        { label: 'פורטה 200 מ"ג/5מ"ל', mgPerMl: 40, pendingLeaflet: true },
       ]
     },
   };
@@ -477,6 +492,17 @@ const App = (() => {
     return null;
   }
 
+  /* find the leaflet table row for a given weight — floors to the nearest defined weight for safety, never extrapolates beyond the table */
+  function _findDoseRow(doseTable, weight) {
+    const sorted = [...doseTable].sort((a, b) => a.kg - b.kg);
+    if (weight < sorted[0].kg) return { outOfRange: 'below', min: sorted[0].kg, max: sorted[sorted.length - 1].kg };
+    if (weight > sorted[sorted.length - 1].kg) return { outOfRange: 'above', min: sorted[0].kg, max: sorted[sorted.length - 1].kg };
+    // exact match if present, otherwise the nearest lower defined weight
+    let row = sorted[0];
+    for (const r of sorted) { if (r.kg <= weight) row = r; else break; }
+    return { row };
+  }
+
   function calcDose() {
     const weight = parseFloat(document.getElementById('dose-weight').value);
     const box = document.getElementById('dose-result');
@@ -486,32 +512,37 @@ const App = (() => {
     if (!weight || weight < 1 || weight > 60) { box.style.display = 'none'; return; }
 
     const drug = DOSE_DB[doseMedSel];
+    const conc = drug.concentrations[doseConcIdx];
 
-    if (drug.minWeightKg && weight < drug.minWeightKg) {
+    if (conc.pendingLeaflet) {
       box.style.display = 'none';
       if (warnBox) {
         warnBox.style.display = 'block';
         warnBox.className = 'dose-warning dose-warning-block';
-        warnBox.innerHTML = `🚫 תרופה זו אינה מומלצת למשקל מתחת ל־${drug.minWeightKg} ק"ג ללא הנחיית רופא/ה. יש להתייעץ לפני מתן.`;
+        warnBox.innerHTML = `📋 עדיין אין טבלת מינון רשמית לצורת מתן זו במערכת. יש לצלם את עלון היצרן ולשלוח כדי שהמינון המדויק יתווסף — עד אז אין הצגת מינון עבורה.`;
       }
       return;
     }
 
-    const conc = drug.concentrations[doseConcIdx];
-    const mgDose = drug.mgPerKg * weight;
-    const mlDose = mgDose / conc.mgPerMl;
-    const mlRounded = Math.round(mlDose * 2) / 2; // round to nearest 0.5
-    const syringes = mlRounded / conc.syringeml;
-    const syringesTxt = syringes === 1 ? 'מזרק אחד (1 מ"ל)' :
-                        syringes % 1 === 0 ? `${syringes} מזרקים` :
-                        `${Math.floor(syringes)} מזרק וחצי`;
+    const lookup = _findDoseRow(conc.doseTable, weight);
+    if (lookup.outOfRange) {
+      box.style.display = 'none';
+      if (warnBox) {
+        warnBox.style.display = 'block';
+        warnBox.className = 'dose-warning dose-warning-block';
+        const dir = lookup.outOfRange === 'below' ? 'מתחת' : 'מעל';
+        warnBox.innerHTML = `🚫 המשקל ${dir} לטווח הטבלה הרשמית של צורת מתן זו (${lookup.min}–${lookup.max} ק"ג). יש לבחור צורת מתן אחרת המתאימה למשקל, או להתייעץ עם רופא/ה או רוקח/ת.`;
+      }
+      return;
+    }
 
+    const { row } = lookup;
     box.style.display = 'block';
     box.innerHTML = `
-      <div class="dose-result-title">המינון המומלץ</div>
-      <div class="dose-result-ml">${mlRounded.toFixed(1)} מ"ל</div>
-      <div class="dose-result-sub">${syringesTxt} · כל ${drug.interval}</div>
-      <div class="dose-result-detail">${mgDose.toFixed(0)} מ"ג (${drug.mgPerKg} מ"ג × ${weight} ק"ג ÷ ${conc.mgPerMl} מ"ג/מ"ל)</div>
+      <div class="dose-result-title">המינון לפי טבלת היצרן</div>
+      <div class="dose-result-ml">${row.ml.toFixed(2)} מ"ל</div>
+      <div class="dose-result-sub">כל ${drug.interval} · עד ${drug.maxDosesPerDay} מנות ב-24 שעות</div>
+      <div class="dose-result-detail">${row.mg} מ"ג לילד/ה במשקל ${row.kg} ק"ג (טבלת עלון היצרן)</div>
     `;
 
     const warning = _doseHistoryWarning(doseMedSel);
