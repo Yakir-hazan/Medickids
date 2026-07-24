@@ -410,12 +410,12 @@ const App = (() => {
   function openDoseSheet() {
     const state = DB.get();
     doseChildId = state.children[0]?.id || null;
-    doseMedSel = 'אקמול / נובימול';
+    doseMedSel = 'נובימול';
     doseConcIdx = 0;
     _renderDoseChildChips();
     _renderDoseMedChips();
     _renderDoseConcChips();
-    _fillWeightFromChild();
+    document.getElementById('dose-weight').value = ''; // always empty — must be typed fresh every time
     calcDose();
     openSheet('sheet-dose');
   }
@@ -429,19 +429,10 @@ const App = (() => {
     ).join('');
   }
 
-  function _fillWeightFromChild() {
-    const state = DB.get();
-    const child = state.children.find((c) => c.id === doseChildId);
-    const weightInput = document.getElementById('dose-weight');
-    if (child && child.weight) weightInput.value = child.weight;
-    else weightInput.value = '';
-  }
-
   function pickDoseChild(id) {
     doseChildId = id;
     _renderDoseChildChips();
-    _fillWeightFromChild();
-    calcDose();
+    calcDose(); // weight value itself is untouched — only history warnings re-check for the new child
   }
 
   function _renderDoseMedChips() {
