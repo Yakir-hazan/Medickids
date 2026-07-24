@@ -357,6 +357,10 @@ const App = (() => {
     'אקמול / נובימול': {
       mgPerKg: 15,
       interval: '4–6 שעות',
+      intervalHours: 4,
+      maxDosesPerDay: 5,
+      minWeightKg: 3,
+      matchNames: ['אקמול', 'נובימול', 'פארמול', 'דקסמול'],
       concentrations: [
         { label: 'טיפות 100 מ"ג/מ"ל', mgPerMl: 100, unit: 'מ"ל', syringeml: 1 },
         { label: 'סירופ 120 מ"ג/5מ"ל', mgPerMl: 24, unit: 'מ"ל', syringeml: 1 },
@@ -366,6 +370,10 @@ const App = (() => {
     'נורופן': {
       mgPerKg: 7.5,
       interval: '6–8 שעות',
+      intervalHours: 6,
+      maxDosesPerDay: 4,
+      minWeightKg: 5,
+      matchNames: ['נורופן', 'איבופרופן', 'אדוויל'],
       concentrations: [
         { label: 'סירופ 100 מ"ג/5מ"ל', mgPerMl: 20, unit: 'מ"ל', syringeml: 1 },
         { label: 'פורטה 200 מ"ג/5מ"ל', mgPerMl: 40, unit: 'מ"ל', syringeml: 1 },
@@ -375,21 +383,43 @@ const App = (() => {
 
   let doseMedSel = 'אקמול / נובימול';
   let doseConcIdx = 0;
+  let doseChildId = null;
 
   function openDoseSheet() {
     const state = DB.get();
-    // pre-fill weight from first child if available
-    const firstChild = state.children[0];
-    const weightInput = document.getElementById('dose-weight');
-    if (firstChild && firstChild.weight) weightInput.value = firstChild.weight;
-    else weightInput.value = '';
-
+    doseChildId = state.children[0]?.id || null;
     doseMedSel = 'אקמול / נובימול';
     doseConcIdx = 0;
+    _renderDoseChildChips();
     _renderDoseMedChips();
     _renderDoseConcChips();
+    _fillWeightFromChild();
     calcDose();
     openSheet('sheet-dose');
+  }
+
+  function _renderDoseChildChips() {
+    const state = DB.get();
+    const box = document.getElementById('dose-child-chips');
+    if (!box) return;
+    box.innerHTML = state.children.map((c) =>
+      `<button type="button" class="chip ${c.id === doseChildId ? 'sel' : ''}" onclick="App.pickDoseChild('${c.id}')">${c.emoji} ${c.name}</button>`
+    ).join('');
+  }
+
+  function _fillWeightFromChild() {
+    const state = DB.get();
+    const child = state.children.find((c) => c.id === doseChildId);
+    const weightInput = document.getElementById('dose-weight');
+    if (child && child.weight) weightInput.value = child.weight;
+    else weightInput.value = '';
+  }
+
+  function pickDoseChild(id) {
+    doseChildId = id;
+    _renderDoseChildChips();
+    _fillWeightFromChild();
+    calcDose();
   }
 
   function _renderDoseMedChips() {
@@ -419,12 +449,54 @@ const App = (() => {
     calcDose();
   }
 
+  /* does a free-text medicine name (as stored in medEntries) belong to this DOSE_DB drug? */
+  function _matchesDrug(medicineName, drugKey) {
+    if (!medicineName) return false;
+    const names = DOSE_DB[drugKey].matchNames || [];
+    return names.some((n) => medicineName.indexOf(n) !== -1);
+  }
+
+  function _doseHistoryWarning(drugKey) {
+    if (!doseChildId) return null;
+    const drug = DOSE_DB[drugKey];
+    const now = Date.now();
+    const entries = DB.get().medEntries.filter((e) => e.childId === doseChildId && _matchesDrug(e.medicine, drugKey));
+    if (!entries.length) return null;
+
+    const last = entries.reduce((a, b) => (b.time > a.time ? b : a));
+    const hoursSince = (now - last.time) / 3600000;
+    if (hoursSince < drug.intervalHours) {
+      const remain = Math.ceil(drug.intervalHours - hoursSince);
+      return { level: 'alert', text: `⏱️ המנה האחרונה הייתה לפני ${hoursSince < 1 ? 'פחות משעה' : Math.floor(hoursSince) + ' שעות'} — המרווח המומלץ הוא ${drug.interval}. מומלץ להמתין כ־${remain} שעות נוספות לפני מנה נוספת.` };
+    }
+
+    const last24h = entries.filter((e) => now - e.time <= 24 * 3600000).length;
+    if (last24h >= drug.maxDosesPerDay) {
+      return { level: 'alert', text: `⚠️ כבר ניתנו ${last24h} מנות מהתרופה הזו ב־24 השעות האחרונות — זהו המספר המרבי המומלץ ליום. אין לתת מנה נוספת בלי להתייעץ עם רופא/ה או רוקח/ת.` };
+    }
+    return null;
+  }
+
   function calcDose() {
     const weight = parseFloat(document.getElementById('dose-weight').value);
     const box = document.getElementById('dose-result');
+    const warnBox = document.getElementById('dose-warning');
+    if (warnBox) { warnBox.style.display = 'none'; warnBox.innerHTML = ''; }
+
     if (!weight || weight < 1 || weight > 60) { box.style.display = 'none'; return; }
 
     const drug = DOSE_DB[doseMedSel];
+
+    if (drug.minWeightKg && weight < drug.minWeightKg) {
+      box.style.display = 'none';
+      if (warnBox) {
+        warnBox.style.display = 'block';
+        warnBox.className = 'dose-warning dose-warning-block';
+        warnBox.innerHTML = `🚫 תרופה זו אינה מומלצת למשקל מתחת ל־${drug.minWeightKg} ק"ג ללא הנחיית רופא/ה. יש להתייעץ לפני מתן.`;
+      }
+      return;
+    }
+
     const conc = drug.concentrations[doseConcIdx];
     const mgDose = drug.mgPerKg * weight;
     const mlDose = mgDose / conc.mgPerMl;
@@ -441,6 +513,13 @@ const App = (() => {
       <div class="dose-result-sub">${syringesTxt} · כל ${drug.interval}</div>
       <div class="dose-result-detail">${mgDose.toFixed(0)} מ"ג (${drug.mgPerKg} מ"ג × ${weight} ק"ג ÷ ${conc.mgPerMl} מ"ג/מ"ל)</div>
     `;
+
+    const warning = _doseHistoryWarning(doseMedSel);
+    if (warning && warnBox) {
+      warnBox.style.display = 'block';
+      warnBox.className = 'dose-warning dose-warning-' + warning.level;
+      warnBox.innerHTML = warning.text;
+    }
   }
 
   /* ---------- settings ---------- */
@@ -478,7 +557,7 @@ const App = (() => {
     setHistFilter, setTempFilter, openTempSheet, pickTempChild, saveTemp,
     openEditKid, saveKid, toggleNotif, init,
     installNow, skipLanding,
-    openDoseSheet, pickDoseMed, pickDoseConc, calcDose,
+    openDoseSheet, pickDoseChild, pickDoseMed, pickDoseConc, calcDose,
   };
 })();
 
