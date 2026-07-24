@@ -407,12 +407,26 @@ const App = (() => {
       ]
     },
     'נורופן': {
-      interval: null,
-      intervalHours: null,
-      maxDosesPerDay: null,
+      interval: '6–8 שעות (מרווח מינימלי 4 שעות)',
+      intervalHours: 4,
+      maxDosesPerDay: 4,
       matchNames: ['נורופן', 'איבופרופן', 'אדוויל'],
       concentrations: [
-        { label: 'סירופ 100 מ"ג/5מ"ל', pendingLeaflet: true },
+        {
+          label: 'סירופ 100 מ"ג/5מ"ל (20 מ"ג/מ"ל)',
+          mgPerMl: 20,
+          // exact table from the official patient leaflet — no formula, no rounding
+          doseTable: [
+            { kgMin: 5,  kgMax: 5.4,  ml: 2 },
+            { kgMin: 5.5, kgMax: 8.1, ml: 2.5 },
+            { kgMin: 8.2, kgMax: 10.9, ml: 3.75 },
+            { kgMin: 11, kgMax: 15,  ml: 5 },
+            { kgMin: 16, kgMax: 21,  ml: 7.5 },
+            { kgMin: 22, kgMax: 26,  ml: 10 },
+            { kgMin: 27, kgMax: 32,  ml: 12.5 },
+            { kgMin: 33, kgMax: 43,  ml: 15 },
+          ],
+        },
         { label: 'פורטה 200 מ"ג/5מ"ל', pendingLeaflet: true },
       ]
     },
@@ -510,8 +524,22 @@ const App = (() => {
     return null;
   }
 
-  /* find the leaflet table row for a given weight — floors to the nearest defined weight for safety, never extrapolates beyond the table */
+  /* find the leaflet table row for a given weight — never extrapolates beyond the table.
+     Supports two official leaflet formats:
+     - per-kg rows ({kg, ml, mg}) — floors to the nearest defined weight (e.g. Novimol)
+     - weight-range rows ({kgMin, kgMax, ml}) — exact bracket match (e.g. Nurofen) */
   function _findDoseRow(doseTable, weight) {
+    const isRangeTable = doseTable[0].kgMin != null;
+
+    if (isRangeTable) {
+      const sorted = [...doseTable].sort((a, b) => a.kgMin - b.kgMin);
+      if (weight < sorted[0].kgMin) return { outOfRange: 'below', min: sorted[0].kgMin, max: sorted[sorted.length - 1].kgMax };
+      if (weight > sorted[sorted.length - 1].kgMax) return { outOfRange: 'above', min: sorted[0].kgMin, max: sorted[sorted.length - 1].kgMax };
+      const row = sorted.find((r) => weight >= r.kgMin && weight <= r.kgMax);
+      if (!row) return { outOfRange: 'below', min: sorted[0].kgMin, max: sorted[sorted.length - 1].kgMax }; // falls in a gap between brackets
+      return { row };
+    }
+
     const sorted = [...doseTable].sort((a, b) => a.kg - b.kg);
     if (weight < sorted[0].kg) return { outOfRange: 'below', min: sorted[0].kg, max: sorted[sorted.length - 1].kg };
     if (weight > sorted[sorted.length - 1].kg) return { outOfRange: 'above', min: sorted[0].kg, max: sorted[sorted.length - 1].kg };
@@ -555,6 +583,8 @@ const App = (() => {
     }
 
     const { row } = lookup;
+    const mg = row.mg != null ? row.mg : (conc.mgPerMl != null ? Math.round(row.ml * conc.mgPerMl) : null);
+    const weightLabel = row.kg != null ? `${row.kg} ק"ג` : `${row.kgMin}–${row.kgMax} ק"ג`;
     const subParts = [];
     if (drug.interval) subParts.push(`כל ${drug.interval}`);
     if (drug.maxDosesPerDay != null) subParts.push(`עד ${drug.maxDosesPerDay} מנות ב-24 שעות`);
@@ -563,7 +593,7 @@ const App = (() => {
       <div class="dose-result-title">המינון לפי טבלת היצרן</div>
       <div class="dose-result-ml">${row.ml.toFixed(2)} מ"ל</div>
       <div class="dose-result-sub">${subParts.length ? subParts.join(' · ') : 'יש לבדוק מרווח ומספר מנות מרבי בעלון'}</div>
-      <div class="dose-result-detail">${row.mg} מ"ג לילד/ה במשקל ${row.kg} ק"ג (טבלת עלון היצרן)</div>
+      <div class="dose-result-detail">${mg != null ? mg + ' מ"ג ' : ''}לילד/ה במשקל ${weightLabel} (טבלת עלון היצרן)</div>
     `;
 
     const warning = _doseHistoryWarning(doseMedSel);
