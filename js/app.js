@@ -354,14 +354,14 @@ const App = (() => {
 
   /* ---------- dose calculator ---------- */
   const DOSE_DB = {
-    'אקמול / נובימול': {
+    'נובימול': {
       interval: '4–6 שעות',
       intervalHours: 4,
       maxDosesPerDay: 5,
-      matchNames: ['אקמול', 'נובימול', 'פארמול', 'דקסמול'],
+      matchNames: ['נובימול'],
       concentrations: [
         {
-          label: 'טיפות 100 מ"ג/מ"ל (נובימול/טיפטיפות)',
+          label: 'טיפות 100 מ"ג/מ"ל (טיפטיפות)',
           mgPerMl: 100,
           // exact table from the official patient leaflet — no formula, no rounding
           doseTable: [
@@ -380,18 +380,25 @@ const App = (() => {
             { kg: 15, mg: 225, ml: 2.25 },
           ],
         },
-        { label: 'סירופ 120 מ"ג/5מ"ל', mgPerMl: 24, pendingLeaflet: true },
-        { label: 'סירופ 250 מ"ג/5מ"ל', mgPerMl: 50, pendingLeaflet: true },
+      ]
+    },
+    'אקמול': {
+      interval: null,
+      intervalHours: null,
+      maxDosesPerDay: null,
+      matchNames: ['אקמול'],
+      concentrations: [
+        { label: 'ממתין לעלון רשמי', pendingLeaflet: true },
       ]
     },
     'נורופן': {
-      interval: '6–8 שעות',
-      intervalHours: 6,
-      maxDosesPerDay: 4,
+      interval: null,
+      intervalHours: null,
+      maxDosesPerDay: null,
       matchNames: ['נורופן', 'איבופרופן', 'אדוויל'],
       concentrations: [
-        { label: 'סירופ 100 מ"ג/5מ"ל', mgPerMl: 20, pendingLeaflet: true },
-        { label: 'פורטה 200 מ"ג/5מ"ל', mgPerMl: 40, pendingLeaflet: true },
+        { label: 'סירופ 100 מ"ג/5מ"ל', pendingLeaflet: true },
+        { label: 'פורטה 200 מ"ג/5מ"ל', pendingLeaflet: true },
       ]
     },
   };
@@ -479,15 +486,20 @@ const App = (() => {
     if (!entries.length) return null;
 
     const last = entries.reduce((a, b) => (b.time > a.time ? b : a));
-    const hoursSince = (now - last.time) / 3600000;
-    if (hoursSince < drug.intervalHours) {
-      const remain = Math.ceil(drug.intervalHours - hoursSince);
-      return { level: 'alert', text: `⏱️ המנה האחרונה הייתה לפני ${hoursSince < 1 ? 'פחות משעה' : Math.floor(hoursSince) + ' שעות'} — המרווח המומלץ הוא ${drug.interval}. מומלץ להמתין כ־${remain} שעות נוספות לפני מנה נוספת.` };
+
+    if (drug.intervalHours != null) {
+      const hoursSince = (now - last.time) / 3600000;
+      if (hoursSince < drug.intervalHours) {
+        const remain = Math.ceil(drug.intervalHours - hoursSince);
+        return { level: 'alert', text: `⏱️ המנה האחרונה הייתה לפני ${hoursSince < 1 ? 'פחות משעה' : Math.floor(hoursSince) + ' שעות'} — המרווח המומלץ הוא ${drug.interval}. מומלץ להמתין כ־${remain} שעות נוספות לפני מנה נוספת.` };
+      }
     }
 
-    const last24h = entries.filter((e) => now - e.time <= 24 * 3600000).length;
-    if (last24h >= drug.maxDosesPerDay) {
-      return { level: 'alert', text: `⚠️ כבר ניתנו ${last24h} מנות מהתרופה הזו ב־24 השעות האחרונות — זהו המספר המרבי המומלץ ליום. אין לתת מנה נוספת בלי להתייעץ עם רופא/ה או רוקח/ת.` };
+    if (drug.maxDosesPerDay != null) {
+      const last24h = entries.filter((e) => now - e.time <= 24 * 3600000).length;
+      if (last24h >= drug.maxDosesPerDay) {
+        return { level: 'alert', text: `⚠️ כבר ניתנו ${last24h} מנות מהתרופה הזו ב־24 השעות האחרונות — זהו המספר המרבי המומלץ ליום. אין לתת מנה נוספת בלי להתייעץ עם רופא/ה או רוקח/ת.` };
+      }
     }
     return null;
   }
@@ -537,11 +549,14 @@ const App = (() => {
     }
 
     const { row } = lookup;
+    const subParts = [];
+    if (drug.interval) subParts.push(`כל ${drug.interval}`);
+    if (drug.maxDosesPerDay != null) subParts.push(`עד ${drug.maxDosesPerDay} מנות ב-24 שעות`);
     box.style.display = 'block';
     box.innerHTML = `
       <div class="dose-result-title">המינון לפי טבלת היצרן</div>
       <div class="dose-result-ml">${row.ml.toFixed(2)} מ"ל</div>
-      <div class="dose-result-sub">כל ${drug.interval} · עד ${drug.maxDosesPerDay} מנות ב-24 שעות</div>
+      <div class="dose-result-sub">${subParts.length ? subParts.join(' · ') : 'יש לבדוק מרווח ומספר מנות מרבי בעלון'}</div>
       <div class="dose-result-detail">${row.mg} מ"ג לילד/ה במשקל ${row.kg} ק"ג (טבלת עלון היצרן)</div>
     `;
 
