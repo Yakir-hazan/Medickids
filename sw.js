@@ -1,4 +1,4 @@
-const CACHE_NAME = 'madhom-v10';
+const CACHE_NAME = 'madhom-v11';
 const APP_SHELL = [
   './',
   './index.html',
@@ -42,4 +42,5 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
+
 
