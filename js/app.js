@@ -183,39 +183,177 @@ const App = (() => {
 
   function renderDashboard() {
     const state = DB.get();
-    document.getElementById('fam-name').textContent = state.family;
-    document.getElementById('fam-sub').textContent = `${state.children.length} ילדים פעילים · מעקב חי`;
+    const now = Date.now();
 
+    // ---------- header ----------
+    const hour = new Date().getHours();
+    const timeGreet = hour < 5 ? 'לילה טוב' : hour < 12 ? 'בוקר טוב' : hour < 17 ? 'צהריים טובים' : hour < 21 ? 'ערב טוב' : 'לילה טוב';
+    const famName = state.family ? `משפחת ${state.family}` : '';
+    document.getElementById('dash-greeting').textContent = famName ? `${timeGreet}, ${famName} 👋` : `${timeGreet} 👋`;
+
+    // ---------- empty state ----------
     const wrap = document.getElementById('dash-children');
     if (!state.children.length) {
-      wrap.innerHTML = `<div class="empty-state"><div class="ic">👨‍👩‍👧‍👦</div><div class="t">עדיין אין ילדים באפליקציה</div><div class="s">אפשר להוסיף ילד/ה דרך הגדרות ← ניהול ילדים</div></div>`;
+      wrap.innerHTML = `<div class="empty-state"><div class="ic">👨‍👩‍👧‍👦</div><div class="t">עדיין אין ילדים באפליקציה</div><div class="s">הוסיפו ילד/ה דרך הגדרות ← ניהול ילדים</div></div>`;
+      document.getElementById('dash-title').textContent = 'ברוכים הבאים ל-Medickids';
+      document.getElementById('dash-next-card').style.display = 'none';
+      document.getElementById('dash-calm-card').style.display = 'none';
+      document.getElementById('dash-fam-summary').style.display = 'none';
+      document.getElementById('dash-timeline').style.display = 'none';
+      document.getElementById('dash-insight').style.display = 'none';
       return;
     }
 
-    wrap.innerHTML = state.children.map((c) => {
+    // ---------- compute per-child data ----------
+    const childData = state.children.map((c) => {
       const lastMed = DB.lastMedFor(c.id);
       const lastTemp = DB.lastTempFor(c.id);
-      const night = DB.nightSummary(c.id);
-      const warn = lastTemp && lastTemp.value >= 38;
-      const insight = smartInsight(c);
+      const hasFever = lastTemp && lastTemp.value >= 38;
 
-      const nightHtml = night ? `<div class="night-note">🌙 <span><b>הלילה:</b> ${c.name} ${night.medCount ? `קיבל/ה תרופה ${night.medCount === 1 ? 'פעם אחת' : night.medCount + ' פעמים'}` : ''}${night.medCount && night.maxTemp ? ', ' : ''}${night.maxTemp ? `חום מקסימלי ${night.maxTemp}°` : ''}.</span></div>` : '';
-      const insightHtml = insight ? `<div class="smart-insight ${insight.level}"><span class="ic">${insight.icon}</span><span>${insight.text}</span></div>` : '';
+      // next dose countdown
+      let nextDoseMs = null;
+      let nextDrugName = null;
+      if (lastMed) {
+        const drugKey = Object.keys(DOSE_DB).find((k) => _matchesDrug(lastMed.medicine, k));
+        const drug = drugKey ? DOSE_DB[drugKey] : null;
+        if (drug && drug.intervalHours) {
+          const readyAt = lastMed.time + drug.intervalHours * 3600000;
+          if (readyAt > now) { nextDoseMs = readyAt - now; nextDrugName = lastMed.medicine; }
+        }
+      }
 
-      return `${nightHtml}<div class="child-card">
-        <div class="child-row">
+      // mood
+      let mood = '😊';
+      if (hasFever && lastTemp.value >= 39) mood = '😓';
+      else if (hasFever) mood = '🤒';
+
+      return { c, lastMed, lastTemp, hasFever, nextDoseMs, nextDrugName, mood };
+    });
+
+    // ---------- title ----------
+    const anyFever = childData.some((d) => d.hasFever);
+    document.getElementById('dash-title').textContent = anyFever ? 'מה קורה הלילה?' : 'מה קורה עכשיו?';
+
+    // ---------- next action card — pick the most urgent ----------
+    const urgentDose = childData
+      .filter((d) => d.nextDoseMs !== null)
+      .sort((a, b) => a.nextDoseMs - b.nextDoseMs)[0] || null;
+
+    const nextCard = document.getElementById('dash-next-card');
+    const calmCard = document.getElementById('dash-calm-card');
+
+    if (urgentDose) {
+      const totalMin = Math.ceil(urgentDose.nextDoseMs / 60000);
+      const hh = String(Math.floor(totalMin / 60)).padStart(2, '0');
+      const mm = String(totalMin % 60).padStart(2, '0');
+      document.getElementById('dash-next-timer').textContent = `${hh}:${mm}`;
+      document.getElementById('dash-next-main').textContent = `אפשר לתת שוב ${urgentDose.nextDrugName} ל${urgentDose.c.name}`;
+      document.getElementById('dash-next-sub').textContent = `מנה אחרונה ב־${formatClock(urgentDose.lastMed.time)}`;
+      nextCard.style.display = '';
+      calmCard.style.display = 'none';
+    } else {
+      nextCard.style.display = 'none';
+      calmCard.style.display = '';
+      const calmText = anyFever ? `חום מוגבר — עקוב/י אחרי הסימנים` : `לילה שקט — אין פעולות דחופות`;
+      document.getElementById('dash-calm-text').textContent = calmText;
+    }
+
+    // ---------- family summary ----------
+    const famSummary = document.getElementById('dash-fam-summary');
+    const feverCount = childData.filter((d) => d.hasFever).length;
+    const okCount = childData.filter((d) => !d.hasFever).length;
+    const medTodayCount = state.medEntries.filter((e) => {
+      const d = new Date(e.time); const n = new Date();
+      return d.getFullYear() === n.getFullYear() && d.getMonth() === n.getMonth() && d.getDate() === n.getDate();
+    }).length;
+    document.getElementById('fam-fever-count').textContent = `🌡️ ${feverCount}`;
+    document.getElementById('fam-med-count').textContent = `💊 ${medTodayCount}`;
+    document.getElementById('fam-ok-count').textContent = `✅ ${okCount}`;
+    famSummary.style.display = state.children.length > 1 ? '' : 'none';
+
+    // ---------- child cards ----------
+    wrap.innerHTML = childData.map(({ c, lastMed, lastTemp, hasFever, nextDoseMs, nextDrugName, mood }) => {
+      const tempVal = lastTemp ? lastTemp.value + '°' : '—';
+      const tempClass = hasFever ? ' fever' : '';
+      const cardClass = hasFever ? ' warm' : '';
+
+      // sparkline from last 5 temps
+      const temps = DB.tempsFor(c.id).slice(0, 5).reverse();
+      const spark = temps.length > 1
+        ? temps.map((t) => {
+            const icons = ['▁','▂','▃','▄','▅','▆','▇'];
+            const idx = Math.min(6, Math.max(0, Math.round((t.value - 36) * 2)));
+            return icons[idx];
+          }).join('') : '';
+
+      let canGiveHtml = '';
+      if (nextDoseMs !== null) {
+        const totalMin = Math.ceil(nextDoseMs / 60000);
+        const hh = String(Math.floor(totalMin / 60)).padStart(2, '0');
+        const mm = String(totalMin % 60).padStart(2, '0');
+        canGiveHtml = `<div class="can-give-bar warn-bar">⏱️ בעוד ${hh}:${mm} אפשר לתת שוב ${nextDrugName}</div>`;
+      } else if (lastMed) {
+        canGiveHtml = `<div class="can-give-bar ok-bar">✅ אפשר לתת מנה נוספת אם צריך</div>`;
+      }
+
+      return `<div class="child-card${cardClass}">
+        <div class="child-top">
           <div class="avatar" style="background:${AVATAR_GRADIENT[c.color]}">${c.emoji}</div>
-          <div class="child-name">${c.name}</div>
-          <div class="status-pill ${warn ? 'warn' : ''}">${warn ? 'חום מוגבר' : 'מעקב פעיל'}</div>
+          <div class="child-info">
+            <div class="child-name">${c.name}</div>
+            <div class="child-mood">${mood} ${c.weight ? c.weight + ' ק״ג' : ''}</div>
+          </div>
         </div>
-        ${insightHtml}
-        <div class="stat-grid">
-          <div class="stat-box"><div class="stat-label">חום אחרון</div><div class="stat-value temp">${lastTemp ? lastTemp.value + '°' : '—'}</div></div>
-          <div class="stat-box"><div class="stat-label">תרופה אחרונה</div><div class="stat-value">${lastMed ? lastMed.medicine : '—'}</div></div>
+        <div class="cstat-row">
+          <div class="cstat">
+            <div class="cstat-val${tempClass}">${tempVal}</div>
+            <div class="cstat-lbl">חום אחרון</div>
+          </div>
+          <div class="cstat">
+            <div class="cstat-val">${lastMed ? lastMed.medicine : '—'}</div>
+            <div class="cstat-lbl">תרופה אחרונה</div>
+          </div>
+          ${lastMed ? `<div class="cstat"><div class="cstat-val">${elapsedString(lastMed.time)}</div><div class="cstat-lbl">לפני</div></div>` : ''}
         </div>
-        ${lastMed ? `<div class="elapsed-bar"><span class="t">ניתנה ב־${formatClock(lastMed.time)} · עברו</span><span class="v">${elapsedString(lastMed.time)}</span></div>` : ''}
+        ${spark ? `<div class="sparkline">${spark} <span class="spark-lbl">מגמת חום</span></div>` : ''}
+        ${canGiveHtml}
       </div>`;
     }).join('');
+
+    // ---------- timeline (last 3 events) ----------
+    const feed = DB.feed(null).slice(0, 3);
+    const tlCard = document.getElementById('dash-timeline');
+    if (feed.length) {
+      document.getElementById('dash-tl-rows').innerHTML = feed.map((e) => {
+        const child = state.children.find((c) => c.id === e.childId);
+        const childName = child ? child.name : '';
+        const ic = e.kind === 'med' ? '💊' : '🌡️';
+        const txt = e.kind === 'med' ? `${e.medicine}${e.dose ? ' ' + e.dose : ''}` : `${e.value}°`;
+        return `<div class="tl-row">
+          <div class="tl-time">${formatClock(e.time)}</div>
+          <div class="tl-ic">${ic}</div>
+          <div class="tl-txt">${txt}</div>
+          <div class="tl-child">${childName}</div>
+        </div>`;
+      }).join('');
+      tlCard.style.display = '';
+    } else {
+      tlCard.style.display = 'none';
+    }
+
+    // ---------- insight (first child with one) ----------
+    const insightEl = document.getElementById('dash-insight');
+    let shownInsight = null;
+    for (const { c } of childData) {
+      const ins = smartInsight(c);
+      if (ins) { shownInsight = ins; break; }
+    }
+    if (shownInsight) {
+      document.getElementById('dash-insight-text').textContent = shownInsight.text;
+      insightEl.style.display = '';
+    } else {
+      insightEl.style.display = 'none';
+    }
   }
 
   /* ---------- add medication sheet ---------- */

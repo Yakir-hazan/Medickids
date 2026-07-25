@@ -75,18 +75,67 @@
     <!-- DASHBOARD -->
     <div class="screen" id="screen-dash">
       <div class="scroll">
-        <div class="app-header">
-          <div class="fam" id="fam-name">משפחה</div>
-          <div class="sub" id="fam-sub"></div>
+        <!-- header -->
+        <div class="dash-header">
+          <div class="dash-greeting" id="dash-greeting">שלום 👋</div>
+          <div class="dash-title" id="dash-title">מה קורה עכשיו?</div>
         </div>
+
+        <!-- next action card -->
+        <div class="next-card" id="dash-next-card" style="display:none">
+          <div class="next-card-label">⏰ הפעולה הבאה</div>
+          <div class="next-card-body">
+            <div class="next-timer-box">
+              <div class="next-timer-val" id="dash-next-timer">--:--</div>
+              <div class="next-timer-lbl">שעות</div>
+            </div>
+            <div class="next-card-text">
+              <div class="next-main" id="dash-next-main"></div>
+              <div class="next-sub" id="dash-next-sub"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- calm state (no urgent action) -->
+        <div class="calm-card" id="dash-calm-card" style="display:none">
+          <span class="calm-ic">🌙</span>
+          <span class="calm-text" id="dash-calm-text">אין פעולות דחופות כרגע</span>
+        </div>
+
+        <!-- family summary -->
+        <div class="fam-summary" id="dash-fam-summary" style="display:none">
+          <div class="fam-stat"><div class="fam-stat-val" id="fam-fever-count">0</div><div class="fam-stat-lbl">עם חום</div></div>
+          <div class="fam-divider"></div>
+          <div class="fam-stat"><div class="fam-stat-val" id="fam-med-count">0</div><div class="fam-stat-lbl">מנות היום</div></div>
+          <div class="fam-divider"></div>
+          <div class="fam-stat"><div class="fam-stat-val" id="fam-ok-count">0</div><div class="fam-stat-lbl">מרגיש/ה טוב</div></div>
+        </div>
+
+        <!-- child cards -->
         <div id="dash-children"></div>
-        <div class="dose-calc-card" onclick="App.openDoseSheet()">
-          <span class="dose-calc-icon">🧮</span>
-          <span class="dose-calc-label">חישוב מינון תרופה</span>
-          <span class="chev">‹</span>
+
+        <!-- quick actions -->
+        <div class="qa-grid">
+          <button class="qa-btn" onclick="App.openMedSheet()"><div class="qa-ic">💊</div><div class="qa-lbl">נתתי תרופה</div></button>
+          <button class="qa-btn" onclick="App.openTempSheet()"><div class="qa-ic">🌡️</div><div class="qa-lbl">מדדתי חום</div></button>
+          <button class="qa-btn" onclick="App.openDoseSheet()"><div class="qa-ic">🧮</div><div class="qa-lbl">חישוב מינון</div></button>
+          <button class="qa-btn" onclick="App.tab('screen-hist')"><div class="qa-ic">📋</div><div class="qa-lbl">היסטוריה</div></button>
+        </div>
+
+        <!-- timeline -->
+        <div class="tl-card" id="dash-timeline" style="display:none">
+          <div class="tl-title">אירועים אחרונים</div>
+          <div id="dash-tl-rows"></div>
+          <button class="tl-more" onclick="App.tab('screen-hist')">הצג הכול ›</button>
+        </div>
+
+        <!-- insight -->
+        <div class="insight-card" id="dash-insight" style="display:none">
+          <div class="insight-ic">💡</div>
+          <div class="insight-text" id="dash-insight-text"></div>
         </div>
       </div>
-      <button class="fab" onclick="App.openMedSheet()">➕ נתתי תרופה</button>
+
       <div class="navbar">
         <button class="navitem" data-nav="screen-dash" onclick="App.tab('screen-dash')"><span class="ic">🏠</span>בית</button>
         <button class="navitem" data-nav="screen-hist" onclick="App.tab('screen-hist')"><span class="ic">🕒</span>היסטוריה</button>
