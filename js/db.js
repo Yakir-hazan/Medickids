@@ -48,11 +48,14 @@ const DB = (() => {
     },
     updateChild(id, patch) {
       const c = state.children.find((x) => x.id === id);
-      if (c) Object.assign(c, patch);
+      if (c) {
+        if (patch.weight !== undefined && patch.weight !== c.weight) patch.weightUpdatedAt = Date.now();
+        Object.assign(c, patch);
+      }
       save(state);
     },
     addChild(child) {
-      state.children.push({ id: uid(), color: state.children.length % 2 ? 'a2' : 'a1', ...child });
+      state.children.push({ id: uid(), color: state.children.length % 2 ? 'a2' : 'a1', weightUpdatedAt: Date.now(), ...child });
       save(state);
     },
     setSetting(key, value) {

@@ -129,6 +129,54 @@ const App = (() => {
   }
 
   /* ---------- dashboard ---------- */
+  /* one prioritized, actionable line per child — fever alert > dose timing > stale weight.
+     Only ever returns ONE message so the dashboard stays calm, not noisy. */
+  function smartInsight(c) {
+    const now = Date.now();
+    const temps = DB.tempsFor(c.id); // newest first
+
+    // 1) fever — only interrupt with an alert when it's actually urgent
+    if (temps.length && temps[0].value >= 38) {
+      const latest = temps[0];
+      let feverStart = latest.time;
+      for (let i = 1; i < temps.length; i++) {
+        if (temps[i].value >= 38) feverStart = temps[i].time; else break;
+      }
+      const feverHours = (now - feverStart) / 3600000;
+      if (latest.value >= 39.5) {
+        return { level: 'alert', icon: '🚨', text: `החום הגיע ל־${latest.value}° — כדאי לשקול פנייה לרופא/ה.` };
+      }
+      if (feverHours >= 24) {
+        return { level: 'alert', icon: '🌡️', text: `החום נמשך כבר ${Math.floor(feverHours)} שעות — כדאי לשקול פנייה לרופא/ה.` };
+      }
+    }
+
+    // 2) dose timing — reuses the same DOSE_DB intervals as the dose calculator, so the two never contradict each other
+    const lastMed = DB.lastMedFor(c.id);
+    if (lastMed) {
+      const drugKey = Object.keys(DOSE_DB).find((k) => _matchesDrug(lastMed.medicine, k));
+      const drug = drugKey ? DOSE_DB[drugKey] : null;
+      if (drug && drug.intervalHours != null) {
+        const hoursSince = (now - lastMed.time) / 3600000;
+        const remain = drug.intervalHours - hoursSince;
+        if (remain > 0) {
+          const remainLabel = remain >= 1 ? `${Math.ceil(remain)} שעות` : `${Math.max(1, Math.round(remain * 60))} דקות`;
+          return { level: 'info', icon: '⏱️', text: `אפשר לתת מנה נוספת של ${lastMed.medicine} בעוד כ־${remainLabel}.` };
+        }
+        return { level: 'ok', icon: '✅', text: `עברו ${elapsedString(lastMed.time)} מאז ${lastMed.medicine} — אפשר לתת מנה נוספת אם צריך.` };
+      }
+      return { level: 'info', icon: '💊', text: `עברו ${elapsedString(lastMed.time)} מאז ${lastMed.medicine}.` };
+    }
+
+    // 3) stale weight — lowest priority, and only once we actually know when it was last set
+    if (c.weightUpdatedAt && (now - c.weightUpdatedAt) > 180 * 24 * 3600000) {
+      const months = Math.floor((now - c.weightUpdatedAt) / (30 * 24 * 3600000));
+      return { level: 'info', icon: '⚖️', text: `המשקל לא עודכן כבר ${months} חודשים — מינון מדויק דורש משקל עדכני.` };
+    }
+
+    return null;
+  }
+
   function renderDashboard() {
     const state = DB.get();
     document.getElementById('fam-name').textContent = state.family;
@@ -145,8 +193,10 @@ const App = (() => {
       const lastTemp = DB.lastTempFor(c.id);
       const night = DB.nightSummary(c.id);
       const warn = lastTemp && lastTemp.value >= 38;
+      const insight = smartInsight(c);
 
       const nightHtml = night ? `<div class="night-note">🌙 <span><b>הלילה:</b> ${c.name} ${night.medCount ? `קיבל/ה תרופה ${night.medCount === 1 ? 'פעם אחת' : night.medCount + ' פעמים'}` : ''}${night.medCount && night.maxTemp ? ', ' : ''}${night.maxTemp ? `חום מקסימלי ${night.maxTemp}°` : ''}.</span></div>` : '';
+      const insightHtml = insight ? `<div class="smart-insight ${insight.level}"><span class="ic">${insight.icon}</span><span>${insight.text}</span></div>` : '';
 
       return `${nightHtml}<div class="child-card">
         <div class="child-row">
@@ -154,6 +204,7 @@ const App = (() => {
           <div class="child-name">${c.name}</div>
           <div class="status-pill ${warn ? 'warn' : ''}">${warn ? 'חום מוגבר' : 'מעקב פעיל'}</div>
         </div>
+        ${insightHtml}
         <div class="stat-grid">
           <div class="stat-box"><div class="stat-label">חום אחרון</div><div class="stat-value temp">${lastTemp ? lastTemp.value + '°' : '—'}</div></div>
           <div class="stat-box"><div class="stat-label">תרופה אחרונה</div><div class="stat-value">${lastMed ? lastMed.medicine : '—'}</div></div>

@@ -95,6 +95,13 @@ body{
 .night-note{background:var(--lav-soft);border-radius:18px;padding:13px 15px;margin-bottom:14px;
   font-size:12.5px;color:#4A3F7A;display:flex;gap:9px;align-items:flex-start;}
 
+.smart-insight{border-radius:14px;padding:10px 13px;margin-bottom:11px;font-size:12.5px;font-weight:600;
+  line-height:1.55;display:flex;gap:8px;align-items:flex-start;}
+.smart-insight .ic{font-size:15px;flex-shrink:0;line-height:1.4;}
+.smart-insight.info{background:var(--tint);color:var(--gold-deep);}
+.smart-insight.ok{background:var(--mint-soft);color:#2E8F5F;}
+.smart-insight.alert{background:var(--coral-soft);color:#B8502F;}
+
 .fab{position:absolute;bottom:96px;left:20px;right:20px;border-radius:20px;padding:16px;text-align:center;
   font-weight:700;font-size:14.5px;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;
   border:none;background:linear-gradient(135deg,var(--gold),#9B8EFF);color:#fff;
