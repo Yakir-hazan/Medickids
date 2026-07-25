@@ -181,6 +181,8 @@ const App = (() => {
     return null;
   }
 
+  let heroState = { type: 'calm', childId: null }; // remembers what the hero card currently represents, for heroClick()
+
   function renderDashboard() {
     const state = DB.get();
     const now = Date.now();
@@ -196,13 +198,14 @@ const App = (() => {
     if (!state.children.length) {
       wrap.innerHTML = `<div class="empty-state"><div class="ic">👨‍👩‍👧‍👦</div><div class="t">עדיין אין ילדים באפליקציה</div><div class="s">הוסיפו ילד/ה דרך הגדרות ← ניהול ילדים</div></div>`;
       document.getElementById('dash-title').textContent = 'ברוכים הבאים ל-Medickids';
-      document.getElementById('dash-next-card').style.display = 'none';
-      document.getElementById('dash-calm-card').style.display = 'none';
+      document.getElementById('dash-updated').style.display = 'none';
+      document.getElementById('dash-hero').style.display = 'none';
       document.getElementById('dash-fam-summary').style.display = 'none';
       document.getElementById('dash-timeline').style.display = 'none';
       document.getElementById('dash-insight').style.display = 'none';
       return;
     }
+    document.getElementById('dash-hero').style.display = '';
 
     // ---------- compute per-child data ----------
     const childData = state.children.map((c) => {
@@ -234,88 +237,170 @@ const App = (() => {
     const anyFever = childData.some((d) => d.hasFever);
     document.getElementById('dash-title').textContent = anyFever ? 'מה קורה הלילה?' : 'מה קורה עכשיו?';
 
-    // ---------- next action card — pick the most urgent ----------
+    // ---------- header: last updated ----------
+    const latestEvent = DB.feed(null)[0] || null;
+    const updatedEl = document.getElementById('dash-updated');
+    if (latestEvent) {
+      updatedEl.textContent = `עודכן לפני ${elapsedString(latestEvent.time)}`;
+      updatedEl.style.display = '';
+    } else {
+      updatedEl.style.display = 'none';
+    }
+
+    // ---------- dynamic hero card — priority: fever > dose timing > stale weight > calm ----------
+    const hero = document.getElementById('dash-hero');
+
+    // worst fever across all children
+    const feverChild = childData
+      .filter((d) => d.hasFever)
+      .sort((a, b) => b.lastTemp.value - a.lastTemp.value)[0] || null;
+
+    // most urgent pending dose across all children
     const urgentDose = childData
       .filter((d) => d.nextDoseMs !== null)
       .sort((a, b) => a.nextDoseMs - b.nextDoseMs)[0] || null;
 
-    const nextCard = document.getElementById('dash-next-card');
-    const calmCard = document.getElementById('dash-calm-card');
+    // most stale weight across all children
+    const staleWeight = state.children
+      .filter((c) => c.weightUpdatedAt && (now - c.weightUpdatedAt) > 180 * 24 * 3600000)
+      .sort((a, b) => a.weightUpdatedAt - b.weightUpdatedAt)[0] || null;
 
-    if (urgentDose) {
+    if (feverChild) {
+      heroState = { type: 'fever', childId: feverChild.c.id };
+      hero.className = 'hero-card fever';
+      hero.innerHTML = `
+        <div class="hero-top">
+          <div class="hero-ic">${feverChild.lastTemp.value >= 39.5 ? '🔥' : '🌡️'}</div>
+          <div style="flex:1;">
+            <div class="hero-label">שימו לב</div>
+            <div class="hero-main">ל${feverChild.c.name} יש חום גבוה</div>
+            <div class="hero-sub">מדדתם לפני ${elapsedString(feverChild.lastTemp.time)}</div>
+          </div>
+          <div class="hero-timer">${feverChild.lastTemp.value}°</div>
+        </div>`;
+    } else if (urgentDose) {
+      heroState = { type: 'med', childId: urgentDose.c.id };
       const totalMin = Math.ceil(urgentDose.nextDoseMs / 60000);
       const hh = String(Math.floor(totalMin / 60)).padStart(2, '0');
       const mm = String(totalMin % 60).padStart(2, '0');
-      document.getElementById('dash-next-timer').textContent = `${hh}:${mm}`;
-      document.getElementById('dash-next-main').textContent = `אפשר לתת שוב ${urgentDose.nextDrugName} ל${urgentDose.c.name}`;
-      document.getElementById('dash-next-sub').textContent = `מנה אחרונה ב־${formatClock(urgentDose.lastMed.time)}`;
-      nextCard.style.display = '';
-      calmCard.style.display = 'none';
+      hero.className = 'hero-card med';
+      hero.innerHTML = `
+        <div class="hero-top">
+          <div class="hero-ic">⏰</div>
+          <div style="flex:1;">
+            <div class="hero-label">הפעולה הבאה</div>
+            <div class="hero-main">אפשר לתת שוב ${urgentDose.nextDrugName} ל${urgentDose.c.name} בעוד</div>
+            <div class="hero-sub">מנה אחרונה ב־${formatClock(urgentDose.lastMed.time)}</div>
+          </div>
+          <div class="hero-timer">${hh}:${mm}</div>
+        </div>`;
+    } else if (staleWeight) {
+      heroState = { type: 'weight', childId: staleWeight.id };
+      const months = Math.floor((now - staleWeight.weightUpdatedAt) / (30 * 24 * 3600000));
+      hero.className = 'hero-card weight';
+      hero.innerHTML = `
+        <div class="hero-top">
+          <div class="hero-ic">⚖️</div>
+          <div style="flex:1;">
+            <div class="hero-label">תזכורת</div>
+            <div class="hero-main">כדאי לעדכן משקל ל${staleWeight.name}</div>
+            <div class="hero-sub">עברו ${months} חודשים מאז העדכון האחרון</div>
+          </div>
+        </div>`;
     } else {
-      nextCard.style.display = 'none';
-      calmCard.style.display = '';
-      const calmText = anyFever ? `חום מוגבר — עקוב/י אחרי הסימנים` : `לילה שקט — אין פעולות דחופות`;
-      document.getElementById('dash-calm-text').textContent = calmText;
+      heroState = { type: 'calm', childId: null };
+      const latestTemp = childData
+        .filter((d) => d.lastTemp)
+        .sort((a, b) => b.lastTemp.time - a.lastTemp.time)[0] || null;
+      hero.className = 'hero-card calm';
+      hero.innerHTML = `
+        <div class="hero-top">
+          <div class="hero-ic">🌙</div>
+          <div style="flex:1;">
+            <div class="hero-label">הכול רגוע</div>
+            <div class="hero-main">אין פעולות דחופות כרגע</div>
+            ${latestTemp ? `<div class="hero-sub">המדידה האחרונה: ${latestTemp.lastTemp.value}°</div>` : ''}
+          </div>
+        </div>`;
     }
 
-    // ---------- family summary ----------
+    // ---------- family summary — humanized chips ----------
     const famSummary = document.getElementById('dash-fam-summary');
-    const feverCount = childData.filter((d) => d.hasFever).length;
-    const okCount = childData.filter((d) => !d.hasFever).length;
     const medTodayCount = state.medEntries.filter((e) => {
       const d = new Date(e.time); const n = new Date();
       return d.getFullYear() === n.getFullYear() && d.getMonth() === n.getMonth() && d.getDate() === n.getDate();
     }).length;
-    document.getElementById('fam-fever-count').textContent = `🌡️ ${feverCount}`;
-    document.getElementById('fam-med-count').textContent = `💊 ${medTodayCount}`;
-    document.getElementById('fam-ok-count').textContent = `✅ ${okCount}`;
-    famSummary.style.display = state.children.length > 1 ? '' : 'none';
+    if (state.children.length > 1) {
+      const chips = childData.map(({ c, hasFever }) =>
+        hasFever
+          ? `<div class="fam-chip warn">🌡️ ${c.name} עם חום</div>`
+          : `<div class="fam-chip ok">🙂 ${c.name} מרגיש/ה טוב</div>`
+      ).join('') + (medTodayCount ? `<div class="fam-chip">💊 ${medTodayCount} מנות היום</div>` : '');
+      famSummary.innerHTML = `
+        <div class="fam-top">
+          <span class="fam-ic">👨‍👩‍👧‍👦</span>
+          <span class="fam-title">${state.children.length} ילדים</span>
+        </div>
+        <div class="fam-chips">${chips}</div>`;
+      famSummary.style.display = '';
+    } else {
+      famSummary.style.display = 'none';
+    }
 
-    // ---------- child cards ----------
+    // ---------- child cards — row based ----------
     wrap.innerHTML = childData.map(({ c, lastMed, lastTemp, hasFever, nextDoseMs, nextDrugName, mood }) => {
-      const tempVal = lastTemp ? lastTemp.value + '°' : '—';
-      const tempClass = hasFever ? ' fever' : '';
       const cardClass = hasFever ? ' warm' : '';
+      const moodText = hasFever ? '🌡️ עם חום כרגע' : '🙂 רגוע';
 
-      // sparkline from last 5 temps
-      const temps = DB.tempsFor(c.id).slice(0, 5).reverse();
-      const spark = temps.length > 1
-        ? temps.map((t) => {
-            const icons = ['▁','▂','▃','▄','▅','▆','▇'];
-            const idx = Math.min(6, Math.max(0, Math.round((t.value - 36) * 2)));
-            return icons[idx];
-          }).join('') : '';
+      let tempRow = '';
+      if (lastTemp) {
+        tempRow = `<div class="crow">
+          <div class="crow-ic">🌡️</div>
+          <div class="crow-body">
+            <div class="crow-val${hasFever ? ' fever' : ''}">${lastTemp.value}°</div>
+            <div class="crow-lbl">מדידה אחרונה: לפני ${elapsedString(lastTemp.time)}</div>
+          </div>
+        </div>`;
+      }
+
+      let medRow = '';
+      if (lastMed) {
+        medRow = `<div class="crow">
+          <div class="crow-ic">💊</div>
+          <div class="crow-body">
+            <div class="crow-val">${lastMed.medicine}</div>
+            <div class="crow-lbl">ניתן לפני ${elapsedString(lastMed.time)}</div>
+          </div>
+          <div class="crow-time">${formatClock(lastMed.time)}</div>
+        </div>`;
+      }
 
       let canGiveHtml = '';
       if (nextDoseMs !== null) {
         const totalMin = Math.ceil(nextDoseMs / 60000);
         const hh = String(Math.floor(totalMin / 60)).padStart(2, '0');
         const mm = String(totalMin % 60).padStart(2, '0');
-        canGiveHtml = `<div class="can-give-bar warn-bar">⏱️ בעוד ${hh}:${mm} אפשר לתת שוב ${nextDrugName}</div>`;
+        canGiveHtml = `<div class="can-give-bar warn-bar">⏱️ אפשר לתת שוב ${nextDrugName} בעוד ${hh}:${mm}</div>`;
       } else if (lastMed) {
         canGiveHtml = `<div class="can-give-bar ok-bar">✅ אפשר לתת מנה נוספת אם צריך</div>`;
       }
+
+      const emptyRow = (!tempRow && !medRow)
+        ? `<div class="crow"><div class="crow-ic">✨</div><div class="crow-body"><div class="crow-lbl">אין נתונים עדיין היום</div></div></div>`
+        : '';
 
       return `<div class="child-card${cardClass}">
         <div class="child-top">
           <div class="avatar" style="background:${AVATAR_GRADIENT[c.color]}">${c.emoji}</div>
           <div class="child-info">
             <div class="child-name">${c.name}</div>
-            <div class="child-mood">${mood} ${c.weight ? c.weight + ' ק״ג' : ''}</div>
+            <div class="child-mood">${moodText}</div>
           </div>
         </div>
-        <div class="cstat-row">
-          <div class="cstat">
-            <div class="cstat-val${tempClass}">${tempVal}</div>
-            <div class="cstat-lbl">חום אחרון</div>
-          </div>
-          <div class="cstat">
-            <div class="cstat-val">${lastMed ? lastMed.medicine : '—'}</div>
-            <div class="cstat-lbl">תרופה אחרונה</div>
-          </div>
-          ${lastMed ? `<div class="cstat"><div class="cstat-val">${elapsedString(lastMed.time)}</div><div class="cstat-lbl">לפני</div></div>` : ''}
-        </div>
-        ${spark ? `<div class="sparkline">${spark} <span class="spark-lbl">מגמת חום</span></div>` : ''}
+        ${tempRow}
+        ${tempRow && medRow ? '<div class="child-divider"></div>' : ''}
+        ${medRow}
+        ${emptyRow}
         ${canGiveHtml}
       </div>`;
     }).join('');
@@ -498,6 +583,23 @@ const App = (() => {
     toast('המדידה נשמרה ✓');
     renderTemp();
     renderDashboard();
+  }
+
+  /* ---------- hero card interactions ---------- */
+  function heroClick() {
+    if (heroState.type === 'med') { openMedSheet(); return; }
+    if (heroState.type === 'weight' && heroState.childId) { openEditKid(heroState.childId); return; }
+    // 'fever' and 'calm' states are informational only — no action on tap
+  }
+
+  /* picks the child most in need of a weight update (single child → that child;
+     multiple → oldest weightUpdatedAt, or first child if none ever set) and opens the edit sheet directly */
+  function quickWeightUpdate() {
+    const state = DB.get();
+    if (!state.children.length) { toast('הוסיפו ילד/ה קודם דרך הגדרות'); return; }
+    if (state.children.length === 1) { openEditKid(state.children[0].id); return; }
+    const target = [...state.children].sort((a, b) => (a.weightUpdatedAt || 0) - (b.weightUpdatedAt || 0))[0];
+    openEditKid(target.id);
   }
 
   /* ---------- children management ---------- */
@@ -854,8 +956,10 @@ const App = (() => {
     openEditKid, saveKid, toggleNotif, init,
     installNow, skipLanding,
     openDoseSheet, pickDoseChild, pickDoseMed, pickDoseConc, calcDose,
+    heroClick, quickWeightUpdate,
   };
 })();
 
 document.addEventListener('DOMContentLoaded', App.init);
+
 
