@@ -1,4 +1,8 @@
 const App = (() => {
+  /* ---------- flow constants ---------- */
+  const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
+  const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
+
   const AVATAR_GRADIENT = {
     a1: 'linear-gradient(135deg,#FFB6A3,#FF9F6B)',
     a2: 'linear-gradient(135deg,#7C6FF0,#9B8EFF)',
@@ -672,6 +676,7 @@ const App = (() => {
   }
 
   function init() {
+    // Render all screens so they're ready before any transition
     renderLanding();
     renderPickList();
     renderDashboard();
@@ -681,6 +686,26 @@ const App = (() => {
     setInterval(renderDashboard, 60000); // keep "elapsed" times fresh
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+
+    // ---------- flow routing ----------
+    // Step 1: non-standalone browser → show Landing (A2HS prompt), stop here.
+    if (!isStandalone()) {
+      goto('screen-landing');
+      return;
+    }
+
+    // Step 2: standalone (installed PWA) — decide by data, not by platform.
+    const isReturningUser = DB.get().children.length > 0;
+
+    if (isReturningUser) {
+      // Returning user: short splash → Dashboard
+      goto('screen-splash');
+      setTimeout(() => goto('screen-dash'), SPLASH_DURATION_RETURNING);
+    } else {
+      // New user: splash → Onboarding (add first child) → Dashboard
+      goto('screen-splash');
+      setTimeout(() => goto('screen-kids'), SPLASH_DURATION_NEW);
     }
   }
 
