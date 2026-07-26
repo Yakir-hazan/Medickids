@@ -39,8 +39,10 @@ const DB = (() => {
     persist: () => save(state),
 
     addMedEntry(entry) {
-      state.medEntries.unshift({ id: uid(), time: Date.now(), ...entry });
+      const full = { id: uid(), time: Date.now(), ...entry };
+      state.medEntries.unshift(full);
       save(state);
+      return full;
     },
     updateMedEntry(id, patch) {
       const e = state.medEntries.find((x) => x.id === id);
