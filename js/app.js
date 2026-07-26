@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.2 → 1.0.0-beta.2 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.14';
+  const APP_VERSION = '1.0.0-beta.15';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -593,33 +593,79 @@ const App = (() => {
       customInput.style.display = 'none';
     }
   }
-  function scheduleDoseReminder(entry, customReadyAt) {
+  /* finds an earlier, still-pending (not yet fired) reminder for the same child+drug so it can be
+     cancelled before scheduling a new one — this is what prevents two near-simultaneous pushes */
+  function _findPendingReminder(childId, drugKey, excludeEntryId) {
+    const now = Date.now();
+    const candidates = DB.get().medEntries.filter((e) =>
+      e.id !== excludeEntryId && e.childId === childId && _matchesDrug(e.medicine, drugKey) &&
+      e.reminderNotificationId && e.reminderReadyAt && e.reminderReadyAt > now
+    );
+    if (!candidates.length) return null;
+    return candidates.reduce((a, b) => (b.time > a.time ? b : a));
+  }
+  function _cancelReminder(notificationId) {
+    if (!notificationId) return Promise.resolve();
+    return fetch(`/api/notify?id=${encodeURIComponent(notificationId)}`, { method: 'DELETE' }).catch(() => {});
+  }
+  async function scheduleDoseReminder(entry, customReadyAt) {
     if (!entry || !DB.get().settings.notifications) return; // user opted out — don't schedule
+    const drugKey = Object.keys(DOSE_DB).find((k) => _matchesDrug(entry.medicine, k));
     let readyAt = customReadyAt;
     if (readyAt == null) {
-      const drugKey = Object.keys(DOSE_DB).find((k) => _matchesDrug(entry.medicine, k));
       const drug = drugKey ? DOSE_DB[drugKey] : null;
       if (!drug || drug.intervalHours == null) return; // no known interval and no manual time — nothing to schedule
       readyAt = entry.time + drug.intervalHours * 3600000;
     }
     if (readyAt <= Date.now()) return; // time already passed — don't schedule in the past
 
+    // avoid duplicate pushes: if an earlier dose of the same drug for this child still has a
+    // pending reminder, cancel it first — the new dose supersedes it
+    if (drugKey) {
+      const pending = _findPendingReminder(entry.childId, drugKey, entry.id);
+      if (pending) {
+        await _cancelReminder(pending.reminderNotificationId);
+        DB.updateMedEntry(pending.id, { reminderNotificationId: null, reminderReadyAt: null });
+      }
+    }
+
     const child = childById(entry.childId);
-    fetch('/api/notify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title: 'זמן למנה הבאה 💊',
-        message: `אפשר לתת ל${child ? child.name : 'הילד/ה'} מנה נוספת של ${entry.medicine}`,
-        childName: child ? child.name : undefined,
-        scheduledTime: new Date(readyAt).toISOString(),
-        externalId: entry.id,
-      }),
-    }).catch(() => {}); // best-effort — never block the UI on a failed schedule call
+    try {
+      const res = await fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'זמן למנה הבאה 💊',
+          message: `אפשר לתת ל${child ? child.name : 'הילד/ה'} מנה נוספת של ${entry.medicine}`,
+          childName: child ? child.name : undefined,
+          scheduledTime: new Date(readyAt).toISOString(),
+          externalId: entry.id,
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (data && data.notificationId) {
+        // store the id + time so a future dose of the same drug can find & cancel this one
+        DB.updateMedEntry(entry.id, { reminderNotificationId: data.notificationId, reminderReadyAt: readyAt });
+      }
+    } catch (e) { /* best-effort — never block the UI on a failed schedule call */ }
   }
 
-  function saveMed() {
+  async function saveMed() {
     if (!medChildSel) { toast('אין ילד לבחור — הוסיפו ילד/ה קודם'); return; }
+
+    // warn (not block) if a dose of the same drug was already given too recently — same check the
+    // dose calculator uses, now applied at the actual logging step too
+    if (!editMedEntryId) {
+      const drugKey = Object.keys(DOSE_DB).find((k) => _matchesDrug(medMedicineSel, k));
+      if (drugKey) {
+        const warning = _doseHistoryWarning(medChildSel, drugKey);
+        if (warning && warning.level === 'alert') {
+          const plain = warning.text.replace(/^[⏱️⚠️]\s*/, '');
+          if (!confirm(`${plain}\n\nלהמשיך בכל זאת ולרשום את המנה?`)) return;
+        }
+      }
+    }
+
     const patch = {
       childId: medChildSel,
       medicine: medMedicineSel || 'תרופה',
@@ -648,6 +694,10 @@ const App = (() => {
   function deleteMedEntry() {
     if (!editMedEntryId) return;
     if (!confirm('למחוק את הרשומה הזו? הפעולה אינה הפיכה.')) return;
+    const entry = DB.get().medEntries.find((e) => e.id === editMedEntryId);
+    if (entry && entry.reminderNotificationId && entry.reminderReadyAt && entry.reminderReadyAt > Date.now()) {
+      _cancelReminder(entry.reminderNotificationId); // dose record is gone — its reminder shouldn't fire either
+    }
     DB.deleteMedEntry(editMedEntryId);
     editMedEntryId = null;
     closeSheet('sheet-med');
@@ -987,11 +1037,11 @@ const App = (() => {
     return names.some((n) => medicineName.indexOf(n) !== -1);
   }
 
-  function _doseHistoryWarning(drugKey) {
-    if (!doseChildId) return null;
+  function _doseHistoryWarning(childId, drugKey) {
+    if (!childId) return null;
     const drug = DOSE_DB[drugKey];
     const now = Date.now();
-    const entries = DB.get().medEntries.filter((e) => e.childId === doseChildId && _matchesDrug(e.medicine, drugKey));
+    const entries = DB.get().medEntries.filter((e) => e.childId === childId && _matchesDrug(e.medicine, drugKey));
     if (!entries.length) return null;
 
     const last = entries.reduce((a, b) => (b.time > a.time ? b : a));
@@ -1085,7 +1135,7 @@ const App = (() => {
       <div class="dose-result-detail">${mg != null ? mg + ' מ"ג ' : ''}לילד/ה במשקל ${weightLabel} (טבלת עלון היצרן)</div>
     `;
 
-    const warning = _doseHistoryWarning(doseMedSel);
+    const warning = _doseHistoryWarning(doseChildId, doseMedSel);
     if (warning && warnBox) {
       warnBox.style.display = 'block';
       warnBox.className = 'dose-warning dose-warning-' + warning.level;
