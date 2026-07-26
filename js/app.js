@@ -1023,6 +1023,26 @@ const App = (() => {
     const on = !DB.get().settings.notifications;
     DB.setSetting('notifications', on);
     renderSettings();
+    // חבר ל-OneSignal
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(async function(OneSignal) {
+      if (on) {
+        // בקש רשות אם עוד לא ניתנה
+        const permission = await OneSignal.Notifications.requestPermission();
+        if (!permission) {
+          // המשתמש סירב — החזר את הטאגל
+          DB.setSetting('notifications', false);
+          renderSettings();
+          toast('כדי לקבל התראות — אפשר גישה בהגדרות הטלפון');
+        } else {
+          await OneSignal.User.PushSubscription.optIn();
+          toast('התראות הופעלו ✅');
+        }
+      } else {
+        await OneSignal.User.PushSubscription.optOut();
+        toast('התראות כובו');
+      }
+    });
   }
 
   /* ---------- version / updates ---------- */
