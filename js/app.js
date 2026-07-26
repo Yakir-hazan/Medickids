@@ -42,11 +42,11 @@ const App = (() => {
   });
   window.addEventListener('appinstalled', () => {
     deferredInstallPrompt = null;
-    goto('screen-splash');
+    showSplash();
   });
 
   function renderLanding() {
-    if (isStandalone()) { goto('screen-splash'); return; }
+    if (isStandalone()) { showSplash(); return; }
     document.getElementById('landing-ios').style.display = isIOS() ? 'block' : 'none';
     document.getElementById('landing-android').style.display = (isAndroid() || (!isIOS() && deferredInstallPrompt)) ? 'block' : 'none';
     document.getElementById('landing-desktop').style.display = (!isIOS() && !isAndroid() && !deferredInstallPrompt) ? 'block' : 'none';
@@ -58,7 +58,7 @@ const App = (() => {
     deferredInstallPrompt.prompt();
     deferredInstallPrompt.userChoice.finally(() => { deferredInstallPrompt = null; });
   }
-  function skipLanding() { goto('screen-splash'); }
+  function skipLanding() { showSplash(); }
 
   /* ---------- helpers ---------- */
   function nowHHMM() {
@@ -109,6 +109,53 @@ const App = (() => {
     document.getElementById(id).classList.add('active');
     if (id === 'screen-kids') renderKids();
   }
+  function showSplash() {
+    goto('screen-splash');
+    animateSplashThermo();
+  }
+
+  /* ---------- splash thermometer animation ---------- */
+  let splashAnimId = null;
+  function animateSplashThermo() {
+    const mercuryEl = document.getElementById('splash-mercury');
+    const tempEl = document.getElementById('splash-temp');
+    const subEl = document.getElementById('splash-loading-sub');
+    if (!mercuryEl || !tempEl || !subEl) return;
+    if (splashAnimId) cancelAnimationFrame(splashAnimId);
+
+    const MIN_TEMP = 34.0, MAX_TEMP = 38.5, FULL_RANGE = 8; // tube scale spans 34°–42°; mercury only rises to 38.5° on it
+    const TUBE_BOTTOM = 250, TUBE_H = 236;
+    const DURATION = 1300; // finishes comfortably before the shortest auto-nav timeout (1500ms)
+    const messages = [[35.0, 'טוען נתונים...'], [36.2, 'בודק עדכונים...'], [37.4, 'כמעט מוכן...']];
+    let msgIdx = 0;
+    let startTime = null;
+
+    mercuryEl.setAttribute('height', 0);
+    mercuryEl.setAttribute('y', TUBE_BOTTOM);
+    tempEl.textContent = MIN_TEMP.toFixed(1) + '°C';
+    subEl.textContent = 'טוען...';
+
+    function tempToHeight(t) { return ((t - MIN_TEMP) / FULL_RANGE) * TUBE_H; }
+    function easeInOut(t) { return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; }
+
+    function step(ts) {
+      if (!startTime) startTime = ts;
+      const progress = Math.min((ts - startTime) / DURATION, 1);
+      const currentTemp = MIN_TEMP + easeInOut(progress) * (MAX_TEMP - MIN_TEMP);
+      const h = tempToHeight(currentTemp);
+      mercuryEl.setAttribute('y', TUBE_BOTTOM - h);
+      mercuryEl.setAttribute('height', h);
+      tempEl.textContent = currentTemp.toFixed(1) + '°C';
+      while (msgIdx < messages.length && currentTemp >= messages[msgIdx][0]) {
+        subEl.textContent = messages[msgIdx][1];
+        msgIdx++;
+      }
+      if (progress < 1) splashAnimId = requestAnimationFrame(step);
+      else { subEl.textContent = ''; splashAnimId = null; }
+    }
+    splashAnimId = requestAnimationFrame(step);
+  }
+
   function tab(id) {
     goto(id);
     document.querySelectorAll('.navitem').forEach((n) => n.classList.toggle('active', n.dataset.nav === id));
@@ -1042,11 +1089,11 @@ const App = (() => {
 
     if (isReturningUser) {
       // Returning user: short splash → Dashboard
-      goto('screen-splash');
+      showSplash();
       setTimeout(() => goto('screen-dash'), SPLASH_DURATION_RETURNING);
     } else {
       // New user: splash → Onboarding (add first child) → Dashboard
-      goto('screen-splash');
+      showSplash();
       setTimeout(() => goto('screen-kids'), SPLASH_DURATION_NEW);
     }
   }
@@ -1065,6 +1112,7 @@ const App = (() => {
 })();
 
 document.addEventListener('DOMContentLoaded', App.init);
+
 
 
 
