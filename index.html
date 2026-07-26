@@ -403,6 +403,9 @@
       <input class="field-input" id="med-dose" placeholder="___ מ״ל (למילוי לפי עלון היצרן)">
       <div class="field-label">הערה (אופציונלי)</div>
       <input class="field-input" id="med-note" placeholder="לדוגמה: אחרי אמבטיה פושרת">
+      <div class="field-label" id="med-reminder-label">תזכורת למנה הבאה</div>
+      <div class="chip-row" id="med-reminder-chips"></div>
+      <input class="field-input" id="med-reminder-custom" type="datetime-local" style="display:none;margin-top:8px;">
       <button class="sheet-cta" onclick="App.saveMed()">שמירה</button>
       <button class="sheet-delete" id="med-delete-btn" style="display:none" onclick="App.deleteMedEntry()">מחיקת רשומה</button>
     </div>
