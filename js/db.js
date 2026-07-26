@@ -12,7 +12,7 @@ const DB = (() => {
       medicines: ['אקמול ילדים', 'נורופן', 'נובימול'],
       medEntries: [],
       tempEntries: [],
-      settings: { notifications: true },
+      settings: { notifications: false },
     };
   }
 
