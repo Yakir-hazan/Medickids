@@ -54,7 +54,67 @@
     <!-- SPLASH -->
     <div class="screen" id="screen-splash">
       <div class="scroll">
-        <div class="splash-icon">🌡️</div>
+        <div class="thermo-box">
+          <svg width="175" height="310" viewBox="0 0 175 310">
+            <!-- Tube background -->
+            <rect x="60" y="10" width="28" height="248" rx="14" fill="#C5C6E0"/>
+            <!-- Tube inner -->
+            <rect x="64" y="14" width="20" height="236" rx="10" fill="#F0F0FA"/>
+            <!-- Mercury fill — clipped to tube inner -->
+            <defs>
+              <clipPath id="splash-clip">
+                <rect x="64" y="14" width="20" height="236" rx="10"/>
+              </clipPath>
+            </defs>
+            <rect id="splash-mercury" x="64" y="250" width="20" height="0" fill="#D82020" clip-path="url(#splash-clip)"/>
+
+            <!-- Bulb -->
+            <circle cx="74" cy="282" r="24" fill="#C5C6E0"/>
+            <circle cx="74" cy="282" r="22" fill="#D82020"/>
+            <circle cx="67" cy="274" r="5" fill="rgba(255,255,255,0.35)"/>
+
+            <!-- Major ticks + labels -->
+            <line x1="88" y1="14"    x2="100" y2="14"    stroke="#9090B8" stroke-width="1.5"/>
+            <text x="124" y="14"    class="sl">42°</text>
+
+            <line x1="88" y1="43.5"  x2="100" y2="43.5"  stroke="#9090B8" stroke-width="1.5"/>
+            <text x="124" y="43.5"  class="sl">41°</text>
+
+            <line x1="88" y1="73"    x2="100" y2="73"    stroke="#9090B8" stroke-width="1.5"/>
+            <text x="124" y="73"    class="sl">40°</text>
+
+            <line x1="88" y1="102.5" x2="100" y2="102.5" stroke="#9090B8" stroke-width="1.5"/>
+            <text x="124" y="102.5" class="sl">39°</text>
+
+            <line x1="88" y1="117.25" x2="93" y2="117.25" stroke="#B0B2D0" stroke-width="1"/>
+
+            <line x1="88" y1="132"   x2="100" y2="132"   stroke="#9090B8" stroke-width="1.5"/>
+            <text x="124" y="132"   class="sl">38°</text>
+
+            <line x1="88" y1="161.5" x2="100" y2="161.5" stroke="#9090B8" stroke-width="1.5"/>
+            <text x="124" y="161.5" class="sl">37°</text>
+
+            <line x1="88" y1="191"   x2="100" y2="191"   stroke="#9090B8" stroke-width="1.5"/>
+            <text x="124" y="191"   class="sl">36°</text>
+
+            <line x1="88" y1="220.5" x2="100" y2="220.5" stroke="#9090B8" stroke-width="1.5"/>
+            <text x="124" y="220.5" class="sl">35°</text>
+
+            <line x1="88" y1="250"   x2="100" y2="250"   stroke="#9090B8" stroke-width="1.5"/>
+            <text x="124" y="250"   class="sl">34°</text>
+
+            <!-- Minor half-ticks -->
+            <line x1="88" y1="28.75"  x2="92" y2="28.75"  stroke="#C8CAE0" stroke-width="1"/>
+            <line x1="88" y1="58.25"  x2="92" y2="58.25"  stroke="#C8CAE0" stroke-width="1"/>
+            <line x1="88" y1="87.75"  x2="92" y2="87.75"  stroke="#C8CAE0" stroke-width="1"/>
+            <line x1="88" y1="146.75" x2="92" y2="146.75" stroke="#C8CAE0" stroke-width="1"/>
+            <line x1="88" y1="176.25" x2="92" y2="176.25" stroke="#C8CAE0" stroke-width="1"/>
+            <line x1="88" y1="205.75" x2="92" y2="205.75" stroke="#C8CAE0" stroke-width="1"/>
+            <line x1="88" y1="235.25" x2="92" y2="235.25" stroke="#C8CAE0" stroke-width="1"/>
+          </svg>
+        </div>
+        <div class="temp-display" id="splash-temp">34.0°C</div>
+        <div class="loading-sub" id="splash-loading-sub">טוען...</div>
         <div class="splash-title">Medickids <span class="beta-badge">BETA</span></div>
         <div class="splash-sub">כל התרופות, כל המדידות, במקום אחד רגוע —<br>גם ב־3 בלילה.</div>
         <!-- no manual button — App.init() auto-navigates via setTimeout to screen-dash / screen-kids -->
@@ -350,6 +410,7 @@
 <script src="js/app.js"></script>
 </body>
 </html>
+
 
 
 
