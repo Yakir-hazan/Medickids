@@ -983,7 +983,8 @@ const App = (() => {
 
   /* ---------- clock ---------- */
   function tickClock() {
-    document.getElementById('clock').textContent = nowHHMM();
+    const el = document.getElementById('clock');
+    if (el) el.textContent = nowHHMM();
   }
 
   function init() {
@@ -1033,6 +1034,7 @@ const App = (() => {
 })();
 
 document.addEventListener('DOMContentLoaded', App.init);
+
 
 
 
