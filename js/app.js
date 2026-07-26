@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.2 → 1.0.0-beta.2 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.4';
+  const APP_VERSION = '1.0.0-beta.5';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -1021,25 +1021,43 @@ const App = (() => {
   }
   function toggleNotif() {
     const on = !DB.get().settings.notifications;
-    DB.setSetting('notifications', on);
-    renderSettings();
-    // חבר ל-OneSignal
+
     window.OneSignalDeferred = window.OneSignalDeferred || [];
     OneSignalDeferred.push(async function(OneSignal) {
       if (on) {
-        // בקש רשות אם עוד לא ניתנה
-        const permission = await OneSignal.Notifications.requestPermission();
-        if (!permission) {
-          // המשתמש סירב — החזר את הטאגל
-          DB.setSetting('notifications', false);
-          renderSettings();
-          toast('כדי לקבל התראות — אפשר גישה בהגדרות הטלפון');
-        } else {
+        // בדוק מצב הרשאה נוכחי
+        const permState = Notification.permission;
+
+        if (permState === 'denied') {
+          // iOS חסם — לא ניתן לבקש שוב, הנחה המשתמש להגדרות
+          toast('כדי לקבל התראות — אפשר גישה ב: הגדרות ← Safari ← התראות');
+          return; // טאגל נשאר כבוי
+        }
+
+        if (permState === 'granted') {
+          // רשות כבר ניתנה — פשוט opt-in
           await OneSignal.User.PushSubscription.optIn();
+          DB.setSetting('notifications', true);
+          renderSettings();
           toast('התראות הופעלו ✅');
+          return;
+        }
+
+        // permState === 'default' — בקש רשות
+        const granted = await OneSignal.Notifications.requestPermission();
+        if (granted) {
+          await OneSignal.User.PushSubscription.optIn();
+          DB.setSetting('notifications', true);
+          renderSettings();
+          toast('התראות הופעלו ✅');
+        } else {
+          toast('כדי לקבל התראות — אפשר גישה ב: הגדרות ← Safari ← התראות');
+          // טאגל נשאר כבוי
         }
       } else {
         await OneSignal.User.PushSubscription.optOut();
+        DB.setSetting('notifications', false);
+        renderSettings();
         toast('התראות כובו');
       }
     });
