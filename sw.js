@@ -1,8 +1,8 @@
 /* ⚠️ CLAUDE: bump this on EVERY push to this repo — keep in sync with APP_VERSION in js/app.js
-   (same version suffix, e.g. 'v16' here ↔ const APP_VERSION = 'v16' there).
-   Without this bump, users' devices keep serving old cached files and "בדוק אם יש עדכון"
-   in Settings will report "already up to date" even when it isn't. */
-const CACHE_NAME = 'madhom-v16';
+   (increment the -vNN suffix here whenever APP_VERSION changes there, e.g. 'v17' here when
+   APP_VERSION becomes '1.0.0-beta.2'). Without this bump, users' devices keep serving old
+   cached files and "בדוק אם יש עדכון" in Settings will report "already up to date" even when it isn't. */
+const CACHE_NAME = 'madhom-v17';
 const APP_SHELL = [
   './',
   './index.html',
@@ -46,6 +46,7 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
+
 
 
 
