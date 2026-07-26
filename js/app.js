@@ -12,6 +12,8 @@ const App = (() => {
   let medMedicineSel = null;
   let tempChildSel = null;
   let histFilter = 'all';
+  let editMedEntryId = null;
+  let editTempEntryId = null;
   let editingKidId = null; // null = add mode
   let deferredInstallPrompt = null;
 
@@ -109,7 +111,11 @@ const App = (() => {
     if (id === 'screen-temp') renderTemp();
   }
   function openSheet(id) { document.getElementById(id).classList.add('open'); }
-  function closeSheet(id) { document.getElementById(id).classList.remove('open'); }
+  function closeSheet(id) {
+    document.getElementById(id).classList.remove('open');
+    if (id === 'sheet-med') editMedEntryId = null;
+    if (id === 'sheet-temp') editTempEntryId = null;
+  }
 
   /* ---------- pick-child screen ---------- */
   function renderPickList() {
@@ -390,12 +396,13 @@ const App = (() => {
         : '';
 
       return `<div class="child-card${cardClass}">
-        <div class="child-top">
+        <div class="child-top" onclick="App.openEditKid('${c.id}')">
           <div class="avatar" style="background:${AVATAR_GRADIENT[c.color]}">${c.emoji}</div>
           <div class="child-info">
             <div class="child-name">${c.name}</div>
             <div class="child-mood">${moodText}</div>
           </div>
+          <div class="child-edit-hint">עריכה ›</div>
         </div>
         ${tempRow}
         ${tempRow && medRow ? '<div class="child-divider"></div>' : ''}
@@ -442,18 +449,22 @@ const App = (() => {
   }
 
   /* ---------- add medication sheet ---------- */
-  function openMedSheet() {
+  function openMedSheet(entryId) {
     const state = DB.get();
-    medChildSel = state.children[0]?.id || null;
-    medMedicineSel = state.medicines[0] || null;
+    editMedEntryId = entryId || null;
+    const entry = entryId ? state.medEntries.find((e) => e.id === entryId) : null;
+    medChildSel = entry ? entry.childId : (state.children[0]?.id || null);
+    medMedicineSel = entry ? entry.medicine : (state.medicines[0] || null);
     document.getElementById('med-child-chips').innerHTML = state.children.map((c) =>
       `<button type="button" class="chip ${c.id === medChildSel ? 'sel' : ''}" data-id="${c.id}" onclick="App.pickMedChild('${c.id}')">${c.emoji} ${c.name}</button>`).join('');
     document.getElementById('med-medicine-chips').innerHTML = state.medicines.map((m) =>
       `<button type="button" class="chip ${m === medMedicineSel ? 'sel' : ''}" onclick="App.pickMedMedicine('${m}')">${m}</button>`).join('') +
       `<button type="button" class="chip" onclick="App.addCustomMedicine()">+ אחרת</button>`;
-    document.getElementById('med-time').value = nowHHMM();
-    document.getElementById('med-dose').value = '';
-    document.getElementById('med-note').value = '';
+    document.getElementById('med-time').value = entry ? formatClock(entry.time) : nowHHMM();
+    document.getElementById('med-dose').value = entry ? (entry.dose || '') : '';
+    document.getElementById('med-note').value = entry ? (entry.note || '') : '';
+    document.getElementById('med-sheet-title').textContent = entry ? 'עריכת תרופה' : 'נתתי תרופה';
+    document.getElementById('med-delete-btn').style.display = entry ? '' : 'none';
     openSheet('sheet-med');
   }
   function pickMedChild(id) {
@@ -475,16 +486,34 @@ const App = (() => {
   }
   function saveMed() {
     if (!medChildSel) { toast('אין ילד לבחור — הוסיפו ילד/ה קודם'); return; }
-    DB.addMedEntry({
+    const patch = {
       childId: medChildSel,
       medicine: medMedicineSel || 'תרופה',
       dose: document.getElementById('med-dose').value.trim(),
       note: document.getElementById('med-note').value.trim(),
       time: timeToToday(document.getElementById('med-time').value || nowHHMM()),
-    });
+    };
+    if (editMedEntryId) {
+      DB.updateMedEntry(editMedEntryId, patch);
+      toast('התרופה עודכנה ✓');
+    } else {
+      DB.addMedEntry(patch);
+      toast('התרופה נשמרה ✓');
+    }
+    editMedEntryId = null;
     closeSheet('sheet-med');
-    toast('התרופה נשמרה ✓');
     renderDashboard();
+    renderHistory();
+  }
+  function deleteMedEntry() {
+    if (!editMedEntryId) return;
+    if (!confirm('למחוק את הרשומה הזו? הפעולה אינה הפיכה.')) return;
+    DB.deleteMedEntry(editMedEntryId);
+    editMedEntryId = null;
+    closeSheet('sheet-med');
+    toast('הרשומה נמחקה');
+    renderDashboard();
+    renderHistory();
   }
 
   /* ---------- history ---------- */
@@ -509,7 +538,8 @@ const App = (() => {
       if (!c) return;
       const icon = e.kind === 'med' ? '💊' : '🌡️';
       const title = e.kind === 'med' ? e.medicine : `מדידת חום — ${e.value}°`;
-      html += `<div class="hist-row">
+      const openFn = e.kind === 'med' ? `App.openMedSheet('${e.id}')` : `App.openTempSheet('${e.id}')`;
+      html += `<div class="hist-row" onclick="${openFn}">
         <div class="hist-time">${formatClock(e.time)}</div>
         <div class="hist-icon" style="background:${AVATAR_GRADIENT[c.color]}">${icon}</div>
         <div class="hist-main"><div class="hist-med">${title}</div><div class="hist-child">${c.name}${e.note ? ' · ' + e.note : ''}</div></div>
@@ -553,19 +583,24 @@ const App = (() => {
     }
 
     document.getElementById('temp-list').innerHTML = readings.slice().reverse().map((r) =>
-      `<div class="temp-row"><span>${formatClock(r.time)}</span><span class="v">${r.value}°</span></div>`).join('') ||
+      `<div class="temp-row" onclick="App.openTempSheet('${r.id}')"><span>${formatClock(r.time)}</span><span class="v">${r.value}°</span></div>`).join('') ||
       `<div class="empty-state"><div class="ic">🌡️</div><div class="t">אין מדידות</div><div class="s">לחצו על "הוספת מדידה" כדי להתחיל</div></div>`;
   }
   function setTempFilter(id) { tempChildSel = id; renderTemp(); }
 
-  function openTempSheet() {
+  function openTempSheet(entryId) {
     const state = DB.get();
-    if (!tempChildSel && state.children.length) tempChildSel = state.children[0].id;
+    editTempEntryId = entryId || null;
+    const entry = entryId ? state.tempEntries.find((e) => e.id === entryId) : null;
+    if (entry) tempChildSel = entry.childId;
+    else if (!tempChildSel && state.children.length) tempChildSel = state.children[0].id;
     document.getElementById('temp-child-chips').innerHTML = state.children.map((c) =>
       `<button type="button" class="chip ${c.id === tempChildSel ? 'sel' : ''}" data-id="${c.id}" onclick="App.pickTempChild('${c.id}')">${c.emoji} ${c.name}</button>`).join('');
-    document.getElementById('temp-value').value = '';
+    document.getElementById('temp-value').value = entry ? entry.value : '';
     document.getElementById('temp-error').style.display = 'none';
-    document.getElementById('temp-time').value = nowHHMM();
+    document.getElementById('temp-time').value = entry ? formatClock(entry.time) : nowHHMM();
+    document.getElementById('temp-sheet-title').textContent = entry ? 'עריכת מדידת חום' : 'הוספת מדידת חום';
+    document.getElementById('temp-delete-btn').style.display = entry ? '' : 'none';
     openSheet('sheet-temp');
   }
   function pickTempChild(id) {
@@ -578,11 +613,30 @@ const App = (() => {
     if (isNaN(val) || val < 30 || val > 43) { err.style.display = 'block'; return; }
     err.style.display = 'none';
     if (!tempChildSel) { toast('אין ילד לבחור — הוסיפו ילד/ה קודם'); return; }
-    DB.addTempEntry({ childId: tempChildSel, value: val, time: timeToToday(document.getElementById('temp-time').value || nowHHMM()) });
+    const patch = { childId: tempChildSel, value: val, time: timeToToday(document.getElementById('temp-time').value || nowHHMM()) };
+    if (editTempEntryId) {
+      DB.updateTempEntry(editTempEntryId, patch);
+      toast('המדידה עודכנה ✓');
+    } else {
+      DB.addTempEntry(patch);
+      toast('המדידה נשמרה ✓');
+    }
+    editTempEntryId = null;
     closeSheet('sheet-temp');
-    toast('המדידה נשמרה ✓');
     renderTemp();
     renderDashboard();
+    renderHistory();
+  }
+  function deleteTempEntry() {
+    if (!editTempEntryId) return;
+    if (!confirm('למחוק את המדידה הזו? הפעולה אינה הפיכה.')) return;
+    DB.deleteTempEntry(editTempEntryId);
+    editTempEntryId = null;
+    closeSheet('sheet-temp');
+    toast('הרשומה נמחקה');
+    renderTemp();
+    renderDashboard();
+    renderHistory();
   }
 
   /* ---------- hero card interactions ---------- */
@@ -910,6 +964,23 @@ const App = (() => {
     renderSettings();
   }
 
+  /* ---------- danger zone ---------- */
+  function confirmReset() {
+    const sure = confirm('לאפס את כל הנתונים? כל הילדים, התרופות והמדידות יימחקו לצמיתות. הפעולה אינה הפיכה.');
+    if (!sure) return;
+    const reallySure = confirm('בטוח/ה לגמרי? זו הזדמנות אחרונה לבטל.');
+    if (!reallySure) return;
+    DB.reset();
+    toast('כל הנתונים אופסו');
+    renderLanding();
+    renderDashboard();
+    renderHistory();
+    renderTemp();
+    renderSettings();
+    renderKids();
+    goto('screen-kids');
+  }
+
   /* ---------- clock ---------- */
   function tickClock() {
     document.getElementById('clock').textContent = nowHHMM();
@@ -957,9 +1028,11 @@ const App = (() => {
     installNow, skipLanding,
     openDoseSheet, pickDoseChild, pickDoseMed, pickDoseConc, calcDose,
     heroClick, quickWeightUpdate,
+    deleteMedEntry, deleteTempEntry, confirmReset,
   };
 })();
 
 document.addEventListener('DOMContentLoaded', App.init);
+
 
 
