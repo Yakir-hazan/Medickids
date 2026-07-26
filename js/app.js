@@ -112,6 +112,13 @@ const App = (() => {
   function showSplash() {
     goto('screen-splash');
     animateSplashThermo();
+    // בקש רשות התראות OneSignal — רק ב-PWA מותקן (standalone)
+    if (isStandalone()) {
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(function(OneSignal) {
+        OneSignal.Notifications.requestPermission();
+      });
+    }
   }
 
   /* ---------- splash thermometer animation ---------- */
