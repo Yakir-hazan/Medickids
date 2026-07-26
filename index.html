@@ -21,8 +21,36 @@
       });
     });
   </script>
+  <style>
+    .mk-topbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 52px;
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+    .mk-topbar-title {
+      font-size: 17px;
+      font-weight: 600;
+      color: #1a1a2e;
+      letter-spacing: 0.3px;
+    }
+    body {
+      padding-top: 52px;
+    }
+  </style>
 </head>
 <body>
+  <header class="mk-topbar">
+    <span class="mk-topbar-title">Medickids</span>
+  </header>
+
 <div id="app">
 
   <div class="body-area">
