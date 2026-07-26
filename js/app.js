@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.2 → 1.0.0-beta.2 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.13';
+  const APP_VERSION = '1.0.0-beta.14';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -19,6 +19,7 @@ const App = (() => {
   let tempChildSel = null;
   let histFilter = 'all';
   let editMedEntryId = null;
+  let doseReminderMode = 'auto'; // 'auto' | 'custom' — reminder timing for the new dose being logged
   let editTempEntryId = null;
   let editingKidId = null; // null = add mode
   let deferredInstallPrompt = null;
@@ -525,6 +526,23 @@ const App = (() => {
     document.getElementById('med-note').value = entry ? (entry.note || '') : '';
     document.getElementById('med-sheet-title').textContent = entry ? 'עריכת תרופה' : 'נתתי תרופה';
     document.getElementById('med-delete-btn').style.display = entry ? '' : 'none';
+
+    // reminder controls — only relevant when logging a NEW dose, not when editing an old entry
+    const remLabel = document.getElementById('med-reminder-label');
+    const remChips = document.getElementById('med-reminder-chips');
+    const remCustom = document.getElementById('med-reminder-custom');
+    if (entry) {
+      remLabel.style.display = 'none';
+      remChips.style.display = 'none';
+      remCustom.style.display = 'none';
+    } else {
+      doseReminderMode = 'auto';
+      remCustom.value = '';
+      remCustom.style.display = 'none';
+      remLabel.style.display = '';
+      remChips.style.display = '';
+      _renderReminderChips();
+    }
     openSheet('sheet-med');
   }
   function pickMedChild(id) {
@@ -545,14 +563,46 @@ const App = (() => {
     pickMedMedicine(name);
   }
   /* ---------- dose reminder push scheduling ---------- */
-  function scheduleDoseReminder(entry) {
+  function _renderReminderChips() {
+    const box = document.getElementById('med-reminder-chips');
+    if (!box) return;
+    box.innerHTML = `
+      <button type="button" class="chip ${doseReminderMode === 'auto' ? 'sel' : ''}" onclick="App.pickReminderMode('auto')">⏱️ אוטומטי (לפי מרווח התרופה)</button>
+      <button type="button" class="chip ${doseReminderMode === 'custom' ? 'sel' : ''}" onclick="App.pickReminderMode('custom')">🕐 זמן מותאם אישית</button>`;
+  }
+  function _toDatetimeLocal(ms) {
+    const d = new Date(ms);
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+  function pickReminderMode(mode) {
+    doseReminderMode = mode;
+    _renderReminderChips();
+    const customInput = document.getElementById('med-reminder-custom');
+    if (mode === 'custom') {
+      customInput.style.display = '';
+      if (!customInput.value) {
+        // prefill with the automatic guess so the user only has to tweak it, not start from scratch
+        const drugKey = Object.keys(DOSE_DB).find((k) => _matchesDrug(medMedicineSel, k));
+        const drug = drugKey ? DOSE_DB[drugKey] : null;
+        const baseTime = timeToToday(document.getElementById('med-time').value || nowHHMM());
+        const guess = baseTime + (drug && drug.intervalHours != null ? drug.intervalHours : 4) * 3600000;
+        customInput.value = _toDatetimeLocal(guess);
+      }
+    } else {
+      customInput.style.display = 'none';
+    }
+  }
+  function scheduleDoseReminder(entry, customReadyAt) {
     if (!entry || !DB.get().settings.notifications) return; // user opted out — don't schedule
-    const drugKey = Object.keys(DOSE_DB).find((k) => _matchesDrug(entry.medicine, k));
-    const drug = drugKey ? DOSE_DB[drugKey] : null;
-    if (!drug || drug.intervalHours == null) return; // no known interval — nothing to remind about
-
-    const readyAt = entry.time + drug.intervalHours * 3600000;
-    if (readyAt <= Date.now()) return; // backdated entry, already due — don't schedule in the past
+    let readyAt = customReadyAt;
+    if (readyAt == null) {
+      const drugKey = Object.keys(DOSE_DB).find((k) => _matchesDrug(entry.medicine, k));
+      const drug = drugKey ? DOSE_DB[drugKey] : null;
+      if (!drug || drug.intervalHours == null) return; // no known interval and no manual time — nothing to schedule
+      readyAt = entry.time + drug.intervalHours * 3600000;
+    }
+    if (readyAt <= Date.now()) return; // time already passed — don't schedule in the past
 
     const child = childById(entry.childId);
     fetch('/api/notify', {
@@ -582,7 +632,12 @@ const App = (() => {
       toast('התרופה עודכנה ✓');
     } else {
       const entry = DB.addMedEntry(patch);
-      scheduleDoseReminder(entry);
+      let customReadyAt = null;
+      if (doseReminderMode === 'custom') {
+        const val = document.getElementById('med-reminder-custom').value;
+        if (val) customReadyAt = new Date(val).getTime(); // parsed as local time, as entered
+      }
+      scheduleDoseReminder(entry, customReadyAt); // falls back to automatic interval if no custom time was set
       toast('התרופה נשמרה ✓');
     }
     editMedEntryId = null;
@@ -1169,7 +1224,7 @@ const App = (() => {
 
   return {
     goto, tab, openSheet, closeSheet,
-    openMedSheet, pickMedChild, pickMedMedicine, addCustomMedicine, saveMed,
+    openMedSheet, pickMedChild, pickMedMedicine, addCustomMedicine, saveMed, pickReminderMode,
     setHistFilter, setTempFilter, openTempSheet, pickTempChild, saveTemp,
     openEditKid, saveKid, toggleNotif, init,
     installNow, skipLanding,
