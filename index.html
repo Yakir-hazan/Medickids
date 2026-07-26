@@ -408,6 +408,17 @@
 
 <script src="js/db.js"></script>
 <script src="js/app.js"></script>
+
+  <!-- OneSignal Web Push -->
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+  <script>
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(async function(OneSignal) {
+      await OneSignal.init({
+        appId: "049484cd-e39c-43c0-8f64-4b3f5d468174",
+      });
+    });
+  </script>
 </body>
 </html>
 
