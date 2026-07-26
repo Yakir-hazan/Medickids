@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.2 → 1.0.0-beta.2 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.12';
+  const APP_VERSION = '1.0.0-beta.13';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -544,6 +544,30 @@ const App = (() => {
     openMedSheet();
     pickMedMedicine(name);
   }
+  /* ---------- dose reminder push scheduling ---------- */
+  function scheduleDoseReminder(entry) {
+    if (!entry || !DB.get().settings.notifications) return; // user opted out — don't schedule
+    const drugKey = Object.keys(DOSE_DB).find((k) => _matchesDrug(entry.medicine, k));
+    const drug = drugKey ? DOSE_DB[drugKey] : null;
+    if (!drug || drug.intervalHours == null) return; // no known interval — nothing to remind about
+
+    const readyAt = entry.time + drug.intervalHours * 3600000;
+    if (readyAt <= Date.now()) return; // backdated entry, already due — don't schedule in the past
+
+    const child = childById(entry.childId);
+    fetch('/api/notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: 'זמן למנה הבאה 💊',
+        message: `אפשר לתת ל${child ? child.name : 'הילד/ה'} מנה נוספת של ${entry.medicine}`,
+        childName: child ? child.name : undefined,
+        scheduledTime: new Date(readyAt).toISOString(),
+        externalId: entry.id,
+      }),
+    }).catch(() => {}); // best-effort — never block the UI on a failed schedule call
+  }
+
   function saveMed() {
     if (!medChildSel) { toast('אין ילד לבחור — הוסיפו ילד/ה קודם'); return; }
     const patch = {
@@ -557,7 +581,8 @@ const App = (() => {
       DB.updateMedEntry(editMedEntryId, patch);
       toast('התרופה עודכנה ✓');
     } else {
-      DB.addMedEntry(patch);
+      const entry = DB.addMedEntry(patch);
+      scheduleDoseReminder(entry);
       toast('התרופה נשמרה ✓');
     }
     editMedEntryId = null;
