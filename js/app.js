@@ -1,5 +1,10 @@
 const App = (() => {
   /* ---------- flow constants ---------- */
+  /* ⚠️ CLAUDE: bump APP_VERSION on EVERY push to this repo — keep the number in sync with
+     CACHE_NAME in sw.js (same version suffix, e.g. 'v16' here ↔ 'madhom-v16' there).
+     This value is shown to the user in Settings and is what "בדוק אם יש עדכון" relies on
+     to prove a new version actually loaded. Forgetting to bump it breaks both. */
+  const APP_VERSION = 'v16';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -957,11 +962,35 @@ const App = (() => {
   function renderSettings() {
     const on = DB.get().settings.notifications;
     document.getElementById('toggle-notif').classList.toggle('on', on);
+    document.getElementById('set-version-num').textContent = APP_VERSION;
   }
   function toggleNotif() {
     const on = !DB.get().settings.notifications;
     DB.setSetting('notifications', on);
     renderSettings();
+  }
+
+  /* ---------- version / updates ---------- */
+  function checkForUpdate() {
+    if (!('serviceWorker' in navigator)) { toast('הדפדפן לא תומך בבדיקת עדכונים'); return; }
+    navigator.serviceWorker.getRegistration().then((reg) => {
+      if (!reg) { toast('לא נמצא Service Worker פעיל'); return; }
+      toast('בודק עדכונים…');
+      let updated = false;
+      const onControllerChange = () => {
+        updated = true;
+        toast('נמצא עדכון — טוען מחדש…');
+        setTimeout(() => window.location.reload(), 600);
+      };
+      navigator.serviceWorker.addEventListener('controllerchange', onControllerChange, { once: true });
+      reg.update().catch(() => {});
+      setTimeout(() => {
+        if (!updated) {
+          navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
+          toast(`אתה כבר בגרסה העדכנית (${APP_VERSION}) ✓`);
+        }
+      }, 2500);
+    });
   }
 
   /* ---------- danger zone ---------- */
@@ -1030,10 +1059,12 @@ const App = (() => {
     openDoseSheet, pickDoseChild, pickDoseMed, pickDoseConc, calcDose,
     heroClick, quickWeightUpdate,
     deleteMedEntry, deleteTempEntry, confirmReset,
+    checkForUpdate,
   };
 })();
 
 document.addEventListener('DOMContentLoaded', App.init);
+
 
 
 
