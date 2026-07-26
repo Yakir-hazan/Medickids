@@ -174,6 +174,9 @@
         <div class="set-group">
           <button class="set-row">ℹ️ אודות האפליקציה<span class="chev">‹</span></button>
         </div>
+        <div class="set-group">
+          <button class="set-row danger" onclick="App.confirmReset()">🗑️ איפוס נתונים<span class="chev">‹</span></button>
+        </div>
       </div>
       <div class="navbar">
         <button class="navitem" data-nav="screen-dash" onclick="App.tab('screen-dash')"><span class="ic">🏠</span>בית</button>
@@ -285,7 +288,7 @@
     <div class="sheet">
       <button class="close-sheet" onclick="App.closeSheet('sheet-med')">סגור ✕</button>
       <div class="sheet-handle"></div>
-      <div class="sheet-title">נתתי תרופה</div>
+      <div class="sheet-title" id="med-sheet-title">נתתי תרופה</div>
       <div class="field-label">ילד</div>
       <div class="chip-row" id="med-child-chips"></div>
       <div class="field-label">תרופה</div>
@@ -297,6 +300,7 @@
       <div class="field-label">הערה (אופציונלי)</div>
       <input class="field-input" id="med-note" placeholder="לדוגמה: אחרי אמבטיה פושרת">
       <button class="sheet-cta" onclick="App.saveMed()">שמירה</button>
+      <button class="sheet-delete" id="med-delete-btn" style="display:none" onclick="App.deleteMedEntry()">מחיקת רשומה</button>
     </div>
   </div>
 
@@ -305,7 +309,7 @@
     <div class="sheet">
       <button class="close-sheet" onclick="App.closeSheet('sheet-temp')">סגור ✕</button>
       <div class="sheet-handle"></div>
-      <div class="sheet-title">הוספת מדידת חום</div>
+      <div class="sheet-title" id="temp-sheet-title">הוספת מדידת חום</div>
       <div class="field-label">ילד</div>
       <div class="chip-row" id="temp-child-chips"></div>
       <div class="field-label">טמפרטורה</div>
@@ -314,6 +318,7 @@
       <div class="field-label">שעה</div>
       <input class="field-input" id="temp-time" type="time">
       <button class="sheet-cta" onclick="App.saveTemp()">שמירה</button>
+      <button class="sheet-delete" id="temp-delete-btn" style="display:none" onclick="App.deleteTempEntry()">מחיקת רשומה</button>
     </div>
   </div>
 
@@ -340,6 +345,7 @@
 <script src="js/app.js"></script>
 </body>
 </html>
+
 
 
 
