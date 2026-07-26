@@ -42,8 +42,26 @@ const DB = (() => {
       state.medEntries.unshift({ id: uid(), time: Date.now(), ...entry });
       save(state);
     },
+    updateMedEntry(id, patch) {
+      const e = state.medEntries.find((x) => x.id === id);
+      if (e) Object.assign(e, patch);
+      save(state);
+    },
+    deleteMedEntry(id) {
+      state.medEntries = state.medEntries.filter((x) => x.id !== id);
+      save(state);
+    },
     addTempEntry(entry) {
       state.tempEntries.unshift({ id: uid(), time: Date.now(), ...entry });
+      save(state);
+    },
+    updateTempEntry(id, patch) {
+      const e = state.tempEntries.find((x) => x.id === id);
+      if (e) Object.assign(e, patch);
+      save(state);
+    },
+    deleteTempEntry(id) {
+      state.tempEntries = state.tempEntries.filter((x) => x.id !== id);
       save(state);
     },
     updateChild(id, patch) {
@@ -91,4 +109,5 @@ const DB = (() => {
     },
   };
 })();
+
 
