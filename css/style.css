@@ -40,10 +40,11 @@ body{
 
 /* splash */
 #screen-splash .scroll{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 30px;}
-.splash-icon{width:88px;height:88px;border-radius:28px;background:linear-gradient(145deg,var(--gold),#9B8EFF);
-  display:flex;align-items:center;justify-content:center;font-size:40px;margin-bottom:22px;
-  box-shadow:0 14px 30px rgba(124,111,240,.35);}
-.splash-title{font-size:24px;font-weight:800;margin-bottom:8px;}
+.thermo-box{transform:scale(.72);margin-bottom:-30px;}
+.temp-display{font-size:20px;font-weight:700;color:#D82020;font-variant-numeric:tabular-nums;margin-top:2px;}
+.loading-sub{font-size:12px;color:var(--ink-soft);min-height:16px;margin-top:2px;margin-bottom:10px;font-weight:600;}
+.sl{font-size:13px;fill:var(--ink-soft);font-family:'Rubik',sans-serif;dominant-baseline:middle;}
+.splash-title{font-size:24px;font-weight:800;margin-top:6px;margin-bottom:8px;}
 .beta-badge{display:inline-block;background:#FFF0E8;color:#C0602F;font-size:10px;font-weight:800;
   letter-spacing:.5px;padding:3px 8px;border-radius:8px;vertical-align:middle;margin-right:4px;}
 .dash-beta{margin-top:6px;align-self:flex-end;}
@@ -327,5 +328,6 @@ body{
   border: 1.5px solid #ffb3ae;
   color: #9c1c14;
 }
+
 
 
