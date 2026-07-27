@@ -88,9 +88,20 @@ const DB = (() => {
     },
     /* --- prescriptions: an active/past treatment for a specific child (e.g. daily vitamin D) ---
        global array with a childId field on each record (not nested under the child), so queries
-       like "all active prescriptions today" or "what's active for this child" stay simple filters. */
+       like "all active prescriptions today" or "what's active for this child" stay simple filters.
+       References the catalog by stable `productId`/`ingredientId` (not the display name), so a
+       product's Hebrew label can change without breaking existing prescriptions.
+       Only ever stores what's specific to THIS treatment (status, timing, reminder) — protocol
+       defaults (intervalHours etc.) live in MEDICATION_CATALOG and are read from there, not copied. */
     addPrescription(rx) {
-      const full = { id: uid(), startedAt: Date.now(), active: true, ...rx };
+      const full = {
+        id: uid(),
+        status: 'active', // 'active' | 'completed' | 'cancelled'
+        startAt: Date.now(),
+        endAt: null,
+        reminder: { on: true },
+        ...rx,
+      };
       state.prescriptions.unshift(full);
       save(state);
       return full;
@@ -102,7 +113,7 @@ const DB = (() => {
       return p || null;
     },
     activePrescriptionsFor(childId) {
-      return state.prescriptions.filter((p) => p.childId === childId && p.active);
+      return state.prescriptions.filter((p) => p.childId === childId && p.status === 'active');
     },
     lastMedFor(childId) {
       return state.medEntries.filter((e) => e.childId === childId).sort((a, b) => b.time - a.time)[0] || null;
