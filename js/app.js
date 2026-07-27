@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.2 → 1.0.0-beta.2 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.16';
+  const APP_VERSION = '1.0.0-beta.17';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -19,7 +19,8 @@ const App = (() => {
   let tempChildSel = null;
   let histFilter = 'all';
   let editMedEntryId = null;
-  let doseReminderMode = 'auto'; // 'auto' | 'custom' — reminder timing for the new dose being logged
+  let doseReminderMode = 'auto'; // 'auto' | 'custom' — reminder timing for PRN doses being logged
+  let dailyReminderOn = true; // for DAILY-protocol medicines — whether to keep a recurring reminder
   let editTempEntryId = null;
   let editingKidId = null; // null = add mode
   let deferredInstallPrompt = null;
@@ -222,14 +223,14 @@ const App = (() => {
       }
     }
 
-    // 2) dose timing — reuses the same DOSE_DB intervals as the dose calculator, so the two never contradict each other
+    // 2) dose timing — reuses the same MEDICATION_CATALOG intervals as the dose calculator, so the two never contradict each other
     const lastMed = DB.lastMedFor(c.id);
     if (lastMed) {
-      const drugKey = Object.keys(DOSE_DB).find((k) => _matchesDrug(lastMed.medicine, k));
-      const drug = drugKey ? DOSE_DB[drugKey] : null;
-      if (drug && drug.intervalHours != null) {
+      const drugKey = Object.keys(MEDICATION_CATALOG).find((k) => _matchesDrug(lastMed.medicine, k));
+      const drug = drugKey ? MEDICATION_CATALOG[drugKey] : null;
+      if (drug && drug.protocol.intervalHours != null) {
         const hoursSince = (now - lastMed.time) / 3600000;
-        const remain = drug.intervalHours - hoursSince;
+        const remain = drug.protocol.intervalHours - hoursSince;
         if (remain > 0) {
           const remainLabel = remain >= 1 ? `${Math.ceil(remain)} שעות` : `${Math.max(1, Math.round(remain * 60))} דקות`;
           return { level: 'info', icon: '⏱️', text: `אפשר לתת מנה נוספת של ${lastMed.medicine} בעוד כ־${remainLabel}.` };
@@ -284,10 +285,10 @@ const App = (() => {
       let nextDoseMs = null;
       let nextDrugName = null;
       if (lastMed) {
-        const drugKey = Object.keys(DOSE_DB).find((k) => _matchesDrug(lastMed.medicine, k));
-        const drug = drugKey ? DOSE_DB[drugKey] : null;
-        if (drug && drug.intervalHours) {
-          const readyAt = lastMed.time + drug.intervalHours * 3600000;
+        const drugKey = Object.keys(MEDICATION_CATALOG).find((k) => _matchesDrug(lastMed.medicine, k));
+        const drug = drugKey ? MEDICATION_CATALOG[drugKey] : null;
+        if (drug && drug.protocol.intervalHours) {
+          const readyAt = lastMed.time + drug.protocol.intervalHours * 3600000;
           if (readyAt > now) { nextDoseMs = readyAt - now; nextDrugName = lastMed.medicine; }
         }
       }
@@ -536,22 +537,51 @@ const App = (() => {
       remChips.style.display = 'none';
       remCustom.style.display = 'none';
     } else {
-      doseReminderMode = 'auto';
-      remCustom.value = '';
-      remCustom.style.display = 'none';
       remLabel.style.display = '';
       remChips.style.display = '';
-      _renderReminderChips();
+      _updateReminderUI(); // decides auto/custom (PRN) vs recurring toggle (daily) based on the medicine itself
     }
     openSheet('sheet-med');
   }
   function pickMedChild(id) {
     medChildSel = id;
     document.querySelectorAll('#med-child-chips .chip').forEach((el) => el.classList.toggle('sel', el.dataset.id === id));
+    if (!editMedEntryId) _updateReminderUI(); // daily-reminder default depends on this child's existing prescriptions
   }
   function pickMedMedicine(name) {
     medMedicineSel = name;
     document.querySelectorAll('#med-medicine-chips .chip').forEach((el) => el.classList.toggle('sel', el.textContent === name));
+    if (!editMedEntryId) _updateReminderUI(); // the medicine's protocol type decides which reminder UI to show
+  }
+  /* the medicine picked decides the reminder UI, not the user: PRN meds get the auto/custom picker,
+     DAILY meds get a simple recurring-reminder toggle (and default it from any existing prescription) */
+  function _updateReminderUI() {
+    const remLabel = document.getElementById('med-reminder-label');
+    const remChips = document.getElementById('med-reminder-chips');
+    const remCustom = document.getElementById('med-reminder-custom');
+    if (!remLabel) return;
+    const catalogEntry = _catalogEntryFor(medMedicineSel);
+
+    if (catalogEntry && catalogEntry.protocol.type === TREATMENT_TYPES.DAILY) {
+      const drugKey = Object.keys(MEDICATION_CATALOG).find((k) => _matchesDrug(medMedicineSel, k));
+      const existing = medChildSel ? DB.get().prescriptions.find((p) => p.childId === medChildSel && p.medicationKey === drugKey && p.active) : null;
+      dailyReminderOn = existing ? existing.reminderOn !== false : true;
+      remLabel.textContent = 'תזכורת יומית';
+      remCustom.style.display = 'none';
+      remChips.innerHTML = `
+        <button type="button" class="chip ${dailyReminderOn ? 'sel' : ''}" onclick="App.toggleDailyReminder(true)">🔁 להזכיר כל יום</button>
+        <button type="button" class="chip ${!dailyReminderOn ? 'sel' : ''}" onclick="App.toggleDailyReminder(false)">🚫 בלי תזכורת קבועה</button>`;
+    } else {
+      remLabel.textContent = 'תזכורת למנה הבאה';
+      doseReminderMode = 'auto';
+      remCustom.value = '';
+      remCustom.style.display = 'none';
+      _renderReminderChips();
+    }
+  }
+  function toggleDailyReminder(on) {
+    dailyReminderOn = on;
+    _updateReminderUI();
   }
   function addCustomMedicine() {
     const name = prompt('שם התרופה:');
@@ -583,10 +613,10 @@ const App = (() => {
       customInput.style.display = '';
       if (!customInput.value) {
         // prefill with the automatic guess so the user only has to tweak it, not start from scratch
-        const drugKey = Object.keys(DOSE_DB).find((k) => _matchesDrug(medMedicineSel, k));
-        const drug = drugKey ? DOSE_DB[drugKey] : null;
+        const drugKey = Object.keys(MEDICATION_CATALOG).find((k) => _matchesDrug(medMedicineSel, k));
+        const drug = drugKey ? MEDICATION_CATALOG[drugKey] : null;
         const baseTime = timeToToday(document.getElementById('med-time').value || nowHHMM());
-        const guess = baseTime + (drug && drug.intervalHours != null ? drug.intervalHours : 4) * 3600000;
+        const guess = baseTime + (drug && drug.protocol.intervalHours != null ? drug.protocol.intervalHours : 4) * 3600000;
         customInput.value = _toDatetimeLocal(guess);
       }
     } else {
@@ -612,17 +642,16 @@ const App = (() => {
   }
   async function scheduleDoseReminder(entry, customReadyAt) {
     if (!entry || !DB.get().settings.notifications) return; // user opted out — don't schedule
-    const drugKey = Object.keys(DOSE_DB).find((k) => _matchesDrug(entry.medicine, k));
-    const drug = drugKey ? DOSE_DB[drugKey] : null;
+    const drugKey = Object.keys(MEDICATION_CATALOG).find((k) => _matchesDrug(entry.medicine, k));
+    const drug = drugKey ? MEDICATION_CATALOG[drugKey] : null;
     const ingredientKey = drug ? drug.activeIngredient : null;
-    const ingredient = ingredientKey ? ACTIVE_INGREDIENTS[ingredientKey] : null;
 
     let readyAt = customReadyAt;
     if (readyAt == null) {
-      if (ingredient && ingredient.treatmentType === 'daily') {
+      if (drug && drug.protocol.type === TREATMENT_TYPES.DAILY) {
         readyAt = entry.time + 24 * 3600000; // once-a-day meds — remind at the same time tomorrow
-      } else if (drug && drug.intervalHours != null) {
-        readyAt = entry.time + drug.intervalHours * 3600000;
+      } else if (drug && drug.protocol.intervalHours != null) {
+        readyAt = entry.time + drug.protocol.intervalHours * 3600000;
       } else {
         return; // no known interval and no manual time — nothing to schedule
       }
@@ -668,17 +697,17 @@ const App = (() => {
 
   async function saveMed() {
     if (!medChildSel) { toast('אין ילד לבחור — הוסיפו ילד/ה קודם'); return; }
+    const catalogEntry = _catalogEntryFor(medMedicineSel);
+    const protocolType = catalogEntry ? catalogEntry.protocol.type : null;
+    const drugKey = Object.keys(MEDICATION_CATALOG).find((k) => _matchesDrug(medMedicineSel, k));
 
-    // warn (not block) if a dose of the same drug was already given too recently — same check the
-    // dose calculator uses, now applied at the actual logging step too
-    if (!editMedEntryId) {
-      const drugKey = Object.keys(DOSE_DB).find((k) => _matchesDrug(medMedicineSel, k));
-      if (drugKey) {
-        const warning = _doseHistoryWarning(medChildSel, drugKey);
-        if (warning && warning.level === 'alert') {
-          const plain = warning.text.replace(/^[⏱️⚠️]\s*/, '');
-          if (!confirm(`${plain}\n\nלהמשיך בכל זאת ולרשום את המנה?`)) return;
-        }
+    // warn (not block) if a dose of the same substance was already given too recently / already
+    // given today (for daily meds) — same check the dose calculator uses, now applied here too
+    if (!editMedEntryId && drugKey) {
+      const warning = _doseHistoryWarning(medChildSel, drugKey);
+      if (warning && warning.level === 'alert') {
+        const plain = warning.text.replace(/^[⏱️⚠️☀️]\s*/, '');
+        if (!confirm(`${plain}\n\nלהמשיך בכל זאת ולרשום את המנה?`)) return;
       }
     }
 
@@ -693,13 +722,27 @@ const App = (() => {
       DB.updateMedEntry(editMedEntryId, patch);
       toast('התרופה עודכנה ✓');
     } else {
+      // DAILY-protocol meds: upsert a Prescription representing "ongoing daily treatment" for this
+      // child+medicine, so future work (dashboard list, etc.) has a real place to read it from
+      if (protocolType === TREATMENT_TYPES.DAILY && drugKey) {
+        const existingRx = DB.get().prescriptions.find((p) => p.childId === medChildSel && p.medicationKey === drugKey && p.active);
+        if (existingRx) {
+          DB.updatePrescription(existingRx.id, { reminderOn: dailyReminderOn });
+          patch.prescriptionId = existingRx.id;
+        } else {
+          const rx = DB.addPrescription({ childId: medChildSel, medicationKey: drugKey, type: TREATMENT_TYPES.DAILY, reminderOn: dailyReminderOn });
+          patch.prescriptionId = rx.id;
+        }
+      }
+
       const entry = DB.addMedEntry(patch);
       let customReadyAt = null;
       if (doseReminderMode === 'custom') {
         const val = document.getElementById('med-reminder-custom').value;
         if (val) customReadyAt = new Date(val).getTime(); // parsed as local time, as entered
       }
-      scheduleDoseReminder(entry, customReadyAt); // falls back to automatic interval if no custom time was set
+      const shouldSchedule = protocolType === TREATMENT_TYPES.DAILY ? dailyReminderOn : true;
+      if (shouldSchedule) scheduleDoseReminder(entry, customReadyAt); // falls back to automatic timing if no custom time was set
       toast('התרופה נשמרה ✓');
     }
     editMedEntryId = null;
@@ -912,18 +955,27 @@ const App = (() => {
      Safety checks (duplicate-dose warnings, reminder dedup) key off activeIngredient, not brand name,
      so e.g. Acamol + Novimol (both paracetamol) are correctly treated as the same substance. */
   const ACTIVE_INGREDIENTS = {
-    paracetamol: { name: 'פרצטמול', treatmentType: 'prn' },
-    ibuprofen: { name: 'איבופרופן', treatmentType: 'prn' },
-    vitaminD: { name: 'ויטמין D', treatmentType: 'daily' },
+    paracetamol: { name: 'פרצטמול' },
+    ibuprofen: { name: 'איבופרופן' },
+    vitaminD: { name: 'ויטמין D' },
   };
 
-  const DOSE_DB = {
+  /* Treatment protocol types (layer 3) — each is a different logical "engine" for timing/warnings.
+     COURSE and WEEKLY are placeholders for phase 2 (not implemented yet — no product uses them). */
+  const TREATMENT_TYPES = {
+    PRN: 'prn',
+    DAILY: 'daily',
+    COURSE: 'course',
+    WEEKLY: 'weekly',
+    CUSTOM: 'custom',
+  };
+
+  /* Medication Catalog (layers 2+3): Product info (brand/matchNames/concentrations) + its default
+     Protocol (timing/safety rules). See docs/medication-architecture.md for the full model. */
+  const MEDICATION_CATALOG = {
     'נובימול': {
       activeIngredient: 'paracetamol',
-      treatmentType: 'prn',
-      interval: '4–6 שעות',
-      intervalHours: 4,
-      maxDosesPerDay: 5,
+      protocol: { type: TREATMENT_TYPES.PRN, interval: '4–6 שעות', intervalHours: 4, maxDosesPerDay: 5 },
       matchNames: ['נובימול'],
       concentrations: [
         {
@@ -965,10 +1017,7 @@ const App = (() => {
     },
     'אקמול': {
       activeIngredient: 'paracetamol',
-      treatmentType: 'prn',
-      interval: null,
-      intervalHours: null,
-      maxDosesPerDay: null,
+      protocol: { type: TREATMENT_TYPES.PRN, interval: null, intervalHours: null, maxDosesPerDay: null },
       matchNames: ['אקמול'],
       concentrations: [
         { label: 'ממתין לעלון רשמי', pendingLeaflet: true },
@@ -976,10 +1025,7 @@ const App = (() => {
     },
     'נורופן': {
       activeIngredient: 'ibuprofen',
-      treatmentType: 'prn',
-      interval: '6–8 שעות (מרווח מינימלי 4 שעות)',
-      intervalHours: 4,
-      maxDosesPerDay: 4,
+      protocol: { type: TREATMENT_TYPES.PRN, interval: '6–8 שעות (מרווח מינימלי 4 שעות)', intervalHours: 4, maxDosesPerDay: 4 },
       matchNames: ['נורופן', 'איבופרופן', 'אדוויל'],
       concentrations: [
         {
@@ -1002,17 +1048,18 @@ const App = (() => {
     },
     'ויטמין D': {
       activeIngredient: 'vitaminD',
-      treatmentType: 'daily',
-      dosesPerDay: 1,
-      interval: null,
-      intervalHours: null,
-      maxDosesPerDay: null,
+      protocol: { type: TREATMENT_TYPES.DAILY, dosesPerDay: 1 },
       matchNames: ['ויטמין D', 'ויטמין די', 'וויטמין D'],
       concentrations: [
         { label: 'ממתין לנתוני מינון רשמיים', pendingLeaflet: true },
       ]
     },
   };
+  /* resolves a free-text medicine name (as stored in medEntries / picked in the UI) to its catalog entry */
+  function _catalogEntryFor(medicineName) {
+    const key = Object.keys(MEDICATION_CATALOG).find((k) => _matchesDrug(medicineName, k));
+    return key ? MEDICATION_CATALOG[key] : null;
+  }
 
   let doseMedSel = 'אקמול / נובימול';
   let doseConcIdx = 0;
@@ -1047,13 +1094,13 @@ const App = (() => {
   }
 
   function _renderDoseMedChips() {
-    document.getElementById('dose-med-chips').innerHTML = Object.keys(DOSE_DB).map((m) =>
+    document.getElementById('dose-med-chips').innerHTML = Object.keys(MEDICATION_CATALOG).map((m) =>
       `<button type="button" class="chip ${m === doseMedSel ? 'sel' : ''}" onclick="App.pickDoseMed('${m}')">${m}</button>`
     ).join('');
   }
 
   function _renderDoseConcChips() {
-    const concs = DOSE_DB[doseMedSel].concentrations;
+    const concs = MEDICATION_CATALOG[doseMedSel].concentrations;
     document.getElementById('dose-conc-chips').innerHTML = concs.map((c, i) =>
       `<button type="button" class="chip ${i === doseConcIdx ? 'sel' : ''}" onclick="App.pickDoseConc(${i})">${c.label}</button>`
     ).join('');
@@ -1073,15 +1120,15 @@ const App = (() => {
     calcDose();
   }
 
-  /* does a free-text medicine name (as stored in medEntries) belong to this DOSE_DB drug? */
+  /* does a free-text medicine name (as stored in medEntries) belong to this MEDICATION_CATALOG drug? */
   function _matchesDrug(medicineName, drugKey) {
     if (!medicineName) return false;
-    const names = DOSE_DB[drugKey].matchNames || [];
+    const names = MEDICATION_CATALOG[drugKey].matchNames || [];
     return names.some((n) => medicineName.indexOf(n) !== -1);
   }
-  /* all brand keys (DOSE_DB entries) that share a given active ingredient — e.g. paracetamol -> ['נובימול','אקמול'] */
+  /* all brand keys (MEDICATION_CATALOG entries) that share a given active ingredient — e.g. paracetamol -> ['נובימול','אקמול'] */
   function _brandKeysForIngredient(ingredientKey) {
-    return Object.keys(DOSE_DB).filter((k) => DOSE_DB[k].activeIngredient === ingredientKey);
+    return Object.keys(MEDICATION_CATALOG).filter((k) => MEDICATION_CATALOG[k].activeIngredient === ingredientKey);
   }
   /* true if medicineName matches ANY brand sharing this active ingredient — this is what lets the app
      see Acamol + Novimol as "the same substance" for safety checks, instead of two unrelated drugs */
@@ -1091,7 +1138,7 @@ const App = (() => {
 
   function _doseHistoryWarning(childId, drugKey) {
     if (!childId) return null;
-    const drug = DOSE_DB[drugKey];
+    const drug = MEDICATION_CATALOG[drugKey];
     const ingredientKey = drug.activeIngredient;
     const ingredient = ingredientKey ? ACTIVE_INGREDIENTS[ingredientKey] : null;
     const now = Date.now();
@@ -1103,27 +1150,27 @@ const App = (() => {
 
     const last = entries.reduce((a, b) => (b.time > a.time ? b : a));
 
-    if (ingredient && ingredient.treatmentType === 'daily') {
+    if (drug.protocol.type === TREATMENT_TYPES.DAILY) {
       // once-a-day meds: warn if one was already given today (calendar day), not by hour-interval
       const sameDay = new Date(last.time).toDateString() === new Date(now).toDateString();
       if (sameDay) {
-        return { level: 'alert', text: `☀️ ${ingredient.name} כבר ניתן/ה היום ב-${formatClock(last.time)} — זו תרופה שניתנת פעם אחת ביום.` };
+        return { level: 'alert', text: `☀️ ${ingredient ? ingredient.name : drugKey} כבר ניתן/ה היום ב-${formatClock(last.time)} — זו תרופה שניתנת פעם אחת ביום.` };
       }
       return null;
     }
 
-    if (drug.intervalHours != null) {
+    if (drug.protocol.intervalHours != null) {
       const hoursSince = (now - last.time) / 3600000;
-      if (hoursSince < drug.intervalHours) {
-        const remain = Math.ceil(drug.intervalHours - hoursSince);
+      if (hoursSince < drug.protocol.intervalHours) {
+        const remain = Math.ceil(drug.protocol.intervalHours - hoursSince);
         const otherBrand = ingredient && !_matchesDrug(last.medicine, drugKey) ? ` (${ingredient.name}, ניתן בתור "${last.medicine}")` : '';
-        return { level: 'alert', text: `⏱️ המנה האחרונה${otherBrand} הייתה לפני ${hoursSince < 1 ? 'פחות משעה' : Math.floor(hoursSince) + ' שעות'} — המרווח המומלץ הוא ${drug.interval}. מומלץ להמתין כ־${remain} שעות נוספות לפני מנה נוספת.` };
+        return { level: 'alert', text: `⏱️ המנה האחרונה${otherBrand} הייתה לפני ${hoursSince < 1 ? 'פחות משעה' : Math.floor(hoursSince) + ' שעות'} — המרווח המומלץ הוא ${drug.protocol.interval}. מומלץ להמתין כ־${remain} שעות נוספות לפני מנה נוספת.` };
       }
     }
 
-    if (drug.maxDosesPerDay != null) {
+    if (drug.protocol.maxDosesPerDay != null) {
       const last24h = entries.filter((e) => now - e.time <= 24 * 3600000).length;
-      if (last24h >= drug.maxDosesPerDay) {
+      if (last24h >= drug.protocol.maxDosesPerDay) {
         const substanceNote = ingredient ? `מ${ingredient.name} (כולל מותגים אחרים עם אותו חומר פעיל)` : 'מהתרופה הזו';
         return { level: 'alert', text: `⚠️ כבר ניתנו ${last24h} מנות ${substanceNote} ב־24 השעות האחרונות — זהו המספר המרבי המומלץ ליום. אין לתת מנה נוספת בלי להתייעץ עם רופא/ה או רוקח/ת.` };
       }
@@ -1164,7 +1211,7 @@ const App = (() => {
 
     if (!weight || weight < 1 || weight > 60) { box.style.display = 'none'; return; }
 
-    const drug = DOSE_DB[doseMedSel];
+    const drug = MEDICATION_CATALOG[doseMedSel];
     const conc = drug.concentrations[doseConcIdx];
 
     if (conc.pendingLeaflet) {
@@ -1193,8 +1240,8 @@ const App = (() => {
     const mg = row.mg != null ? row.mg : (conc.mgPerMl != null ? Math.round(row.ml * conc.mgPerMl) : null);
     const weightLabel = row.kg != null ? `${row.kg} ק"ג` : `${row.kgMin}–${row.kgMax} ק"ג`;
     const subParts = [];
-    if (drug.interval) subParts.push(`כל ${drug.interval}`);
-    if (drug.maxDosesPerDay != null) subParts.push(`עד ${drug.maxDosesPerDay} מנות ב-24 שעות`);
+    if (drug.protocol.interval) subParts.push(`כל ${drug.protocol.interval}`);
+    if (drug.protocol.maxDosesPerDay != null) subParts.push(`עד ${drug.protocol.maxDosesPerDay} מנות ב-24 שעות`);
     box.style.display = 'block';
     box.innerHTML = `
       <div class="dose-result-title">המינון לפי טבלת היצרן</div>
@@ -1342,7 +1389,7 @@ const App = (() => {
 
   return {
     goto, tab, openSheet, closeSheet,
-    openMedSheet, pickMedChild, pickMedMedicine, addCustomMedicine, saveMed, pickReminderMode,
+    openMedSheet, pickMedChild, pickMedMedicine, addCustomMedicine, saveMed, pickReminderMode, toggleDailyReminder,
     setHistFilter, setTempFilter, openTempSheet, pickTempChild, saveTemp,
     openEditKid, saveKid, toggleNotif, init,
     installNow, skipLanding,
