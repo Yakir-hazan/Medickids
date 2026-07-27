@@ -12,6 +12,7 @@ const DB = (() => {
       medicines: ['אקמול ילדים', 'נורופן', 'נובימול', 'ויטמין D'],
       medEntries: [],
       tempEntries: [],
+      prescriptions: [], // active/past treatments (e.g. "daily vitamin D reminder", future: antibiotic courses)
       settings: { notifications: false },
     };
   }
@@ -20,7 +21,10 @@ const DB = (() => {
     try {
       const raw = localStorage.getItem(KEY);
       if (!raw) { const s = seed(); save(s); return s; }
-      return JSON.parse(raw);
+      // merge: any top-level field added to seed() since this user last saved (e.g. `prescriptions`)
+      // gets its default value, without touching the user's existing data
+      const merged = { ...seed(), ...JSON.parse(raw) };
+      return merged;
     } catch (e) {
       const s = seed(); save(s); return s;
     }
@@ -81,6 +85,24 @@ const DB = (() => {
     setSetting(key, value) {
       state.settings[key] = value;
       save(state);
+    },
+    /* --- prescriptions: an active/past treatment for a specific child (e.g. daily vitamin D) ---
+       global array with a childId field on each record (not nested under the child), so queries
+       like "all active prescriptions today" or "what's active for this child" stay simple filters. */
+    addPrescription(rx) {
+      const full = { id: uid(), startedAt: Date.now(), active: true, ...rx };
+      state.prescriptions.unshift(full);
+      save(state);
+      return full;
+    },
+    updatePrescription(id, patch) {
+      const p = state.prescriptions.find((x) => x.id === id);
+      if (p) Object.assign(p, patch);
+      save(state);
+      return p || null;
+    },
+    activePrescriptionsFor(childId) {
+      return state.prescriptions.filter((p) => p.childId === childId && p.active);
     },
     lastMedFor(childId) {
       return state.medEntries.filter((e) => e.childId === childId).sort((a, b) => b.time - a.time)[0] || null;
