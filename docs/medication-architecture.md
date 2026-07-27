@@ -1,9 +1,8 @@
 # ארכיטקטורת תרופות — מסמך תכנון
 
-> נכתב: 27.7.2026, עודכן: 27.7.2026 (v2 — מודל 5 שכבות).
-> **סטטוס**: beta.16 מימש גרסה חלקית/ראשונית (ראו "מה כבר קיים למטה") — אבל היא מערבבת
-> מוצר ופרוטוקול באותו אובייקט, וחסר לגמרי מושג ה-Prescription. המסמך הזה הוא התכנון
-> לרפקטור שיחליף את beta.16, **לפני** שהקטלוג גדל מעבר ל-4 תרופות.
+> נכתב: 27.7.2026, עודכן: 27.7.2026 (v3 — Phase 1 של מודל 5 השכבות מומש ב-beta.17).
+> **סטטוס**: Phase 1 בוצע (Ingredient/Product/Protocol נפרדים + Prescription ל-PRN/Daily,
+> ראו "מה מומש בפועל" למטה). Phase 2 (Course/אנטיביוטיקה) עדיין לא התחיל.
 
 ## הבעיה שהתגלתה אחרי beta.16
 
@@ -62,23 +61,30 @@ paracetamol, ibuprofen, amoxicillin, cetirizine, salbutamol, ...
 זירטק, פניסטיל, ונטולין. אם הארכיטקטורה נכונה — הוספת תרופה חדשה תהיה בעיקר הוספת נתונים,
 לא כתיבת לוגיקה חדשה.
 
-## מה כבר קיים היום (beta.16 — ישוחלף)
-- `ACTIVE_INGREDIENTS` — כבר קיים כמושג עצמאי (paracetamol/ibuprofen/vitaminD), ישרוד את הרפקטור
-  כמעט as-is — זו כבר בדיוק שכבה 1.
-- `DOSE_DB` — יפורק לשתיים: `MEDICATION_CATALOG.products` (מוצר בלבד: matchNames, concentrations)
-  ו-Protocol נפרד (PRN/Daily) שיהיה ברירת מחדל לכל מוצר אבל ניתן לדריסה ב-Prescription.
-- `_doseHistoryWarning`, `scheduleDoseReminder`, `_findPendingReminder` — הלוגיקה שלהם היום
-  כבר עובדת ברמת activeIngredient, אבל היא "PRN-only" בפועל (interval/maxPerDay). תצטרך להתפצל
-  לפי סוג הפרוטוקול (PRN שונה מ-Course שונה מ-Daily).
-- `state.medicines` (מערך שמות שטוח ב-db.js) — יוחלף ב-`state.medications` (קטלוג) +
-  `state.prescriptions` (טיפולים פעילים לכל ילד) — צריך גם מיגרציה: הרשומות הקיימות ב-`medEntries`
-  ימשיכו לעבוד כי ההתאמה היא לפי טקסט חופשי (`matchNames`), לא לפי ID.
+## החלטות שהתקבלו ומה שמומש (27.7.2026, beta.17)
 
-## שאלות פתוחות (טרם הוחלט)
-- מבנה מדויק ל-`Prescription` ב-DB — האם `state.prescriptions` מערך גלובלי עם שדה `childId`
-  בכל רשומה, או מבנה נפרד פר-ילד (`child.prescriptions`)?
-- האם מסך "נתתי תרופה" הקיים יתפצל לשניים: "התחלת טיפול" (יוצר Prescription, לקורסים/Daily)
-  מול "נתתי מנה" (Administration בלבד, ל-PRN שאין לו Prescription) — או נשאר מסך אחד ששואל
-  בעדינות אם זה PRN/Daily/Course ובונה Prescription ברקע בשקיפות?
-- Scope לסבב הרפקטור הזה — כל 5 השכבות בבת אחת (מהלך ארוך יותר), או תשתית מינימלית עכשיו
-  (Product+Protocol נפרדים, Prescription רק ל-PRN/Daily, ו-Course בעתיד)?
+- **Scope לשלב א׳**: PRN (חום/כאב) + יומי קבוע (ויטמינים). **בוצע.**
+- **מיגרציה**: מיפוי אוטומטי לפי שם — ההתאמה הקיימת (`matchNames`/substring) כבר עושה זאת,
+  לא נדרש סקריפט נפרד. **בוצע.**
+- **מבנה Prescription**: `state.prescriptions` מערך גלובלי עם שדה `childId` בכל רשומה (לא מקונן
+  בתוך הילד) — קל יותר לשאילתות כמו "אילו טיפולים פעילים היום". **בוצע.**
+- **מסך "נתתי תרופה"**: לא מפוצל לשניים, והמשתמש לא בוחר PRN/Daily ידנית — **סוג התרופה
+  שנבחרה קובע את ה-UI**: PRN מקבל את בורר "אוטומטי/מותאם אישית" הרגיל, DAILY מקבל טוגל "להזכיר
+  כל יום / בלי תזכורת קבועה" שיוצר/מעדכן Prescription בשקיפות. **בוצע.**
+- **TREATMENT_TYPES enum מרכזי** (`PRN`/`DAILY`/`COURSE`/`WEEKLY`/`CUSTOM`) במקום מחרוזות
+  מפוזרות בקוד. **בוצע** — COURSE/WEEKLY מוגדרים כ-placeholder לשלב ב׳, שום מוצר לא משתמש בהם עדיין.
+
+### מה מומש בפועל בקוד
+- `DOSE_DB` → `MEDICATION_CATALOG`, עם הפרדה אמיתית: Product (`matchNames`/`concentrations`)
+  מול Protocol מקונן (`protocol: { type, intervalHours, maxDosesPerDay, interval }`).
+- `ACTIVE_INGREDIENTS` נשאר שכבה עצמאית עם `name` בלבד — `treatmentType` הועבר ל-Protocol
+  (הפרוטוקול שייך למוצר, לא לחומר הפעיל — כמו שהוגדר במודל).
+- `db.js`: נוסף `state.prescriptions` + CRUD (`addPrescription`/`updatePrescription`/
+  `activePrescriptionsFor`), ומיזוג ברירות מחדל ב-`load()` כדי ששדה חדש לא ישבור משתמשים ותיקים.
+- `saveMed()`: לתרופה מסוג DAILY עושה upsert ל-Prescription (מוצא קיים לפי child+medicationKey
+  או יוצר חדש) ומקשר את רשומת ה-Administration אליו (`entry.prescriptionId`).
+- `_doseHistoryWarning` ו-`scheduleDoseReminder` קוראים את סוג הפרוטוקול מ-`drug.protocol.type`.
+
+### מה עדיין לא קיים (במכוון — שלב ב׳)
+- Course (אנטיביוטיקה): ספירת ימי קורס, מנה שנשכחה, סיום אוטומטי — שום מוצר עדיין לא מוגדר COURSE.
+- הדשבורד עוד לא מציג רשימת Prescriptions פעילים — ה-Prescription נשמר אך לא מוצג מעבר לטוגל עצמו.
