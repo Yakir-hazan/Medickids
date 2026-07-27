@@ -81,10 +81,49 @@ paracetamol, ibuprofen, amoxicillin, cetirizine, salbutamol, ...
   (הפרוטוקול שייך למוצר, לא לחומר הפעיל — כמו שהוגדר במודל).
 - `db.js`: נוסף `state.prescriptions` + CRUD (`addPrescription`/`updatePrescription`/
   `activePrescriptionsFor`), ומיזוג ברירות מחדל ב-`load()` כדי ששדה חדש לא ישבור משתמשים ותיקים.
-- `saveMed()`: לתרופה מסוג DAILY עושה upsert ל-Prescription (מוצא קיים לפי child+medicationKey
+- `saveMed()`: לתרופה מסוג DAILY עושה upsert ל-Prescription (מוצא קיים לפי child+productId
   או יוצר חדש) ומקשר את רשומת ה-Administration אליו (`entry.prescriptionId`).
 - `_doseHistoryWarning` ו-`scheduleDoseReminder` קוראים את סוג הפרוטוקול מ-`drug.protocol.type`.
 
 ### מה עדיין לא קיים (במכוון — שלב ב׳)
 - Course (אנטיביוטיקה): ספירת ימי קורס, מנה שנשכחה, סיום אוטומטי — שום מוצר עדיין לא מוגדר COURSE.
 - הדשבורד עוד לא מציג רשימת Prescriptions פעילים — ה-Prescription נשמר אך לא מוצג מעבר לטוגל עצמו.
+
+## Audit ארכיטקטוני לפני Phase 2 (27.7.2026, beta.18)
+
+לפני שממשיכים ל-Course, בוצע Audit ממוקד על ארבע הישויות (ACTIVE_INGREDIENTS /
+MEDICATION_CATALOG / PRESCRIPTIONS / MED_ENTRIES) סביב שאלת ה-Single Source of Truth.
+
+### ממצאים
+- **Product↔Ingredient**: ✅ תקין — המוצר מפנה ל-`activeIngredient` בלבד, השם עצמו חי רק ב-
+  `ACTIVE_INGREDIENTS`, אין כפילות.
+- **Prescription↔Catalog (ערכים)**: ✅ תקין — Prescription מעולם לא שמר `intervalHours`/
+  `maxDosesPerDay` כפולים; תמיד קרא אותם מה-catalog.
+- **Prescription↔Catalog (זהות)**: ❌ **נמצא ותוקן**. `Prescription.medicationKey` הצביע על השם
+  העברי שמשמש גם כמפתח האובייקט ב-`MEDICATION_CATALOG` — לא מזהה יציב. אם השם המוצג משתנה, ההפניה
+  נשברת בשקט.
+- **Prescription.active בוליאני**: ❌ **נמצא ותוקן**. אין מקום ל-`completed`/`cancelled` שיידרש
+  לקורס אנטיביוטיקה.
+- **ACTIVE_INGREDIENTS דל**: ❌ **נמצא ותוקן**. היה `{name}` בלבד, בלי `id`/`aliases`.
+- **Protocol בלי גרסה**: ❌ **נמצא ותוקן**. אין `version` שיאפשר לשנות המלצות מינון בעתיד בלי לשבור
+  נתונים היסטוריים.
+
+### התיקונים שבוצעו
+- לכל מוצר ב-`MEDICATION_CATALOG` נוסף `id` יציב (`novimol_drops`, `acamol_syrup`,
+  `nurofen_syrup`, `vitamin_d_drops`) — נבדק שהם ייחודיים. מפתח האובייקט (השם העברי) נשאר
+  לצורך התאמת טקסט חופשי בלבד (`matchNames`/`_matchesDrug`), לא משמש יותר כמזהה בפועל.
+- `ACTIVE_INGREDIENTS` שודרג ל-`{ id, name, aliases }` לכל חומר פעיל.
+- כל `protocol` קיבל `version: 1`.
+- סכמת `Prescription` שונתה ל: `{ id, childId, productId, ingredientId, protocolType, status
+  ('active'|'completed'|'cancelled'), startAt, endAt, reminder: { on } }`. `productId`/
+  `ingredientId` מצביעים על ה-id היציבים, לא על השם המוצג.
+- נוספה `_catalogEntryById(productId)` לצד `_catalogEntryFor(medicineName)` הקיימת.
+
+### הערת מיגרציה
+בשלב הזה עוד לא נוצרו Prescriptions אמיתיים בסביבת הפרודקשן (הפיצ'ר עלה רק ב-beta.17), אז לא
+נדרש סקריפט מיגרציה בפועל — פשוט שינינו את הסכמה לפני שהיא "התקבעה" עם נתונים אמיתיים. זו בדיוק
+הסיבה שה-Audit הזה נעשה עכשיו ולא אחרי עוד כמה שבועות.
+
+### מסקנה
+ה-Audit יצא "נקי" אחרי התיקון — אין יותר כפילות ערכים בין השכבות, וההפניות (Product↔Ingredient,
+Prescription↔Product/Ingredient) עוברות דרך id יציב ולא שם תצוגה. אפשר להתחיל Phase 2 (Course).
