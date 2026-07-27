@@ -9,7 +9,7 @@ const DB = (() => {
     return {
       family: '',
       children: [],
-      medicines: ['אקמול ילדים', 'נורופן', 'נובימול'],
+      medicines: ['אקמול ילדים', 'נורופן', 'נובימול', 'ויטמין D'],
       medEntries: [],
       tempEntries: [],
       settings: { notifications: false },
