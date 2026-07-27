@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.2 → 1.0.0-beta.2 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.17';
+  const APP_VERSION = '1.0.0-beta.18';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -563,9 +563,8 @@ const App = (() => {
     const catalogEntry = _catalogEntryFor(medMedicineSel);
 
     if (catalogEntry && catalogEntry.protocol.type === TREATMENT_TYPES.DAILY) {
-      const drugKey = Object.keys(MEDICATION_CATALOG).find((k) => _matchesDrug(medMedicineSel, k));
-      const existing = medChildSel ? DB.get().prescriptions.find((p) => p.childId === medChildSel && p.medicationKey === drugKey && p.active) : null;
-      dailyReminderOn = existing ? existing.reminderOn !== false : true;
+      const existing = medChildSel ? DB.get().prescriptions.find((p) => p.childId === medChildSel && p.productId === catalogEntry.id && p.status === 'active') : null;
+      dailyReminderOn = existing ? existing.reminder.on !== false : true;
       remLabel.textContent = 'תזכורת יומית';
       remCustom.style.display = 'none';
       remChips.innerHTML = `
@@ -723,14 +722,21 @@ const App = (() => {
       toast('התרופה עודכנה ✓');
     } else {
       // DAILY-protocol meds: upsert a Prescription representing "ongoing daily treatment" for this
-      // child+medicine, so future work (dashboard list, etc.) has a real place to read it from
-      if (protocolType === TREATMENT_TYPES.DAILY && drugKey) {
-        const existingRx = DB.get().prescriptions.find((p) => p.childId === medChildSel && p.medicationKey === drugKey && p.active);
+      // child+medicine, so future work (dashboard list, etc.) has a real place to read it from.
+      // References the catalog by stable productId, never copies its protocol values.
+      if (protocolType === TREATMENT_TYPES.DAILY && catalogEntry) {
+        const existingRx = DB.get().prescriptions.find((p) => p.childId === medChildSel && p.productId === catalogEntry.id && p.status === 'active');
         if (existingRx) {
-          DB.updatePrescription(existingRx.id, { reminderOn: dailyReminderOn });
+          DB.updatePrescription(existingRx.id, { reminder: { on: dailyReminderOn } });
           patch.prescriptionId = existingRx.id;
         } else {
-          const rx = DB.addPrescription({ childId: medChildSel, medicationKey: drugKey, type: TREATMENT_TYPES.DAILY, reminderOn: dailyReminderOn });
+          const rx = DB.addPrescription({
+            childId: medChildSel,
+            productId: catalogEntry.id,
+            ingredientId: catalogEntry.activeIngredient,
+            protocolType: TREATMENT_TYPES.DAILY,
+            reminder: { on: dailyReminderOn },
+          });
           patch.prescriptionId = rx.id;
         }
       }
@@ -955,9 +961,9 @@ const App = (() => {
      Safety checks (duplicate-dose warnings, reminder dedup) key off activeIngredient, not brand name,
      so e.g. Acamol + Novimol (both paracetamol) are correctly treated as the same substance. */
   const ACTIVE_INGREDIENTS = {
-    paracetamol: { name: 'פרצטמול' },
-    ibuprofen: { name: 'איבופרופן' },
-    vitaminD: { name: 'ויטמין D' },
+    paracetamol: { id: 'paracetamol', name: 'פרצטמול', aliases: [] },
+    ibuprofen: { id: 'ibuprofen', name: 'איבופרופן', aliases: [] },
+    vitaminD: { id: 'vitaminD', name: 'ויטמין D', aliases: ['ויטמין די'] },
   };
 
   /* Treatment protocol types (layer 3) — each is a different logical "engine" for timing/warnings.
@@ -971,11 +977,15 @@ const App = (() => {
   };
 
   /* Medication Catalog (layers 2+3): Product info (brand/matchNames/concentrations) + its default
-     Protocol (timing/safety rules). See docs/medication-architecture.md for the full model. */
+     Protocol (timing/safety rules). See docs/medication-architecture.md for the full model.
+     The object key is the Hebrew display name (used for free-text matching against medEntries) —
+     `id` is the STABLE identifier that Prescriptions/future references should point to, since the
+     display name is allowed to change but the id never should. */
   const MEDICATION_CATALOG = {
     'נובימול': {
+      id: 'novimol_drops',
       activeIngredient: 'paracetamol',
-      protocol: { type: TREATMENT_TYPES.PRN, interval: '4–6 שעות', intervalHours: 4, maxDosesPerDay: 5 },
+      protocol: { version: 1, type: TREATMENT_TYPES.PRN, interval: '4–6 שעות', intervalHours: 4, maxDosesPerDay: 5 },
       matchNames: ['נובימול'],
       concentrations: [
         {
@@ -1016,16 +1026,18 @@ const App = (() => {
       ]
     },
     'אקמול': {
+      id: 'acamol_syrup',
       activeIngredient: 'paracetamol',
-      protocol: { type: TREATMENT_TYPES.PRN, interval: null, intervalHours: null, maxDosesPerDay: null },
+      protocol: { version: 1, type: TREATMENT_TYPES.PRN, interval: null, intervalHours: null, maxDosesPerDay: null },
       matchNames: ['אקמול'],
       concentrations: [
         { label: 'ממתין לעלון רשמי', pendingLeaflet: true },
       ]
     },
     'נורופן': {
+      id: 'nurofen_syrup',
       activeIngredient: 'ibuprofen',
-      protocol: { type: TREATMENT_TYPES.PRN, interval: '6–8 שעות (מרווח מינימלי 4 שעות)', intervalHours: 4, maxDosesPerDay: 4 },
+      protocol: { version: 1, type: TREATMENT_TYPES.PRN, interval: '6–8 שעות (מרווח מינימלי 4 שעות)', intervalHours: 4, maxDosesPerDay: 4 },
       matchNames: ['נורופן', 'איבופרופן', 'אדוויל'],
       concentrations: [
         {
@@ -1047,8 +1059,9 @@ const App = (() => {
       ]
     },
     'ויטמין D': {
+      id: 'vitamin_d_drops',
       activeIngredient: 'vitaminD',
-      protocol: { type: TREATMENT_TYPES.DAILY, dosesPerDay: 1 },
+      protocol: { version: 1, type: TREATMENT_TYPES.DAILY, dosesPerDay: 1 },
       matchNames: ['ויטמין D', 'ויטמין די', 'וויטמין D'],
       concentrations: [
         { label: 'ממתין לנתוני מינון רשמיים', pendingLeaflet: true },
@@ -1059,6 +1072,11 @@ const App = (() => {
   function _catalogEntryFor(medicineName) {
     const key = Object.keys(MEDICATION_CATALOG).find((k) => _matchesDrug(medicineName, k));
     return key ? MEDICATION_CATALOG[key] : null;
+  }
+  /* resolves a stable product id (as stored on a Prescription) back to its display key + entry */
+  function _catalogEntryById(productId) {
+    const key = Object.keys(MEDICATION_CATALOG).find((k) => MEDICATION_CATALOG[k].id === productId);
+    return key ? { key, ...MEDICATION_CATALOG[key] } : null;
   }
 
   let doseMedSel = 'אקמול / נובימול';
