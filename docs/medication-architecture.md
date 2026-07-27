@@ -75,7 +75,10 @@ paracetamol, ibuprofen, amoxicillin, cetirizine, salbutamol, ...
   ימשיכו לעבוד כי ההתאמה היא לפי טקסט חופשי (`matchNames`), לא לפי ID.
 
 ## שאלות פתוחות (טרם הוחלט)
-- מבנה מדויק ל-`Prescription` ב-DB (state.prescriptions — מערך פר-ילד? אובייקט גלובלי עם childId?).
+- מבנה מדויק ל-`Prescription` ב-DB — האם `state.prescriptions` מערך גלובלי עם שדה `childId`
+  בכל רשומה, או מבנה נפרד פר-ילד (`child.prescriptions`)?
 - האם מסך "נתתי תרופה" הקיים יתפצל לשניים: "התחלת טיפול" (יוצר Prescription, לקורסים/Daily)
-  מול "נתתי מנה" (Administration בלבד, ל-PRN שאין לו Prescription)?
-- Scope לסבב הרפקטור הזה — כל 5 השכבות בבת אחת, או תשתית מינימלית + הרחבה הדרגתית?
+  מול "נתתי מנה" (Administration בלבד, ל-PRN שאין לו Prescription) — או נשאר מסך אחד ששואל
+  בעדינות אם זה PRN/Daily/Course ובונה Prescription ברקע בשקיפות?
+- Scope לסבב הרפקטור הזה — כל 5 השכבות בבת אחת (מהלך ארוך יותר), או תשתית מינימלית עכשיו
+  (Product+Protocol נפרדים, Prescription רק ל-PRN/Daily, ו-Course בעתיד)?
