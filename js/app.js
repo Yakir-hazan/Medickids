@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.2 → 1.0.0-beta.2 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.31';
+  const APP_VERSION = '1.0.0-beta.32';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -1140,6 +1140,15 @@ const App = (() => {
     return lastDoseAt + intervalMs;
   }
 
+  /* How many doses were logged for this COURSE today (calendar day, 00:00–now).
+     Used to prevent marking more doses than dosesPerDay allows in a single day. */
+  function _dosesTodayCount(rx) {
+    if (!rx || !rx.doseLog) return 0;
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    return rx.doseLog.filter((d) => d.at >= startOfDay.getTime()).length;
+  }
+
   /* True if the next dose is overdue by more than 30 minutes.
      Used to surface an alert badge on the dashboard card. */
   function _courseIsDoseOverdue(rx) {
@@ -1218,12 +1227,13 @@ const App = (() => {
         // active course
         const totalDoses = (rx.totalDays || 0) * (rx.dosesPerDay || 1);
         const dosesDone = rx.doseLog ? rx.doseLog.length : 0;
+        const dosesToday = _dosesTodayCount(rx);
         const isOverdue = _courseIsDoseOverdue(rx);
         const summary = _courseSummary(rx);
         const statusBadge = isOverdue
           ? `<span style="color:var(--coral);white-space:nowrap;">🔴 מנה באיחור</span>`
           : `<span style="color:var(--mint);white-space:nowrap;">🟢 תקין</span>`;
-        const canMark = dosesDone < totalDoses;
+        const canMark = dosesDone < totalDoses && dosesToday < (rx.dosesPerDay || 1);
         const btn = canMark
           ? `<button onclick="App.markCourseDose('${rx.id}')" style="margin-top:6px;padding:5px 12px;border-radius:8px;border:none;background:var(--accent,#4a90d9);color:#fff;font-size:13px;cursor:pointer;">✓ סימון מנה</button>`
           : '';
@@ -1258,6 +1268,8 @@ const App = (() => {
     const totalDoses = (rx.totalDays || 0) * (rx.dosesPerDay || 1);
     const doneBeforeLog = rx.doseLog ? rx.doseLog.length : 0;
     if (totalDoses > 0 && doneBeforeLog >= totalDoses) { toast('כל המנות כבר סומנו'); return; }
+    const dosesToday = _dosesTodayCount(rx);
+    if (dosesToday >= (rx.dosesPerDay || 1)) { toast('כבר סימנת את כל המנות להיום'); return; }
     const updated = DB.logCourseDose(rxId, 1);
     if (!updated) { toast('שגיאה בשמירה — נסה שוב'); return; }
     if (updated.status === 'completed') {
