@@ -34,18 +34,24 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { title, message, childName, scheduledTime, externalId, buttons } = req.body;
+  const { title, message, childName, scheduledTime, medEntryId, targetDeviceId, buttons } = req.body;
 
   if (!title || !message) {
     return res.status(400).json({ error: 'title and message are required' });
   }
+  // fail closed: never fall back to broadcasting to every subscriber if we don't
+  // know who this reminder is for (e.g. an old cached client that hasn't updated yet).
+  if (!targetDeviceId) {
+    return res.status(400).json({ error: 'targetDeviceId is required — refusing to broadcast to all subscribers' });
+  }
 
   const payload = {
     app_id: process.env.ONESIGNAL_APP_ID,
-    included_segments: ['Total Subscriptions'],
+    include_aliases: { external_id: [targetDeviceId] },
+    target_channel: 'push',
     headings: { en: title, he: title },
     contents: { en: message, he: message },
-    data: { childName, externalId },
+    data: { childName, medEntryId },
   };
 
   // כפתורי פעולה מהירה
