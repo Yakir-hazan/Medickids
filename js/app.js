@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.2 → 1.0.0-beta.2 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.27';
+  const APP_VERSION = '1.0.0-beta.28';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -252,6 +252,7 @@ const App = (() => {
       document.getElementById('dash-updated').style.display = 'none';
       document.getElementById('dash-hero').style.display = 'none';
       document.getElementById('dash-fam-summary').style.display = 'none';
+      document.getElementById('dash-active-treatments').style.display = 'none';
       document.getElementById('dash-timeline').style.display = 'none';
       document.getElementById('dash-insight').style.display = 'none';
       return;
@@ -491,6 +492,8 @@ const App = (() => {
     } else {
       insightEl.style.display = 'none';
     }
+
+    _renderActiveTreatmentsCard(state.children); // Step 1E — independent, reads only via _activeTreatmentState
   }
 
   /* ---------- add medication sheet ---------- */
@@ -1160,6 +1163,35 @@ const App = (() => {
     };
   }
   /* ── end COURSE helpers ───────────────────────────────────────────────── */
+
+  /* Step 1E — read-only "Active Treatments" dashboard card. Receives the children list from the
+     caller (renderDashboard already has it from its own DB.get()) so this function never calls DB
+     itself — everything about a child's treatment status comes from _activeTreatmentState (Step 1D).
+     Shows nothing if no child has an active COURSE. No actions, no bottom sheet, no dose logging. */
+  function _renderActiveTreatmentsCard(children) {
+    const wrap = document.getElementById('dash-active-treatments');
+    const rows = [];
+    children.forEach((c) => {
+      const st = _activeTreatmentState(c.id);
+      if (!st.hasActiveCourse) return;
+      const entry = st.nextCourse ? _catalogEntryById(st.nextCourse.productId) : null;
+      const drugName = entry ? entry.key : 'טיפול פעיל';
+      const status = st.overdueCount > 0
+        ? `<span style="color:var(--coral);white-space:nowrap;">🔴 מנה באיחור</span>`
+        : `<span style="color:var(--mint);white-space:nowrap;">🟢 תקין</span>`;
+      rows.push(`
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;${rows.length ? 'border-top:1px solid var(--line);' : ''}">
+          <div>
+            <div style="font-weight:600;">${c.name} · ${drugName}</div>
+            <div style="font-size:13px;color:var(--ink-soft);">${st.summary}</div>
+          </div>
+          ${status}
+        </div>`);
+    });
+    if (!rows.length) { wrap.style.display = 'none'; wrap.innerHTML = ''; return; }
+    wrap.style.display = '';
+    wrap.innerHTML = `<div class="info-card"><div style="font-weight:700;margin-bottom:2px;">💊 טיפולים פעילים</div>${rows.join('')}</div>`;
+  }
 
   let doseMedSel = 'אקמול / נובימול';
   let doseConcIdx = 0;
