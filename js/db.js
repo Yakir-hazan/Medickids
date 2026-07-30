@@ -38,7 +38,10 @@ const DB = (() => {
     try {
       // merge: any top-level field added to seed() since this user last saved (e.g. `prescriptions`)
       // gets its default value, without touching the user's existing data
-      return { ...seed(), ...JSON.parse(raw) };
+      const merged = { ...seed(), ...JSON.parse(raw) };
+      // Migration: ensure every existing prescription has COURSE fields (defaults for non-course rx)
+      merged.prescriptions = merged.prescriptions.map(migrateRx);
+      return merged;
     } catch (e) {
       // JSON is corrupted — back up the raw string BEFORE we overwrite it with a fresh seed,
       // so a corrupted save can still be recovered manually later (data isn't just gone silently)
@@ -53,6 +56,18 @@ const DB = (() => {
       }
       return s;
     }
+  }
+
+  /* Ensure a prescription record has all COURSE fields.
+     Safe to run on old records — leaves non-course prescriptions intact (isCourse stays false). */
+  function migrateRx(rx) {
+    return {
+      isCourse:     false,   // true = antibiotic-style multi-day course
+      totalDays:    null,    // number of days (e.g. 10)
+      dosesPerDay:  null,    // doses per day (e.g. 2)
+      doseLog:      [],      // [{at: timestamp, dose: number, childId}]
+      ...rx,
+    };
   }
 
   function save(state) {
@@ -115,22 +130,29 @@ const DB = (() => {
       state.settings[key] = value;
       save(state);
     },
-    /* --- prescriptions: an active/past treatment for a specific child (e.g. daily vitamin D) ---
+
+    /* --- prescriptions: an active/past treatment for a specific child ---
        global array with a childId field on each record (not nested under the child), so queries
        like "all active prescriptions today" or "what's active for this child" stay simple filters.
        References the catalog by stable `productId`/`ingredientId` (not the display name), so a
        product's Hebrew label can change without breaking existing prescriptions.
        Only ever stores what's specific to THIS treatment (status, timing, reminder) — protocol
-       defaults (intervalHours etc.) live in MEDICATION_CATALOG and are read from there, not copied. */
+       defaults (intervalHours etc.) live in MEDICATION_CATALOG and are read from there, not copied.
+
+       COURSE fields (isCourse: true):
+         totalDays    — total days of treatment (e.g. 10)
+         dosesPerDay  — doses per day (e.g. 2)
+         doseLog      — [{at: timestamp, dose: number}] one entry per dose given
+    */
     addPrescription(rx) {
-      const full = {
+      const full = migrateRx({
         id: uid(),
         status: 'active', // 'active' | 'completed' | 'cancelled'
         startAt: Date.now(),
         endAt: null,
         reminder: { on: true },
         ...rx,
-      };
+      });
       state.prescriptions.unshift(full);
       save(state);
       return full;
@@ -141,6 +163,32 @@ const DB = (() => {
       save(state);
       return p || null;
     },
+
+    /* Log a single dose for a COURSE prescription.
+       Returns the updated prescription, or null if not found. */
+    logCourseDose(rxId, doseAmount) {
+      const p = state.prescriptions.find((x) => x.id === rxId);
+      if (!p || !p.isCourse) return null;
+      p.doseLog.push({ at: Date.now(), dose: doseAmount });
+      // auto-complete: if total doses reached, mark as completed
+      const totalDoses = (p.totalDays || 0) * (p.dosesPerDay || 1);
+      if (totalDoses > 0 && p.doseLog.length >= totalDoses) {
+        p.status = 'completed';
+        p.endAt = Date.now();
+      }
+      save(state);
+      return p;
+    },
+
+    /* Progress for a COURSE prescription (0–1 float, or null if not a course). */
+    courseProgress(rxId) {
+      const p = state.prescriptions.find((x) => x.id === rxId);
+      if (!p || !p.isCourse) return null;
+      const totalDoses = (p.totalDays || 0) * (p.dosesPerDay || 1);
+      if (!totalDoses) return null;
+      return Math.min(1, p.doseLog.length / totalDoses);
+    },
+
     activePrescriptionsFor(childId) {
       return state.prescriptions.filter((p) => p.childId === childId && p.status === 'active');
     },
