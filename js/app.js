@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.2 → 1.0.0-beta.2 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.18';
+  const APP_VERSION = '1.0.0-beta.19';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -117,7 +117,11 @@ const App = (() => {
     // בקש רשות התראות OneSignal — רק ב-PWA מותקן (standalone)
     if (isStandalone()) {
       window.OneSignalDeferred = window.OneSignalDeferred || [];
-      OneSignalDeferred.push(function(OneSignal) {
+      OneSignalDeferred.push(async function(OneSignal) {
+        // מזהה את ההתקנה הזו אצל OneSignal לפי deviceId יציב, כדי שתזכורות ישלחו רק
+        // למכשיר הזה (include_aliases/external_id בשרת) ולא לכל המנויים. רץ בכל פתיחה
+        // standalone כדי לכסות גם התקנות ותיקות (migration אוטומטי, בלי קוד נפרד).
+        await OneSignal.login(DB.get().deviceId);
         OneSignal.Notifications.requestPermission();
       });
     }
@@ -683,7 +687,8 @@ const App = (() => {
           message: `אפשר לתת ל${child ? child.name : 'הילד/ה'} מנה נוספת של ${entry.medicine}`,
           childName: child ? child.name : undefined,
           scheduledTime: new Date(readyAt).toISOString(),
-          externalId: entry.id,
+          medEntryId: entry.id, // for debugging/data payload only — NOT used for targeting
+          targetDeviceId: DB.get().deviceId, // who the push should actually be delivered to
         }),
       });
       const data = await res.json().catch(() => null);
