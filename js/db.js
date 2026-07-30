@@ -22,19 +22,44 @@ const DB = (() => {
   }
 
   function load() {
+    let raw;
     try {
-      const raw = localStorage.getItem(KEY);
-      if (!raw) { const s = seed(); save(s); return s; }
+      raw = localStorage.getItem(KEY);
+    } catch (e) {
+      raw = null; // localStorage itself inaccessible (very rare) — fall through to a fresh in-memory seed
+    }
+
+    if (!raw) {
+      const s = seed();
+      try { save(s); } catch (e) { /* nothing persisted yet; state still works in-memory for this session */ }
+      return s;
+    }
+
+    try {
       // merge: any top-level field added to seed() since this user last saved (e.g. `prescriptions`)
       // gets its default value, without touching the user's existing data
-      const merged = { ...seed(), ...JSON.parse(raw) };
-      return merged;
+      return { ...seed(), ...JSON.parse(raw) };
     } catch (e) {
-      const s = seed(); save(s); return s;
+      // JSON is corrupted — back up the raw string BEFORE we overwrite it with a fresh seed,
+      // so a corrupted save can still be recovered manually later (data isn't just gone silently)
+      try { localStorage.setItem(KEY + '_corrupted_' + Date.now(), raw); } catch (e2) { /* best-effort backup only */ }
+      const s = seed();
+      try {
+        save(s);
+      } catch (e3) {
+        // even a brand-new empty seed can't be saved (e.g. storage quota already full) — nothing
+        // the user does from here on will persist, so this has to be loud, not a silent no-op
+        alert('שגיאה קריטית: לא ניתן לשמור נתונים במכשיר זה. יש לפנות מקום אחסון ולרענן את הדף.');
+      }
+      return s;
     }
   }
 
   function save(state) {
+    // intentionally NOT wrapped in try/catch here — if localStorage.setItem throws (e.g. quota
+    // exceeded, Safari Private Browsing), the error propagates up to whoever called the DB write
+    // method (addMedEntry, updateChild, etc.), which app.js catches to show a real failure toast
+    // instead of silently claiming success. See app.js saveMed/saveTemp/saveKid/etc.
     localStorage.setItem(KEY, JSON.stringify(state));
   }
 
