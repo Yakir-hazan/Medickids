@@ -163,6 +163,10 @@ const DB = (() => {
       save(state);
       return p || null;
     },
+    deletePrescription(id) {
+      state.prescriptions = state.prescriptions.filter((x) => x.id !== id);
+      save(state);
+    },
 
     /* Log a single dose for a COURSE prescription.
        Returns the updated prescription, or null if not found. */
@@ -221,5 +225,6 @@ const DB = (() => {
     },
   };
 })();
+
 
 
