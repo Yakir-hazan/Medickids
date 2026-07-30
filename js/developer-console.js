@@ -75,8 +75,15 @@
     }, extra || {});
     events.push(ev);
     if (events.length > MAX_EVENTS) events.shift();
-    if (panelOpen) renderPanelBody();
+    if (panelOpen) scheduleRender();
     return ev;
+  }
+
+  let renderScheduled = false;
+  function scheduleRender() {
+    if (renderScheduled) return;
+    renderScheduled = true;
+    requestAnimationFrame(() => { renderScheduled = false; renderPanelBody(); });
   }
 
   // public API — this is what future features should call instead of console.log
@@ -294,7 +301,7 @@
         ${chips.map(([id, label]) => `<div onclick="DevCenterUI.setFilter('${id}')" style="padding:5px 10px;border-radius:20px;font-size:12px;white-space:nowrap;cursor:pointer;
           background:${quickFilter === id ? '#7C6FF0' : '#1a1a2e'};">${label}</div>`).join('')}
       </div>
-      <div id="devctr-timeline-list">${renderEventList(list)}</div>
+      <div id="devctr-timeline-list-wrap">${renderEventList(list)}</div>
     `;
   }
 
@@ -323,7 +330,12 @@
   window.DevCenterUI = {
     close: closePanel,
     setTab: (id) => { currentTab = id; renderPanelBody(); const t = document.getElementById('devctr-tabs'); if (t) renderPanel(); },
-    setSearch: (v) => { searchQuery = v; renderPanelBody(); },
+    setSearch: (v) => {
+      searchQuery = v;
+      const wrap = document.getElementById('devctr-timeline-list-wrap');
+      if (wrap && currentTab === 'timeline') wrap.innerHTML = renderEventList(filteredEvents());
+      else renderPanelBody();
+    },
     setFilter: (id) => { quickFilter = id; renderPanelBody(); },
     toggleBreadcrumb: () => { breadcrumbMode = !breadcrumbMode; renderPanelBody(); },
     toggleDetail: (id) => {
@@ -348,7 +360,6 @@
       if (!list.length) return;
       if (replayTimer) { clearInterval(replayTimer); replayTimer = null; return; }
       let idx = 0;
-      const listEl = document.getElementById('devctr-timeline-list');
       replayTimer = setInterval(() => {
         if (idx >= list.length) { clearInterval(replayTimer); replayTimer = null; return; }
         const ev = list[idx];
