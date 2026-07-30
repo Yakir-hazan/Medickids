@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.2 → 1.0.0-beta.2 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.25';
+  const APP_VERSION = '1.0.0-beta.26';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -1251,33 +1251,6 @@ const App = (() => {
       }
     }
     return null;
-  }
-
-  /* ---------- COURSE helpers (Step 1B) — pure, read-only. No UI/Dashboard/notification wiring yet;
-     these just answer "what's active" and "when's the next dose" so a future screen can use them. ---------- */
-
-  /* all active multi-day-course prescriptions (e.g. antibiotics) for a given child */
-  function _activeCourses(childId) {
-    return DB.get().prescriptions.filter((p) => p.childId === childId && p.isCourse && p.status === 'active');
-  }
-
-  /* next dose due time for a COURSE prescription, in ms epoch. Doses are spaced evenly across the
-     day (24h / dosesPerDay). Before any dose has been logged, the first one is due at course start.
-     Returns null if rx isn't a valid course (missing dosesPerDay). */
-  function _courseNextDoseAt(rx) {
-    if (!rx || !rx.isCourse || !rx.dosesPerDay) return null;
-    const intervalMs = (24 / rx.dosesPerDay) * 3600000;
-    if (!rx.doseLog || !rx.doseLog.length) return rx.startAt;
-    const lastDoseAt = Math.max(...rx.doseLog.map((d) => d.at));
-    return lastDoseAt + intervalMs;
-  }
-
-  /* true if a COURSE prescription's next dose is already due (now is past _courseNextDoseAt).
-     Only meaningful for active courses — always false otherwise. */
-  function _courseIsDoseOverdue(rx) {
-    if (!rx || rx.status !== 'active') return false;
-    const nextAt = _courseNextDoseAt(rx);
-    return nextAt != null && Date.now() > nextAt;
   }
 
   /* find the leaflet table row for a given weight — never extrapolates beyond the table.
