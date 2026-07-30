@@ -455,6 +455,24 @@
     </div>
   </div>
 
+  <!-- sheet-course: פתיחת טיפול מרובה ימים (Step 2A) -->
+  <div class="sheet-overlay" id="sheet-course" onclick="if(event.target===this)App.closeSheet('sheet-course')">
+    <div class="sheet">
+      <button class="close-sheet" onclick="App.closeSheet('sheet-course')">סגור ✕</button>
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">💊 פתיחת טיפול</div>
+      <div class="field-label">ילד/ה</div>
+      <div class="chip-row" id="course-child-chips"></div>
+      <div class="field-label">תרופה</div>
+      <div class="chip-row" id="course-drug-chips"></div>
+      <div class="field-label">מספר ימים</div>
+      <input class="field-input" id="course-days" type="number" min="1" max="30" placeholder="לדוגמה: 10">
+      <div class="field-label">מנות ביום</div>
+      <input class="field-input" id="course-doses-per-day" type="number" min="1" max="6" placeholder="לדוגמה: 2">
+      <button class="sheet-cta" onclick="App.saveCourse()">התחל טיפול</button>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 </div>
 
@@ -464,6 +482,7 @@
 
 </body>
 </html>
+
 
 
 
