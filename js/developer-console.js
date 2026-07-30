@@ -219,7 +219,7 @@
   }
 
   const TABS = [
-    ['timeline', '⏱️ Timeline'], ['logs', '📝 Logs'], ['errors', '🔴 Errors'],
+    ['health', '🩺 Health'], ['timeline', '⏱️ Timeline'], ['logs', '📝 Logs'], ['errors', '🔴 Errors'],
     ['network', '🔵 Network'], ['database', '🟣 Database'], ['storage', '💾 Storage'],
     ['tools', '🛠️ Tools'], ['export', '📤 Export'],
   ];
@@ -245,7 +245,8 @@
   function renderPanelBody() {
     const body = document.getElementById('devctr-body');
     if (!body) return;
-    if (currentTab === 'timeline') body.innerHTML = renderTimelineTab();
+    if (currentTab === 'health') body.innerHTML = renderHealthTab();
+    else if (currentTab === 'timeline') body.innerHTML = renderTimelineTab();
     else if (currentTab === 'logs') body.innerHTML = renderListTab(events.filter((e) => e.source === 'console' || e.source === 'window.onerror'));
     else if (currentTab === 'errors') body.innerHTML = renderListTab(events.filter((e) => e.category === CATEGORY.ERROR));
     else if (currentTab === 'network') body.innerHTML = renderListTab(events.filter((e) => e.category === CATEGORY.NETWORK));
@@ -362,6 +363,100 @@
       closePanel();
     },
   };
+
+  /* ---------- Health tab — the "one screenshot tells you what's wrong" view ---------- */
+  const READ_ONLY_DB_METHODS = ['get', 'lastMedFor', 'lastTempFor', 'tempsFor', 'feed', 'nightSummary', 'activePrescriptionsFor', 'uid'];
+  function row(status, label, value) {
+    const dot = status === 'ok' ? '🟢' : status === 'warn' ? '🟡' : status === 'bad' ? '🔴' : '⚪';
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #222;font-size:13px;">
+      <span>${dot} ${label}</span><span style="direction:ltr;opacity:.85;">${escapeHtml(String(value))}</span></div>`;
+  }
+  function renderHealthTab() {
+    const rows = [];
+
+    // Database
+    let dbOk = false, medCount = 0, kidCount = 0;
+    try {
+      const s = DB.get();
+      dbOk = !!(s && Array.isArray(s.children));
+      kidCount = s.children.length; medCount = s.medEntries.length;
+    } catch (e) {}
+    rows.push(row(dbOk ? 'ok' : 'bad', 'Database', dbOk ? `OK · ${kidCount} ילדים · ${medCount} רשומות` : 'שגיאה בקריאה'));
+
+    // last DB write outcome (from our own event log)
+    let lastWrite = null;
+    for (let i = events.length - 1; i >= 0; i--) {
+      const e = events[i];
+      if (e.source !== 'db') continue;
+      const method = (e.label.match(/DB\.(\w+)\(\)/) || [])[1];
+      if (method && READ_ONLY_DB_METHODS.indexOf(method) === -1) { lastWrite = e; break; }
+    }
+    rows.push(row(!lastWrite ? 'warn' : lastWrite.detail.indexOf('threw') === 0 ? 'bad' : 'ok', 'Last Save',
+      !lastWrite ? 'אין עדיין כתיבה בסשן זה' : (lastWrite.detail.indexOf('threw') === 0 ? 'נכשלה! ' + lastWrite.detail : 'הצליחה · ' + lastWrite.label)));
+
+    // Device ID
+    let deviceId = null;
+    try { deviceId = DB.get().deviceId; } catch (e) {}
+    rows.push(row(deviceId ? 'ok' : 'bad', 'Device ID', deviceId ? 'קיים' : 'חסר!'));
+
+    // Notification permission
+    const perm = (typeof Notification !== 'undefined') ? Notification.permission : 'unsupported';
+    rows.push(row(perm === 'granted' ? 'ok' : perm === 'denied' ? 'bad' : 'warn', 'Notification Permission', perm));
+
+    // Pending reminder queue
+    let pending = 0;
+    try { pending = DB.get().medEntries.filter((e) => e.reminderReadyAt && e.reminderReadyAt > Date.now()).length; } catch (e) {}
+    rows.push(row('ok', 'Pending Reminder Queue', pending));
+
+    // App version
+    const appVersion = (document.getElementById('set-version-num') || {}).textContent || '—';
+    rows.push(row(appVersion !== '—' ? 'ok' : 'warn', 'App Version', appVersion));
+
+    // Storage used
+    let lsSize = 0;
+    try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); lsSize += k.length + (localStorage.getItem(k) || '').length; } } catch (e) {}
+    const mb = lsSize / 1024 / 1024;
+    rows.push(row(mb < 3 ? 'ok' : mb < 4.5 ? 'warn' : 'bad', 'Storage Used', mb.toFixed(2) + ' MB / ~5 MB'));
+
+    const staticHtml = `<div style="opacity:.5;font-size:11px;margin-bottom:10px;">מסך הדיאגנוסטיקה — צילום מסך אחד מכאן לרוב מספיק כדי לדעת איפה הבעיה.</div>` + rows.join('');
+
+    // async checks, filled in after render
+    setTimeout(() => {
+      if (window.caches) {
+        caches.keys().then((names) => {
+          const el = document.getElementById('devctr-health-cache');
+          if (el) { const n = names.find((x) => x.indexOf('madhom') === 0); el.textContent = n || 'לא נמצא'; }
+        });
+      }
+      if (navigator.serviceWorker) {
+        navigator.serviceWorker.getRegistrations().then((regs) => {
+          const el = document.getElementById('devctr-health-sw');
+          if (el) el.textContent = regs.length ? `רשום (${regs[0].active ? 'active' : 'pending'})` : 'לא רשום!';
+        });
+      }
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      const osTimeout = setTimeout(() => {
+        const el = document.getElementById('devctr-health-os');
+        if (el) el.textContent = 'timeout — SDK לא נטען?';
+      }, 4000);
+      OneSignalDeferred.push(function (OneSignal) {
+        clearTimeout(osTimeout);
+        const el = document.getElementById('devctr-health-os');
+        if (el) {
+          try { el.textContent = OneSignal.User && OneSignal.User.onesignalId ? 'מחובר' : 'לא מחובר עדיין'; }
+          catch (e) { el.textContent = 'לא ידוע'; }
+        }
+      });
+    }, 50);
+
+    return staticHtml +
+      `<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #222;font-size:13px;">
+        <span>🟡 Service Worker</span><span id="devctr-health-sw" style="direction:ltr;opacity:.85;">בודק…</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #222;font-size:13px;">
+        <span>🟡 Cache Version</span><span id="devctr-health-cache" style="direction:ltr;opacity:.85;">בודק…</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #222;font-size:13px;">
+        <span>🟡 OneSignal</span><span id="devctr-health-os" style="direction:ltr;opacity:.85;">בודק…</span></div>`;
+  }
 
   /* ---------- Database tab (read-only) ---------- */
   function renderDatabaseTab() {
