@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.2 → 1.0.0-beta.2 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.26';
+  const APP_VERSION = '1.0.0-beta.27';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -1133,6 +1133,31 @@ const App = (() => {
     const dayLabel = rx.totalDays ? `יום ${Math.min(daysSinceStart, rx.totalDays)} מתוך ${rx.totalDays}` : '';
     const doseLabel = totalDoses ? `${dosesDone}/${totalDoses} מנות` : '';
     return [dayLabel, doseLabel].filter(Boolean).join(' · ');
+  }
+  /* Aggregated, read-only snapshot for a child's active treatments — the "ViewModel" a future
+     Active Treatments screen (and eventually the dashboard) will read from, instead of each piece
+     of UI recomputing this itself. Built entirely on the 4 helpers above; does not touch DB, does
+     not render, does not schedule anything.
+     "next" = the course whose next dose is soonest among this child's active courses. */
+  function _activeTreatmentState(childId) {
+    const activeCourses = _activeCourses(childId);
+    let nextCourse = null, nextDoseAt = null, overdueCount = 0;
+    activeCourses.forEach((rx) => {
+      if (_courseIsDoseOverdue(rx)) overdueCount++;
+      const at = _courseNextDoseAt(rx);
+      if (at != null && (nextDoseAt === null || at < nextDoseAt)) {
+        nextDoseAt = at;
+        nextCourse = rx;
+      }
+    });
+    return {
+      hasActiveCourse: activeCourses.length > 0,
+      activeCourses,
+      overdueCount,
+      nextDoseAt,
+      nextCourse,
+      summary: nextCourse ? _courseSummary(nextCourse) : '',
+    };
   }
   /* ── end COURSE helpers ───────────────────────────────────────────────── */
 
