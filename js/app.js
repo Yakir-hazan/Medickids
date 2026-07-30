@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.2 → 1.0.0-beta.2 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.30';
+  const APP_VERSION = '1.0.0-beta.31';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -1186,33 +1186,87 @@ const App = (() => {
   }
   /* ── end COURSE helpers ───────────────────────────────────────────────── */
 
-  /* Step 1E — read-only "Active Treatments" dashboard card. Receives the children list from the
-     caller (renderDashboard already has it from its own DB.get()) so this function never calls DB
-     itself — everything about a child's treatment status comes from _activeTreatmentState (Step 1D).
-     Shows nothing if no child has an active COURSE. No actions, no bottom sheet, no dose logging. */
+  /* Step 1E (updated Step 3A) — Active Treatments dashboard card.
+     Shows all active COURSE prescriptions per child.
+     Active courses: show status badge + "סימון מנה" button.
+     Completed courses: show completion notice only — no action button. */
   function _renderActiveTreatmentsCard(children) {
     const wrap = document.getElementById('dash-active-treatments');
+    const dbState = DB.get();
     const rows = [];
     children.forEach((c) => {
-      const st = _activeTreatmentState(c.id);
-      if (!st.hasActiveCourse) return;
-      const entry = st.nextCourse ? _catalogEntryById(st.nextCourse.productId) : null;
-      const drugName = entry ? entry.key : 'טיפול פעיל';
-      const status = st.overdueCount > 0
-        ? `<span style="color:var(--coral);white-space:nowrap;">🔴 מנה באיחור</span>`
-        : `<span style="color:var(--mint);white-space:nowrap;">🟢 תקין</span>`;
-      rows.push(`
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;${rows.length ? 'border-top:1px solid var(--line);' : ''}">
-          <div>
-            <div style="font-weight:600;">${c.name} · ${drugName}</div>
-            <div style="font-size:13px;color:var(--ink-soft);">${st.summary}</div>
-          </div>
-          ${status}
-        </div>`);
+      // include both active + recently-completed courses for this child
+      const allCourses = dbState.prescriptions.filter(
+        (p) => p.childId === c.id && p.isCourse && (p.status === 'active' || p.status === 'completed')
+      );
+      if (!allCourses.length) return;
+      allCourses.forEach((rx) => {
+        const entry = _catalogEntryById(rx.productId);
+        const drugName = entry ? entry.key : 'טיפול פעיל';
+        const border = rows.length ? 'border-top:1px solid var(--line);' : '';
+        if (rx.status === 'completed') {
+          rows.push(`
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;${border}">
+              <div>
+                <div style="font-weight:600;">${c.name} · ${drugName}</div>
+                <div style="font-size:13px;color:var(--ink-soft);">הטיפול הסתיים ✓</div>
+              </div>
+              <span style="color:var(--mint);white-space:nowrap;">✅ הושלם</span>
+            </div>`);
+          return;
+        }
+        // active course
+        const totalDoses = (rx.totalDays || 0) * (rx.dosesPerDay || 1);
+        const dosesDone = rx.doseLog ? rx.doseLog.length : 0;
+        const isOverdue = _courseIsDoseOverdue(rx);
+        const summary = _courseSummary(rx);
+        const statusBadge = isOverdue
+          ? `<span style="color:var(--coral);white-space:nowrap;">🔴 מנה באיחור</span>`
+          : `<span style="color:var(--mint);white-space:nowrap;">🟢 תקין</span>`;
+        const canMark = dosesDone < totalDoses;
+        const btn = canMark
+          ? `<button onclick="App.markCourseDose('${rx.id}')" style="margin-top:6px;padding:5px 12px;border-radius:8px;border:none;background:var(--accent,#4a90d9);color:#fff;font-size:13px;cursor:pointer;">✓ סימון מנה</button>`
+          : '';
+        rows.push(`
+          <div style="padding:9px 0;${border}">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+              <div>
+                <div style="font-weight:600;">${c.name} · ${drugName}</div>
+                <div style="font-size:13px;color:var(--ink-soft);">${summary}</div>
+              </div>
+              ${statusBadge}
+            </div>
+            ${btn}
+          </div>`);
+      });
     });
     if (!rows.length) { wrap.style.display = 'none'; wrap.innerHTML = ''; return; }
     wrap.style.display = '';
     wrap.innerHTML = `<div class="info-card"><div style="font-weight:700;margin-bottom:2px;">💊 טיפולים פעילים</div>${rows.join('')}</div>`;
+  }
+
+  /* Step 3A — mark a single dose as given for a COURSE prescription.
+     Edge cases handled here (not in db.js):
+     - rxId not found → null returned from DB → toast + bail
+     - course already completed before this call → bail with message
+     - doses would exceed totalDays*dosesPerDay → DB auto-completes; we show completion toast */
+  function markCourseDose(rxId) {
+    const dbState = DB.get();
+    const rx = dbState.prescriptions.find((p) => p.id === rxId);
+    if (!rx) { toast('שגיאה: הטיפול לא נמצא'); return; }
+    if (rx.status === 'completed') { toast('הטיפול כבר הסתיים'); return; }
+    const totalDoses = (rx.totalDays || 0) * (rx.dosesPerDay || 1);
+    const doneBeforeLog = rx.doseLog ? rx.doseLog.length : 0;
+    if (totalDoses > 0 && doneBeforeLog >= totalDoses) { toast('כל המנות כבר סומנו'); return; }
+    const updated = DB.logCourseDose(rxId, 1);
+    if (!updated) { toast('שגיאה בשמירה — נסה שוב'); return; }
+    if (updated.status === 'completed') {
+      toast('🎉 הטיפול הושלם בהצלחה!');
+    } else {
+      const done = updated.doseLog.length;
+      toast(`✓ מנה ${done} מתוך ${totalDoses} סומנה`);
+    }
+    renderDashboard();
   }
 
   let doseMedSel = 'אקמול / נובימול';
@@ -1631,6 +1685,7 @@ const App = (() => {
     installNow, skipLanding,
     openDoseSheet, pickDoseChild, pickDoseMed, pickDoseConc, calcDose,
     openCourseSheet, pickCourseChild, pickCourseDrug, saveCourse,
+    markCourseDose,
     heroClick, quickWeightUpdate,
     deleteMedEntry, deleteTempEntry, confirmReset,
     checkForUpdate,
