@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.2 → 1.0.0-beta.2 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.28';
+  const APP_VERSION = '1.0.0-beta.29';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -1080,6 +1080,28 @@ const App = (() => {
         { label: 'ממתין לנתוני מינון רשמיים', pendingLeaflet: true },
       ]
     },
+    /* ── COURSE antibiotics (Step 2A) ────────────────────────────────────── */
+    'מוקסיפן': {
+      id: 'moxipen_susp',
+      activeIngredient: 'amoxicillin',
+      protocol: { version: 1, type: TREATMENT_TYPES.COURSE },
+      matchNames: ['מוקסיפן'],
+      concentrations: [],
+    },
+    'אמוקסיצילין': {
+      id: 'amoxicillin_generic',
+      activeIngredient: 'amoxicillin',
+      protocol: { version: 1, type: TREATMENT_TYPES.COURSE },
+      matchNames: ['אמוקסיצילין', 'אמוקסיציל'],
+      concentrations: [],
+    },
+    'אוגמנטין': {
+      id: 'augmentin_susp',
+      activeIngredient: 'amoxicillin_clavulanate',
+      protocol: { version: 1, type: TREATMENT_TYPES.COURSE },
+      matchNames: ['אוגמנטין'],
+      concentrations: [],
+    },
   };
   /* resolves a free-text medicine name (as stored in medEntries / picked in the UI) to its catalog entry */
   function _catalogEntryFor(medicineName) {
@@ -1196,6 +1218,80 @@ const App = (() => {
   let doseMedSel = 'אקמול / נובימול';
   let doseConcIdx = 0;
   let doseChildId = null;
+
+  /* ── sheet-course state (Step 2A) ──────────────────────────────────────── */
+  let courseChildId = null;
+  let courseDrugSel = null; // key in MEDICATION_CATALOG
+
+  function openCourseSheet() {
+    const state = DB.get();
+    courseChildId = state.children[0]?.id || null;
+    // default to first COURSE drug in catalog
+    const firstCourseKey = Object.keys(MEDICATION_CATALOG).find(
+      (k) => MEDICATION_CATALOG[k].protocol.type === TREATMENT_TYPES.COURSE
+    );
+    courseDrugSel = firstCourseKey || null;
+    _renderCourseChildChips();
+    _renderCourseDrugChips();
+    document.getElementById('course-days').value = '';
+    document.getElementById('course-doses-per-day').value = '';
+    openSheet('sheet-course');
+  }
+
+  function _renderCourseChildChips() {
+    const state = DB.get();
+    const box = document.getElementById('course-child-chips');
+    if (!box) return;
+    box.innerHTML = state.children.map((c) =>
+      `<button type="button" class="chip ${c.id === courseChildId ? 'sel' : ''}" onclick="App.pickCourseChild('${c.id}')">${c.emoji} ${c.name}</button>`
+    ).join('');
+  }
+
+  function _renderCourseDrugChips() {
+    const box = document.getElementById('course-drug-chips');
+    if (!box) return;
+    const courseKeys = Object.keys(MEDICATION_CATALOG).filter(
+      (k) => MEDICATION_CATALOG[k].protocol.type === TREATMENT_TYPES.COURSE
+    );
+    box.innerHTML = courseKeys.map((k) =>
+      `<button type="button" class="chip ${k === courseDrugSel ? 'sel' : ''}" onclick="App.pickCourseDrug('${k}')">${k}</button>`
+    ).join('');
+  }
+
+  function pickCourseChild(id) {
+    courseChildId = id;
+    _renderCourseChildChips();
+  }
+
+  function pickCourseDrug(key) {
+    courseDrugSel = key;
+    _renderCourseDrugChips();
+  }
+
+  function saveCourse() {
+    if (!courseChildId) { toast('יש לבחור ילד/ה'); return; }
+    if (!courseDrugSel) { toast('יש לבחור תרופה'); return; }
+    const totalDays = parseInt(document.getElementById('course-days').value, 10);
+    const dosesPerDay = parseInt(document.getElementById('course-doses-per-day').value, 10);
+    if (!totalDays || totalDays < 1 || totalDays > 30) { toast('יש להזין מספר ימים (1–30)'); return; }
+    if (!dosesPerDay || dosesPerDay < 1 || dosesPerDay > 6) { toast('יש להזין מספר מנות ביום (1–6)'); return; }
+    const drug = MEDICATION_CATALOG[courseDrugSel];
+    try {
+      DB.addPrescription({
+        childId: courseChildId,
+        productId: drug.id,
+        isCourse: true,
+        totalDays,
+        dosesPerDay,
+      });
+      closeSheet('sheet-course');
+      renderDashboard();
+      toast('הטיפול נפתח בהצלחה ✓');
+    } catch (e) {
+      toast('שגיאה בשמירה — נסה שוב');
+    }
+  }
+  /* ── end sheet-course (Step 2A) ─────────────────────────────────────────── */
 
   function openDoseSheet() {
     const state = DB.get();
@@ -1534,6 +1630,7 @@ const App = (() => {
     openEditKid, saveKid, toggleNotif, init,
     installNow, skipLanding,
     openDoseSheet, pickDoseChild, pickDoseMed, pickDoseConc, calcDose,
+    openCourseSheet, pickCourseChild, pickCourseDrug, saveCourse,
     heroClick, quickWeightUpdate,
     deleteMedEntry, deleteTempEntry, confirmReset,
     checkForUpdate,
@@ -1542,6 +1639,7 @@ const App = (() => {
 })();
 
 document.addEventListener('DOMContentLoaded', App.init);
+
 
 
 
