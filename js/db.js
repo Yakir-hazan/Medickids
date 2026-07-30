@@ -14,6 +14,10 @@ const DB = (() => {
       tempEntries: [],
       prescriptions: [], // active/past treatments (e.g. "daily vitamin D reminder", future: antibiotic courses)
       settings: { notifications: false },
+      // stable per-installation id used to target push notifications to THIS device only
+      // (via OneSignal external_id / login) instead of broadcasting to all subscribers.
+      // generated once and carried forward by the load() merge below on every existing install.
+      deviceId: uid() + uid(),
     };
   }
 
