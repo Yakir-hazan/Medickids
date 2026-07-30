@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.2 → 1.0.0-beta.2 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.20';
+  const APP_VERSION = '1.0.0-beta.21';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -701,39 +701,46 @@ const App = (() => {
       note: document.getElementById('med-note').value.trim(),
       time: timeToToday(document.getElementById('med-time').value || nowHHMM()),
     };
-    if (editMedEntryId) {
-      DB.updateMedEntry(editMedEntryId, patch);
-      toast('התרופה עודכנה ✓');
-    } else {
-      // DAILY-protocol meds: upsert a Prescription representing "ongoing daily treatment" for this
-      // child+medicine, so future work (dashboard list, etc.) has a real place to read it from.
-      // References the catalog by stable productId, never copies its protocol values.
-      if (protocolType === TREATMENT_TYPES.DAILY && catalogEntry) {
-        const existingRx = DB.get().prescriptions.find((p) => p.childId === medChildSel && p.productId === catalogEntry.id && p.status === 'active');
-        if (existingRx) {
-          DB.updatePrescription(existingRx.id, { reminder: { on: dailyReminderOn } });
-          patch.prescriptionId = existingRx.id;
-        } else {
-          const rx = DB.addPrescription({
-            childId: medChildSel,
-            productId: catalogEntry.id,
-            ingredientId: catalogEntry.activeIngredient,
-            protocolType: TREATMENT_TYPES.DAILY,
-            reminder: { on: dailyReminderOn },
-          });
-          patch.prescriptionId = rx.id;
+    try {
+      if (editMedEntryId) {
+        DB.updateMedEntry(editMedEntryId, patch);
+        toast('התרופה עודכנה ✓');
+      } else {
+        // DAILY-protocol meds: upsert a Prescription representing "ongoing daily treatment" for this
+        // child+medicine, so future work (dashboard list, etc.) has a real place to read it from.
+        // References the catalog by stable productId, never copies its protocol values.
+        if (protocolType === TREATMENT_TYPES.DAILY && catalogEntry) {
+          const existingRx = DB.get().prescriptions.find((p) => p.childId === medChildSel && p.productId === catalogEntry.id && p.status === 'active');
+          if (existingRx) {
+            DB.updatePrescription(existingRx.id, { reminder: { on: dailyReminderOn } });
+            patch.prescriptionId = existingRx.id;
+          } else {
+            const rx = DB.addPrescription({
+              childId: medChildSel,
+              productId: catalogEntry.id,
+              ingredientId: catalogEntry.activeIngredient,
+              protocolType: TREATMENT_TYPES.DAILY,
+              reminder: { on: dailyReminderOn },
+            });
+            patch.prescriptionId = rx.id;
+          }
         }
-      }
 
-      const entry = DB.addMedEntry(patch);
-      let customReadyAt = null;
-      if (doseReminderMode === 'custom') {
-        const val = document.getElementById('med-reminder-custom').value;
-        if (val) customReadyAt = new Date(val).getTime(); // parsed as local time, as entered
+        const entry = DB.addMedEntry(patch);
+        let customReadyAt = null;
+        if (doseReminderMode === 'custom') {
+          const val = document.getElementById('med-reminder-custom').value;
+          if (val) customReadyAt = new Date(val).getTime(); // parsed as local time, as entered
+        }
+        const shouldSchedule = protocolType === TREATMENT_TYPES.DAILY ? dailyReminderOn : true;
+        if (shouldSchedule) scheduleDoseReminder(entry, customReadyAt); // falls back to automatic timing if no custom time was set
+        toast('התרופה נשמרה ✓');
       }
-      const shouldSchedule = protocolType === TREATMENT_TYPES.DAILY ? dailyReminderOn : true;
-      if (shouldSchedule) scheduleDoseReminder(entry, customReadyAt); // falls back to automatic timing if no custom time was set
-      toast('התרופה נשמרה ✓');
+    } catch (e) {
+      // localStorage write failed (quota exceeded, private browsing, etc.) — don't claim success,
+      // don't close the sheet, so the user doesn't lose what they just filled in
+      toast('⚠️ השמירה נכשלה — בדקו מקום פנוי במכשיר ונסו שוב');
+      return;
     }
     editMedEntryId = null;
     closeSheet('sheet-med');
@@ -747,7 +754,12 @@ const App = (() => {
     if (entry && entry.reminderNotificationId && entry.reminderReadyAt && entry.reminderReadyAt > Date.now()) {
       _cancelReminder(entry.reminderNotificationId); // dose record is gone — its reminder shouldn't fire either
     }
-    DB.deleteMedEntry(editMedEntryId);
+    try {
+      DB.deleteMedEntry(editMedEntryId);
+    } catch (e) {
+      toast('⚠️ המחיקה נכשלה — נסו שוב');
+      return;
+    }
     editMedEntryId = null;
     closeSheet('sheet-med');
     toast('הרשומה נמחקה');
@@ -853,12 +865,17 @@ const App = (() => {
     err.style.display = 'none';
     if (!tempChildSel) { toast('אין ילד לבחור — הוסיפו ילד/ה קודם'); return; }
     const patch = { childId: tempChildSel, value: val, time: timeToToday(document.getElementById('temp-time').value || nowHHMM()) };
-    if (editTempEntryId) {
-      DB.updateTempEntry(editTempEntryId, patch);
-      toast('המדידה עודכנה ✓');
-    } else {
-      DB.addTempEntry(patch);
-      toast('המדידה נשמרה ✓');
+    try {
+      if (editTempEntryId) {
+        DB.updateTempEntry(editTempEntryId, patch);
+        toast('המדידה עודכנה ✓');
+      } else {
+        DB.addTempEntry(patch);
+        toast('המדידה נשמרה ✓');
+      }
+    } catch (e) {
+      toast('⚠️ השמירה נכשלה — בדקו מקום פנוי במכשיר ונסו שוב');
+      return;
     }
     editTempEntryId = null;
     closeSheet('sheet-temp');
@@ -869,7 +886,12 @@ const App = (() => {
   function deleteTempEntry() {
     if (!editTempEntryId) return;
     if (!confirm('למחוק את המדידה הזו? הפעולה אינה הפיכה.')) return;
-    DB.deleteTempEntry(editTempEntryId);
+    try {
+      DB.deleteTempEntry(editTempEntryId);
+    } catch (e) {
+      toast('⚠️ המחיקה נכשלה — נסו שוב');
+      return;
+    }
     editTempEntryId = null;
     closeSheet('sheet-temp');
     toast('הרשומה נמחקה');
@@ -927,10 +949,15 @@ const App = (() => {
     const weight = parseFloat(document.getElementById('kid-weight').value);
     const birthYear = document.getElementById('kid-birth').value ? parseInt(document.getElementById('kid-birth').value, 10) : null;
     if (!name) { toast('נא להזין שם'); return; }
-    if (editingKidId) {
-      DB.updateChild(editingKidId, { name, weight: isNaN(weight) ? 0 : weight, birthYear });
-    } else {
-      DB.addChild({ name, emoji: '🧒', weight: isNaN(weight) ? 0 : weight, birthYear });
+    try {
+      if (editingKidId) {
+        DB.updateChild(editingKidId, { name, weight: isNaN(weight) ? 0 : weight, birthYear });
+      } else {
+        DB.addChild({ name, emoji: '🧒', weight: isNaN(weight) ? 0 : weight, birthYear });
+      }
+    } catch (e) {
+      toast('⚠️ השמירה נכשלה — בדקו מקום פנוי במכשיר ונסו שוב');
+      return;
     }
     closeSheet('sheet-editkid');
     toast('הפרטים נשמרו ✓');
@@ -1276,7 +1303,12 @@ const App = (() => {
     const on = !DB.get().settings.notifications;
 
     // עדכן UI מיד — לפני כל async
-    DB.setSetting('notifications', on);
+    try {
+      DB.setSetting('notifications', on);
+    } catch (e) {
+      toast('⚠️ השמירה נכשלה — בדקו מקום פנוי במכשיר ונסו שוב');
+      return;
+    }
     renderSettings();
 
     window.OneSignalDeferred = window.OneSignalDeferred || [];
@@ -1344,7 +1376,12 @@ const App = (() => {
     if (!sure) return;
     const reallySure = confirm('בטוח/ה לגמרי? זו הזדמנות אחרונה לבטל.');
     if (!reallySure) return;
-    DB.reset();
+    try {
+      DB.reset();
+    } catch (e) {
+      toast('⚠️ האיפוס נכשל — נסו שוב');
+      return;
+    }
     toast('כל הנתונים אופסו');
     renderLanding();
     renderDashboard();
