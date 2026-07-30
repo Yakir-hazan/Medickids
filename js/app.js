@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.2 → 1.0.0-beta.2 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.32';
+  const APP_VERSION = '1.0.0-beta.33';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -778,18 +778,58 @@ const App = (() => {
       state.children.map((c) => `<button type="button" class="chip ${histFilter === c.id ? 'sel' : ''}" onclick="App.setHistFilter('${c.id}')">${c.emoji} ${c.name}</button>`).join('');
 
     const feed = DB.feed(histFilter === 'all' ? null : histFilter);
+
+    // completed courses — inject into feed as synthetic entries
+    const completedCourses = state.prescriptions.filter(
+      (p) => p.isCourse && p.status === 'completed' &&
+             (histFilter === 'all' || p.childId === histFilter)
+    );
+    const courseEntries = completedCourses.map((rx) => {
+      const entry = _catalogEntryById(rx.productId);
+      const drugName = entry ? entry.key : 'טיפול';
+      const startStr = new Date(rx.startAt).toLocaleDateString('he-IL');
+      const endStr   = rx.endAt ? new Date(rx.endAt).toLocaleDateString('he-IL') : '—';
+      const totalDoses = (rx.totalDays || 0) * (rx.dosesPerDay || 1);
+      const dosesDone  = rx.doseLog ? rx.doseLog.length : 0;
+      return {
+        id: rx.id,
+        kind: 'course',
+        childId: rx.childId,
+        time: rx.endAt || rx.startAt,
+        drugName,
+        startStr,
+        endStr,
+        totalDays: rx.totalDays,
+        dosesPerDay: rx.dosesPerDay,
+        dosesDone,
+        totalDoses,
+      };
+    });
+
+    const combined = [...feed, ...courseEntries].sort((a, b) => b.time - a.time);
     const list = document.getElementById('hist-list');
-    if (!feed.length) {
+    if (!combined.length) {
       list.innerHTML = `<div class="empty-state"><div class="ic">📭</div><div class="t">אין עדיין רשומות</div><div class="s">תרופות ומדידות שיתווספו יופיעו כאן</div></div>`;
       return;
     }
     let lastLabel = null;
     let html = '';
-    feed.forEach((e) => {
+    combined.forEach((e) => {
       const label = dayLabel(e.time);
       if (label !== lastLabel) { html += `<div class="day-label">${label}</div>`; lastLabel = label; }
       const c = childById(e.childId);
       if (!c) return;
+      if (e.kind === 'course') {
+        html += `<div class="hist-row">
+          <div class="hist-time">${formatClock(e.time)}</div>
+          <div class="hist-icon" style="background:${AVATAR_GRADIENT[c.color]}">✅</div>
+          <div class="hist-main">
+            <div class="hist-med">טיפול הושלם · ${e.drugName}</div>
+            <div class="hist-child">${c.name} · ${e.totalDays} ימים · ${e.dosesPerDay} מנות/יום · ${e.dosesDone}/${e.totalDoses} מנות · ${e.startStr}–${e.endStr}</div>
+          </div>
+        </div>`;
+        return;
+      }
       const icon = e.kind === 'med' ? '💊' : '🌡️';
       const title = e.kind === 'med' ? e.medicine : `מדידת חום — ${e.value}°`;
       const openFn = e.kind === 'med' ? `App.openMedSheet('${e.id}')` : `App.openTempSheet('${e.id}')`;
@@ -1195,48 +1235,31 @@ const App = (() => {
   }
   /* ── end COURSE helpers ───────────────────────────────────────────────── */
 
-  /* Step 1E (updated Step 3A) — Active Treatments dashboard card.
-     Shows all active COURSE prescriptions per child.
-     Active courses: show status badge + "סימון מנה" button.
-     Completed courses: show completion notice only — no action button. */
+  /* Step 1E (updated Step 3B) — Active Treatments dashboard card.
+     Shows only ACTIVE COURSE prescriptions. Completed ones are hidden here — they appear in History.
+     Active courses: "פעיל" badge + "סימון מנה" button (when daily limit not reached) + delete button. */
   function _renderActiveTreatmentsCard(children) {
     const wrap = document.getElementById('dash-active-treatments');
     const dbState = DB.get();
     const rows = [];
     children.forEach((c) => {
-      // include both active + recently-completed courses for this child
-      const allCourses = dbState.prescriptions.filter(
-        (p) => p.childId === c.id && p.isCourse && (p.status === 'active' || p.status === 'completed')
+      const activeCourses = dbState.prescriptions.filter(
+        (p) => p.childId === c.id && p.isCourse && p.status === 'active'
       );
-      if (!allCourses.length) return;
-      allCourses.forEach((rx) => {
+      if (!activeCourses.length) return;
+      activeCourses.forEach((rx) => {
         const entry = _catalogEntryById(rx.productId);
         const drugName = entry ? entry.key : 'טיפול פעיל';
         const border = rows.length ? 'border-top:1px solid var(--line);' : '';
-        if (rx.status === 'completed') {
-          rows.push(`
-            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;${border}">
-              <div>
-                <div style="font-weight:600;">${c.name} · ${drugName}</div>
-                <div style="font-size:13px;color:var(--ink-soft);">הטיפול הסתיים ✓</div>
-              </div>
-              <span style="color:var(--mint);white-space:nowrap;">✅ הושלם</span>
-            </div>`);
-          return;
-        }
-        // active course
         const totalDoses = (rx.totalDays || 0) * (rx.dosesPerDay || 1);
         const dosesDone = rx.doseLog ? rx.doseLog.length : 0;
         const dosesToday = _dosesTodayCount(rx);
-        const isOverdue = _courseIsDoseOverdue(rx);
         const summary = _courseSummary(rx);
-        const statusBadge = isOverdue
-          ? `<span style="color:var(--coral);white-space:nowrap;">🔴 מנה באיחור</span>`
-          : `<span style="color:var(--mint);white-space:nowrap;">🟢 תקין</span>`;
         const canMark = dosesDone < totalDoses && dosesToday < (rx.dosesPerDay || 1);
-        const btn = canMark
-          ? `<button onclick="App.markCourseDose('${rx.id}')" style="margin-top:6px;padding:5px 12px;border-radius:8px;border:none;background:var(--accent,#4a90d9);color:#fff;font-size:13px;cursor:pointer;">✓ סימון מנה</button>`
+        const markBtn = canMark
+          ? `<button onclick="App.markCourseDose('${rx.id}')" style="padding:5px 12px;border-radius:8px;border:none;background:var(--accent,#4a90d9);color:#fff;font-size:13px;cursor:pointer;">✓ סימון מנה</button>`
           : '';
+        const deleteBtn = `<button onclick="App.deleteCourse('${rx.id}')" style="padding:5px 10px;border-radius:8px;border:none;background:transparent;color:var(--coral,#e57373);font-size:13px;cursor:pointer;">🗑 מחיקה</button>`;
         rows.push(`
           <div style="padding:9px 0;${border}">
             <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
@@ -1244,9 +1267,9 @@ const App = (() => {
                 <div style="font-weight:600;">${c.name} · ${drugName}</div>
                 <div style="font-size:13px;color:var(--ink-soft);">${summary}</div>
               </div>
-              ${statusBadge}
+              <span style="color:var(--mint);white-space:nowrap;">🟢 פעיל</span>
             </div>
-            ${btn}
+            <div style="display:flex;gap:8px;margin-top:6px;">${markBtn}${deleteBtn}</div>
           </div>`);
       });
     });
@@ -1285,7 +1308,18 @@ const App = (() => {
   let doseConcIdx = 0;
   let doseChildId = null;
 
-  /* ── sheet-course state (Step 2A) ──────────────────────────────────────── */
+  /* Step 3B — manually delete an active COURSE prescription (with confirm). */
+  function deleteCourse(rxId) {
+    const dbState = DB.get();
+    const rx = dbState.prescriptions.find((p) => p.id === rxId);
+    if (!rx) { toast('הטיפול לא נמצא'); return; }
+    const entry = _catalogEntryById(rx.productId);
+    const drugName = entry ? entry.key : 'טיפול';
+    if (!confirm(`למחוק את הטיפול ב${drugName}? הפעולה לא ניתנת לביטול.`)) return;
+    DB.deletePrescription(rxId);
+    renderDashboard();
+    toast('הטיפול נמחק');
+  }
   let courseChildId = null;
   let courseDrugSel = null; // key in MEDICATION_CATALOG
 
@@ -1697,7 +1731,7 @@ const App = (() => {
     installNow, skipLanding,
     openDoseSheet, pickDoseChild, pickDoseMed, pickDoseConc, calcDose,
     openCourseSheet, pickCourseChild, pickCourseDrug, saveCourse,
-    markCourseDose,
+    markCourseDose, deleteCourse,
     heroClick, quickWeightUpdate,
     deleteMedEntry, deleteTempEntry, confirmReset,
     checkForUpdate,
