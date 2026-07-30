@@ -104,6 +104,15 @@
     logEvent(CATEGORY.ERROR, 'unhandledrejection', 'Promise rejected', safeStringify(e.reason));
   });
 
+  window.addEventListener('online', function () {
+    logEvent(CATEGORY.INFO, 'system', 'Back Online', '');
+    if (panelOpen && currentTab === 'health') renderPanelBody();
+  });
+  window.addEventListener('offline', function () {
+    logEvent(CATEGORY.WARNING, 'system', 'Went Offline', '');
+    if (panelOpen && currentTab === 'health') renderPanelBody();
+  });
+
   (function installFetchHook() {
     const origFetch = window.fetch;
     if (!origFetch) return;
@@ -417,6 +426,19 @@
     try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); lsSize += k.length + (localStorage.getItem(k) || '').length; } } catch (e) {}
     const mb = lsSize / 1024 / 1024;
     rows.push(row(mb < 3 ? 'ok' : mb < 4.5 ? 'warn' : 'bad', 'Storage Used', mb.toFixed(2) + ' MB / ~5 MB'));
+
+    // last network activity — answers "did a request even go out, and when" without digging through the Network tab
+    let lastNet = null;
+    for (let i = events.length - 1; i >= 0; i--) { if (events[i].category === CATEGORY.NETWORK) { lastNet = events[i]; break; } }
+    if (!lastNet) {
+      rows.push(row('warn', 'Last Network Activity', 'אין קריאות רשת בסשן זה'));
+    } else {
+      const secAgo = Math.round((Date.now() - lastNet.ts) / 1000);
+      const ago = secAgo < 60 ? `לפני ${secAgo} שנ׳` : secAgo < 3600 ? `לפני ${Math.floor(secAgo / 60)} דק׳` : `לפני ${Math.floor(secAgo / 3600)} שע׳`;
+      const ok = !lastNet.failed;
+      rows.push(row(ok ? 'ok' : 'bad', 'Last Network Activity', `${lastNet.label} · ${lastNet.detail} · ${ago}`));
+    }
+    rows.push(row(navigator.onLine ? 'ok' : 'bad', 'Online', navigator.onLine ? 'כן' : 'לא — אין חיבור רשת'));
 
     const staticHtml = `<div style="opacity:.5;font-size:11px;margin-bottom:10px;">מסך הדיאגנוסטיקה — צילום מסך אחד מכאן לרוב מספיק כדי לדעת איפה הבעיה.</div>` + rows.join('');
 
