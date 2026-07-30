@@ -1089,6 +1089,53 @@ const App = (() => {
     return key ? { key, ...MEDICATION_CATALOG[key] } : null;
   }
 
+  /* ── COURSE helpers (Step 1B) ─────────────────────────────────────────────
+     These operate purely on DB data + catalog — no UI side-effects.
+     Safe to call from anywhere (dashboard render, reminder scheduler, etc.). */
+
+  /* All active COURSE prescriptions for a child, newest first. */
+  function _activeCourses(childId) {
+    return DB.activePrescriptionsFor(childId).filter((p) => p.isCourse);
+  }
+
+  /* Ideal timestamp of the next dose for a COURSE prescription.
+     Returns null if the course is completed/cancelled or has no doses configured.
+     Logic: doses are evenly spread across each 24h day.
+     e.g. dosesPerDay=2 → dose 0 at startAt, dose 1 at startAt+12h, dose 2 at startAt+24h, ...
+     If a dose was already logged, next expected time is based on the last log entry + interval. */
+  function _courseNextDoseAt(rx) {
+    if (!rx || !rx.isCourse || rx.status !== 'active') return null;
+    if (!rx.dosesPerDay || !rx.totalDays) return null;
+    const intervalMs = (24 / rx.dosesPerDay) * 3600 * 1000;
+    if (!rx.doseLog || rx.doseLog.length === 0) {
+      // no doses given yet — first dose is due now (or at startAt, whichever is later)
+      return Math.max(rx.startAt, Date.now());
+    }
+    const lastDoseAt = rx.doseLog[rx.doseLog.length - 1].at;
+    return lastDoseAt + intervalMs;
+  }
+
+  /* True if the next dose is overdue by more than 30 minutes.
+     Used to surface an alert badge on the dashboard card. */
+  function _courseIsDoseOverdue(rx) {
+    const nextAt = _courseNextDoseAt(rx);
+    if (nextAt === null) return false;
+    return Date.now() > nextAt + 30 * 60 * 1000;
+  }
+
+  /* Human-readable summary string for a COURSE (used in dashboard card subtitle).
+     e.g. "יום 3 מתוך 10 · 4/20 מנות" */
+  function _courseSummary(rx) {
+    if (!rx || !rx.isCourse) return '';
+    const dosesDone = rx.doseLog ? rx.doseLog.length : 0;
+    const totalDoses = (rx.totalDays || 0) * (rx.dosesPerDay || 1);
+    const daysSinceStart = Math.floor((Date.now() - rx.startAt) / (24 * 3600 * 1000)) + 1;
+    const dayLabel = rx.totalDays ? `יום ${Math.min(daysSinceStart, rx.totalDays)} מתוך ${rx.totalDays}` : '';
+    const doseLabel = totalDoses ? `${dosesDone}/${totalDoses} מנות` : '';
+    return [dayLabel, doseLabel].filter(Boolean).join(' · ');
+  }
+  /* ── end COURSE helpers ───────────────────────────────────────────────── */
+
   let doseMedSel = 'אקמול / נובימול';
   let doseConcIdx = 0;
   let doseChildId = null;
