@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.2 → 1.0.0-beta.2 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.19';
+  const APP_VERSION = '1.0.0-beta.20';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -1264,6 +1264,13 @@ const App = (() => {
     const on = DB.get().settings.notifications;
     document.getElementById('toggle-notif').classList.toggle('on', on);
     document.getElementById('set-version-num').textContent = APP_VERSION;
+    const aboutV = document.getElementById('about-version-num');
+    if (aboutV) aboutV.textContent = APP_VERSION;
+  }
+  /* generic handler for features that are planned but not built yet — keeps buttons
+     visibly "alive" instead of dead, per Step 1.3 (no silent no-op buttons in Settings) */
+  function stub() {
+    toast('🚧 הפיצ׳ר יתווסף בגרסה עתידית');
   }
   function toggleNotif() {
     const on = !DB.get().settings.notifications;
@@ -1389,6 +1396,7 @@ const App = (() => {
     heroClick, quickWeightUpdate,
     deleteMedEntry, deleteTempEntry, confirmReset,
     checkForUpdate,
+    stub,
   };
 })();
 
