@@ -183,27 +183,6 @@ const App = (() => {
     if (id === 'sheet-temp') editTempEntryId = null;
   }
 
-  /* ---------- pick-child screen ---------- */
-  function renderPickList() {
-    const wrap = document.getElementById('pick-list');
-    const state = DB.get();
-    if (!state.children.length) {
-      wrap.innerHTML = `<div class="empty-state"><div class="ic">👶</div><div class="t">עדיין לא הוספת ילדים</div><div class="s">אפשר להוסיף ילד/ה עכשיו</div></div>
-        <button class="btn-primary" onclick="App.goto('screen-kids')">➕ הוספת ילד/ה</button>`;
-      return;
-    }
-    wrap.innerHTML = state.children.map((c) => {
-      const lastTemp = DB.lastTempFor(c.id);
-      return `<div class="pick-card" onclick="App.tab('screen-dash')">
-        <div class="pick-avatar" style="background:${AVATAR_GRADIENT[c.color]}">${c.emoji}</div>
-        <div>
-          <div class="pick-name">${c.name}</div>
-          <div class="pick-meta">${c.weight} ק״ג${lastTemp ? ' · חום אחרון ' + lastTemp.value + '°' : ''}</div>
-        </div>
-      </div>`;
-    }).join('');
-  }
-
   /* ---------- dashboard ---------- */
   /* one prioritized, actionable line per child — fever alert > dose timing > stale weight.
      Only ever returns ONE message so the dashboard stays calm, not noisy. */
@@ -957,7 +936,6 @@ const App = (() => {
     toast('הפרטים נשמרו ✓');
     renderKids();
     renderDashboard();
-    renderPickList();
   }
 
 
@@ -1370,20 +1348,11 @@ const App = (() => {
     goto('screen-kids');
   }
 
-  /* ---------- clock ---------- */
-  function tickClock() {
-    const el = document.getElementById('clock');
-    if (el) el.textContent = nowHHMM();
-  }
-
   function init() {
     // Render all screens so they're ready before any transition
     renderLanding();
-    renderPickList();
     renderDashboard();
     renderSettings();
-    tickClock();
-    setInterval(tickClock, 15000);
     setInterval(renderDashboard, 60000); // keep "elapsed" times fresh
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').catch(() => {});
