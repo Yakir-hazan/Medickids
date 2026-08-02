@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.2 → 1.0.0-beta.2 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.37';
+  const APP_VERSION = '1.0.0-beta.38';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -1349,6 +1349,7 @@ const App = (() => {
           ? `<button onclick="App.markCourseDose('${rx.id}')" style="padding:5px 12px;border-radius:8px;border:none;background:var(--accent,#4a90d9);color:#fff;font-size:13px;cursor:pointer;">✓ סימון מנה</button>`
           : `<button onclick="App.markCourseDose('${rx.id}')" style="padding:5px 12px;border-radius:8px;border:none;background:#ccc;color:#888;font-size:13px;cursor:not-allowed;" disabled>✓ סימון מנה</button>`;
         const deleteBtn = `<button onclick="App.deleteCourse('${rx.id}')" style="padding:5px 10px;border-radius:8px;border:none;background:transparent;color:var(--coral,#e57373);font-size:13px;cursor:pointer;">🗑 מחיקה</button>`;
+        const editBtn   = `<button onclick="App.openCourseSheet('${rx.id}')" style="padding:5px 10px;border-radius:8px;border:none;background:transparent;color:var(--ink-soft);font-size:13px;cursor:pointer;">✏️ עריכה</button>`;
         rows.push(`
           <div style="padding:9px 0;${border}">
             <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
@@ -1359,7 +1360,7 @@ const App = (() => {
               </div>
               <span style="color:var(--mint);white-space:nowrap;">🟢 פעיל</span>
             </div>
-            <div style="display:flex;gap:8px;margin-top:6px;">${markBtn}${deleteBtn}</div>
+            <div style="display:flex;gap:8px;margin-top:6px;">${markBtn}${editBtn}${deleteBtn}</div>
           </div>`);
       });
     });
@@ -1418,19 +1419,36 @@ const App = (() => {
   }
   let courseChildId = null;
   let courseDrugSel = null; // key in MEDICATION_CATALOG
+  let editCourseRxId = null; // null = new course, rxId = edit mode
 
-  function openCourseSheet() {
+  function openCourseSheet(rxId = null) {
     const state = DB.get();
-    courseChildId = state.children[0]?.id || null;
-    // default to first COURSE drug in catalog
-    const firstCourseKey = Object.keys(MEDICATION_CATALOG).find(
-      (k) => MEDICATION_CATALOG[k].protocol.type === TREATMENT_TYPES.COURSE
-    );
-    courseDrugSel = firstCourseKey || null;
+    editCourseRxId = rxId || null;
+
+    if (editCourseRxId) {
+      // edit mode — load existing prescription values
+      const rx = state.prescriptions.find((p) => p.id === editCourseRxId);
+      if (!rx) { toast('הטיפול לא נמצא'); return; }
+      courseChildId = rx.childId;
+      const entry = _catalogEntryById(rx.productId);
+      courseDrugSel = entry ? entry.key : null;
+      document.getElementById('course-days').value = rx.totalDays || '';
+      document.getElementById('course-doses-per-day').value = rx.dosesPerDay || '';
+      document.getElementById('sheet-course-title').textContent = '✏️ עריכת טיפול';
+    } else {
+      // new course
+      courseChildId = state.children[0]?.id || null;
+      const firstCourseKey = Object.keys(MEDICATION_CATALOG).find(
+        (k) => MEDICATION_CATALOG[k].protocol.type === TREATMENT_TYPES.COURSE
+      );
+      courseDrugSel = firstCourseKey || null;
+      document.getElementById('course-days').value = '';
+      document.getElementById('course-doses-per-day').value = '';
+      document.getElementById('sheet-course-title').textContent = '💊 פתיחת טיפול';
+    }
+
     _renderCourseChildChips();
     _renderCourseDrugChips();
-    document.getElementById('course-days').value = '';
-    document.getElementById('course-doses-per-day').value = '';
     openSheet('sheet-course');
   }
 
@@ -1438,6 +1456,12 @@ const App = (() => {
     const state = DB.get();
     const box = document.getElementById('course-child-chips');
     if (!box) return;
+    if (editCourseRxId) {
+      // edit mode — show selected child as read-only
+      const c = state.children.find((ch) => ch.id === courseChildId);
+      box.innerHTML = c ? `<span class="chip sel" style="opacity:.7;">${c.emoji} ${c.name}</span>` : '';
+      return;
+    }
     box.innerHTML = state.children.map((c) =>
       `<button type="button" class="chip ${c.id === courseChildId ? 'sel' : ''}" onclick="App.pickCourseChild('${c.id}')">${c.emoji} ${c.name}</button>`
     ).join('');
@@ -1446,6 +1470,11 @@ const App = (() => {
   function _renderCourseDrugChips() {
     const box = document.getElementById('course-drug-chips');
     if (!box) return;
+    if (editCourseRxId) {
+      // edit mode — show selected drug as read-only
+      box.innerHTML = courseDrugSel ? `<span class="chip sel" style="opacity:.7;">${courseDrugSel}</span>` : '';
+      return;
+    }
     const courseKeys = Object.keys(MEDICATION_CATALOG).filter(
       (k) => MEDICATION_CATALOG[k].protocol.type === TREATMENT_TYPES.COURSE
     );
@@ -1471,6 +1500,23 @@ const App = (() => {
     const dosesPerDay = parseInt(document.getElementById('course-doses-per-day').value, 10);
     if (!totalDays || totalDays < 1 || totalDays > 30) { toast('יש להזין מספר ימים (1–30)'); return; }
     if (!dosesPerDay || dosesPerDay < 1 || dosesPerDay > 6) { toast('יש להזין מספר מנות ביום (1–6)'); return; }
+
+    if (editCourseRxId) {
+      // edit mode — update only totalDays and dosesPerDay
+      const updated = DB.updatePrescription(editCourseRxId, { totalDays, dosesPerDay });
+      if (!updated) { toast('שגיאה בשמירה — נסה שוב'); return; }
+      // reschedule push with new interval
+      _cancelCourseReminder(updated).then(() => _scheduleCourseReminder(
+        DB.get().prescriptions.find((p) => p.id === editCourseRxId)
+      ));
+      closeSheet('sheet-course');
+      renderDashboard();
+      toast('הטיפול עודכן ✓');
+      editCourseRxId = null;
+      return;
+    }
+
+    // new course
     const drug = MEDICATION_CATALOG[courseDrugSel];
     try {
       DB.addPrescription({
