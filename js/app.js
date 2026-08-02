@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.2 → 1.0.0-beta.2 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.33';
+  const APP_VERSION = '1.0.0-beta.34';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -1181,12 +1181,40 @@ const App = (() => {
   }
 
   /* How many doses were logged for this COURSE today (calendar day, 00:00–now).
-     Used to prevent marking more doses than dosesPerDay allows in a single day. */
+     Kept for potential future use but no longer drives canMark logic. */
   function _dosesTodayCount(rx) {
     if (!rx || !rx.doseLog) return 0;
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
     return rx.doseLog.filter((d) => d.at >= startOfDay.getTime()).length;
+  }
+
+  /* Returns true if enough time has passed since the last logged dose to allow marking a new one.
+     Interval = 24h / dosesPerDay (e.g. 3x/day → 8h, 2x/day → 12h).
+     Also returns true if no doses have been logged yet (first dose of the course). */
+  function _canMarkDoseNow(rx) {
+    if (!rx || !rx.isCourse) return false;
+    const totalDoses = (rx.totalDays || 0) * (rx.dosesPerDay || 1);
+    const dosesDone  = rx.doseLog ? rx.doseLog.length : 0;
+    if (dosesDone >= totalDoses) return false;
+    if (!dosesDone) return true; // first dose — always allowed
+    const intervalMs = (24 / (rx.dosesPerDay || 1)) * 3600 * 1000;
+    const lastDoseAt = rx.doseLog[dosesDone - 1].at;
+    return Date.now() - lastDoseAt >= intervalMs;
+  }
+
+  /* Returns a human-readable string of how long until the next dose is allowed.
+     Used in toast when user tries to mark too soon. */
+  function _nextDoseInText(rx) {
+    if (!rx || !rx.doseLog || !rx.doseLog.length) return '';
+    const intervalMs = (24 / (rx.dosesPerDay || 1)) * 3600 * 1000;
+    const lastDoseAt = rx.doseLog[rx.doseLog.length - 1].at;
+    const remaining  = intervalMs - (Date.now() - lastDoseAt);
+    if (remaining <= 0) return '';
+    const hrs  = Math.floor(remaining / 3600000);
+    const mins = Math.floor((remaining % 3600000) / 60000);
+    if (hrs > 0) return `${hrs} שעות${mins > 0 ? ' ו-' + mins + ' דקות' : ''}`;
+    return `${mins} דקות`;
   }
 
   /* True if the next dose is overdue by more than 30 minutes.
@@ -1253,9 +1281,8 @@ const App = (() => {
         const border = rows.length ? 'border-top:1px solid var(--line);' : '';
         const totalDoses = (rx.totalDays || 0) * (rx.dosesPerDay || 1);
         const dosesDone = rx.doseLog ? rx.doseLog.length : 0;
-        const dosesToday = _dosesTodayCount(rx);
         const summary = _courseSummary(rx);
-        const canMark = dosesDone < totalDoses && dosesToday < (rx.dosesPerDay || 1);
+        const canMark = _canMarkDoseNow(rx);
         const markBtn = canMark
           ? `<button onclick="App.markCourseDose('${rx.id}')" style="padding:5px 12px;border-radius:8px;border:none;background:var(--accent,#4a90d9);color:#fff;font-size:13px;cursor:pointer;">✓ סימון מנה</button>`
           : '';
@@ -1291,8 +1318,11 @@ const App = (() => {
     const totalDoses = (rx.totalDays || 0) * (rx.dosesPerDay || 1);
     const doneBeforeLog = rx.doseLog ? rx.doseLog.length : 0;
     if (totalDoses > 0 && doneBeforeLog >= totalDoses) { toast('כל המנות כבר סומנו'); return; }
-    const dosesToday = _dosesTodayCount(rx);
-    if (dosesToday >= (rx.dosesPerDay || 1)) { toast('כבר סימנת את כל המנות להיום'); return; }
+    if (!_canMarkDoseNow(rx)) {
+      const waitText = _nextDoseInText(rx);
+      toast(waitText ? `המנה הבאה בעוד ${waitText}` : 'עוד לא הגיע הזמן למנה הבאה');
+      return;
+    }
     const updated = DB.logCourseDose(rxId, 1);
     if (!updated) { toast('שגיאה בשמירה — נסה שוב'); return; }
     if (updated.status === 'completed') {
