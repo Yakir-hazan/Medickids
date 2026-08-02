@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.2 → 1.0.0-beta.2 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.36';
+  const APP_VERSION = '1.0.0-beta.37';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -1331,6 +1331,20 @@ const App = (() => {
         const dosesDone = rx.doseLog ? rx.doseLog.length : 0;
         const summary = _courseSummary(rx);
         const canMark = _canMarkDoseNow(rx);
+        const nextAt  = _courseNextDoseAt(rx);
+        let timerText = '';
+        if (canMark) {
+          timerText = '🟢 זמין עכשיו';
+        } else if (nextAt) {
+          const remaining = nextAt - Date.now();
+          if (remaining > 0) {
+            const hrs  = Math.floor(remaining / 3600000);
+            const mins = Math.floor((remaining % 3600000) / 60000);
+            timerText = hrs > 0
+              ? `⏱ מנה הבאה בעוד ${hrs} שעות${mins > 0 ? ' ו-' + mins + ' דקות' : ''}`
+              : `⏱ מנה הבאה בעוד ${mins} דקות`;
+          }
+        }
         const markBtn = canMark
           ? `<button onclick="App.markCourseDose('${rx.id}')" style="padding:5px 12px;border-radius:8px;border:none;background:var(--accent,#4a90d9);color:#fff;font-size:13px;cursor:pointer;">✓ סימון מנה</button>`
           : `<button onclick="App.markCourseDose('${rx.id}')" style="padding:5px 12px;border-radius:8px;border:none;background:#ccc;color:#888;font-size:13px;cursor:not-allowed;" disabled>✓ סימון מנה</button>`;
@@ -1341,6 +1355,7 @@ const App = (() => {
               <div>
                 <div style="font-weight:600;">${c.name} · ${drugName}</div>
                 <div style="font-size:13px;color:var(--ink-soft);">${summary}</div>
+                ${timerText ? `<div style="font-size:12px;color:var(--ink-soft);margin-top:2px;">${timerText}</div>` : ''}
               </div>
               <span style="color:var(--mint);white-space:nowrap;">🟢 פעיל</span>
             </div>
