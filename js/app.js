@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.2 → 1.0.0-beta.2 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.38';
+  const APP_VERSION = '1.0.0-beta.39';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -1326,6 +1326,7 @@ const App = (() => {
       activeCourses.forEach((rx) => {
         const entry = _catalogEntryById(rx.productId);
         const drugName = entry ? entry.key : 'טיפול פעיל';
+        const cardTitle = rx.reason ? `${c.name} — ${rx.reason}` : `${c.name} · ${drugName}`;
         const border = rows.length ? 'border-top:1px solid var(--line);' : '';
         const totalDoses = (rx.totalDays || 0) * (rx.dosesPerDay || 1);
         const dosesDone = rx.doseLog ? rx.doseLog.length : 0;
@@ -1354,7 +1355,7 @@ const App = (() => {
           <div style="padding:9px 0;${border}">
             <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
               <div>
-                <div style="font-weight:600;">${c.name} · ${drugName}</div>
+                <div style="font-weight:600;">${cardTitle}</div>
                 <div style="font-size:13px;color:var(--ink-soft);">${summary}</div>
                 ${timerText ? `<div style="font-size:12px;color:var(--ink-soft);margin-top:2px;">${timerText}</div>` : ''}
               </div>
@@ -1434,6 +1435,7 @@ const App = (() => {
       courseDrugSel = entry ? entry.key : null;
       document.getElementById('course-days').value = rx.totalDays || '';
       document.getElementById('course-doses-per-day').value = rx.dosesPerDay || '';
+      document.getElementById('course-reason').value = rx.reason || '';
       document.getElementById('sheet-course-title').textContent = '✏️ עריכת טיפול';
     } else {
       // new course
@@ -1444,6 +1446,7 @@ const App = (() => {
       courseDrugSel = firstCourseKey || null;
       document.getElementById('course-days').value = '';
       document.getElementById('course-doses-per-day').value = '';
+      document.getElementById('course-reason').value = '';
       document.getElementById('sheet-course-title').textContent = '💊 פתיחת טיפול';
     }
 
@@ -1500,10 +1503,12 @@ const App = (() => {
     const dosesPerDay = parseInt(document.getElementById('course-doses-per-day').value, 10);
     if (!totalDays || totalDays < 1 || totalDays > 30) { toast('יש להזין מספר ימים (1–30)'); return; }
     if (!dosesPerDay || dosesPerDay < 1 || dosesPerDay > 6) { toast('יש להזין מספר מנות ביום (1–6)'); return; }
+    const reason = (document.getElementById('course-reason').value || '').trim();
+    if (!reason) { toast('יש להזין סיבת הטיפול'); return; }
 
     if (editCourseRxId) {
-      // edit mode — update only totalDays and dosesPerDay
-      const updated = DB.updatePrescription(editCourseRxId, { totalDays, dosesPerDay });
+      // edit mode — update totalDays, dosesPerDay, reason
+      const updated = DB.updatePrescription(editCourseRxId, { totalDays, dosesPerDay, reason });
       if (!updated) { toast('שגיאה בשמירה — נסה שוב'); return; }
       // reschedule push with new interval
       _cancelCourseReminder(updated).then(() => _scheduleCourseReminder(
@@ -1525,6 +1530,7 @@ const App = (() => {
         isCourse: true,
         totalDays,
         dosesPerDay,
+        reason,
       });
       closeSheet('sheet-course');
       renderDashboard();
