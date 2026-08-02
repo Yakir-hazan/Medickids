@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.2 → 1.0.0-beta.2 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.35';
+  const APP_VERSION = '1.0.0-beta.36';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -624,6 +624,54 @@ const App = (() => {
   function _cancelReminder(notificationId) {
     if (!notificationId) return Promise.resolve();
     return fetch(`/api/notify?id=${encodeURIComponent(notificationId)}`, { method: 'DELETE' }).catch(() => {});
+  }
+
+  /* Cancel a pending course-dose push (stored on the prescription as courseNotificationId). */
+  async function _cancelCourseReminder(rx) {
+    if (!rx || !rx.courseNotificationId) return;
+    await _cancelReminder(rx.courseNotificationId);
+    DB.updatePrescription(rx.id, { courseNotificationId: null, courseReminderAt: null });
+  }
+
+  /* Schedule a push for the next course dose.
+     Interval = 24h / dosesPerDay from the moment the dose was just marked.
+     Does nothing if: notifications off, course completed, or scheduledTime already passed. */
+  async function _scheduleCourseReminder(rx) {
+    if (!DB.get().settings.notifications) return;
+    if (!rx || rx.status === 'completed') return;
+    const intervalMs  = (24 / (rx.dosesPerDay || 1)) * 3600 * 1000;
+    const lastDoseAt  = rx.doseLog && rx.doseLog.length ? rx.doseLog[rx.doseLog.length - 1].at : Date.now();
+    const readyAt     = lastDoseAt + intervalMs;
+    if (readyAt <= Date.now()) return;
+
+    // cancel previous pending reminder for this prescription before scheduling a new one
+    await _cancelCourseReminder(rx);
+
+    const entry   = _catalogEntryById(rx.productId);
+    const drug    = entry ? entry.key : 'תרופה';
+    const child   = childById(rx.childId);
+    const childName = child ? child.name : 'הילד/ה';
+
+    try {
+      const res = await fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: `זמן למנה הבאה 💊`,
+          message: `הגיע הזמן לתת ל${childName} מנה של ${drug}`,
+          childName,
+          scheduledTime: new Date(readyAt).toISOString(),
+          targetDeviceId: DB.get().deviceId,
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (data && data.notificationId) {
+        DB.updatePrescription(rx.id, {
+          courseNotificationId: data.notificationId,
+          courseReminderAt: readyAt,
+        });
+      }
+    } catch (e) { /* best-effort — never block UI */ }
   }
   async function scheduleDoseReminder(entry, customReadyAt) {
     if (!entry || !DB.get().settings.notifications) return; // user opted out — don't schedule
@@ -1310,7 +1358,7 @@ const App = (() => {
      - rxId not found → null returned from DB → toast + bail
      - course already completed before this call → bail with message
      - doses would exceed totalDays*dosesPerDay → DB auto-completes; we show completion toast */
-  function markCourseDose(rxId) {
+  async function markCourseDose(rxId) {
     const dbState = DB.get();
     const rx = dbState.prescriptions.find((p) => p.id === rxId);
     if (!rx) { toast('שגיאה: הטיפול לא נמצא'); return; }
@@ -1326,10 +1374,12 @@ const App = (() => {
     const updated = DB.logCourseDose(rxId, 1);
     if (!updated) { toast('שגיאה בשמירה — נסה שוב'); return; }
     if (updated.status === 'completed') {
+      await _cancelCourseReminder(updated); // no more doses — cancel any pending push
       toast('🎉 הטיפול הושלם בהצלחה!');
     } else {
       const done = updated.doseLog.length;
       toast(`✓ מנה ${done} מתוך ${totalDoses} סומנה`);
+      _scheduleCourseReminder(updated); // best-effort, not awaited — don't block UI
     }
     renderDashboard();
   }
@@ -1339,13 +1389,14 @@ const App = (() => {
   let doseChildId = null;
 
   /* Step 3B — manually delete an active COURSE prescription (with confirm). */
-  function deleteCourse(rxId) {
+  async function deleteCourse(rxId) {
     const dbState = DB.get();
     const rx = dbState.prescriptions.find((p) => p.id === rxId);
     if (!rx) { toast('הטיפול לא נמצא'); return; }
     const entry = _catalogEntryById(rx.productId);
     const drugName = entry ? entry.key : 'טיפול';
     if (!confirm(`למחוק את הטיפול ב${drugName}? הפעולה לא ניתנת לביטול.`)) return;
+    await _cancelCourseReminder(rx);
     DB.deletePrescription(rxId);
     renderDashboard();
     toast('הטיפול נמחק');
