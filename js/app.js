@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.2 → 1.0.0-beta.2 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.39';
+  const APP_VERSION = '1.0.0-beta.40';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -434,7 +434,12 @@ const App = (() => {
         const mm = String(totalMin % 60).padStart(2, '0');
         canGiveHtml = `<div class="can-give-bar warn-bar">⏱️ אפשר לתת שוב ${nextDrugName} בעוד ${hh}:${mm}</div>`;
       } else if (lastMed) {
-        canGiveHtml = `<div class="can-give-bar ok-bar">✅ אפשר לתת מנה נוספת אם צריך</div>`;
+        const recentNormalTemp = lastTemp && !hasFever && (Date.now() - lastTemp.time < 6 * 3600 * 1000);
+        if (recentNormalTemp) {
+          canGiveHtml = `<div class="can-give-bar ok-bar">🌟 החום תקין — ${c.name} מרגיש/ה טוב!</div>`;
+        } else {
+          canGiveHtml = `<div class="can-give-bar ok-bar">✅ אפשר לתת מנה נוספת אם צריך</div>`;
+        }
       }
 
       const emptyRow = (!tempRow && !medRow)
