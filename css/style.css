@@ -143,14 +143,54 @@ body {
   background: var(--primary-bg);
 }
 .navitem .ic { font-size: 20px; }
+.nav-ic { font-size: 22px; line-height: 1; }
 
-/* ── Dashboard header ── */
-.dash-header {
-  padding: 10px 2px 14px;
-  display: flex; justify-content: space-between; align-items: flex-start;
+/* ── Dashboard TopBar (Stitch) ── */
+.dash-topbar {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 10;
+  background: rgba(255,255,255,.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(200,196,214,.3);
+  box-shadow: 0 1px 8px rgba(87,68,207,.05);
 }
-.dash-greeting { font-size: 12.5px; color: var(--ink-soft); font-weight: 500; margin-bottom: 3px; }
-.dash-title { font-size: 22px; font-weight: 800; color: var(--ink); }
+.dash-topbar-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 64px; padding: 0 20px;
+}
+.dash-topbar-title {
+  font-family: 'Be Vietnam Pro','Rubik',sans-serif;
+  font-size: 20px; font-weight: 700; letter-spacing: -0.02em;
+  color: #5744cf;
+}
+.dash-avatar-btn, .dash-notif-btn {
+  background: none; border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  padding: 6px; border-radius: 50%;
+  color: #5744cf;
+  transition: background .2s;
+}
+.dash-avatar-btn:active, .dash-notif-btn:active { background: rgba(87,68,207,.1); }
+.dash-avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: #EAE8FF;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.dash-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.dash-scroll { padding-top: 64px !important; }
+
+/* ── Dashboard Greeting (Stitch) ── */
+.dash-greeting-section { padding: 24px 0 8px; }
+.dash-greeting {
+  font-family: 'Be Vietnam Pro','Rubik',sans-serif;
+  font-size: 30px; font-weight: 700; line-height: 1.2;
+  letter-spacing: -0.02em; color: #1a1a2e;
+  margin-bottom: 6px;
+}
+.dash-title {
+  font-size: 15px; font-weight: 400; color: #474554; line-height: 1.5;
+}
 .dash-updated {
   font-size: 10.5px; color: var(--ink-soft); font-weight: 600;
   background: var(--surface-low); padding: 5px 10px;
@@ -235,22 +275,33 @@ body {
 .can-give-bar.warn-bar { background: #FFF5E6; color: #C07020; }
 
 /* ── Quick actions ── */
+/* ── Quick Actions (Stitch) ── */
+.qa-section { margin-bottom: 14px; }
+.qa-section-title {
+  font-size: 17px; font-weight: 600; color: #1a1a2e;
+  margin-bottom: 12px;
+}
 .qa-grid {
   display: grid; grid-template-columns: 1fr 1fr 1fr;
-  gap: 10px; margin-bottom: 14px;
+  gap: 10px;
 }
 .qa-btn {
-  background: var(--surface);
-  border: 1px solid var(--line-soft);
-  border-radius: 18px; padding: 14px 8px;
+  border: none; border-radius: 18px;
+  padding: 16px 8px; aspect-ratio: 1;
   text-align: center; cursor: pointer;
   font-family: inherit;
-  box-shadow: 0 4px 12px rgba(87,68,207,.07);
-  transition: all .2s;
+  box-shadow: 0 4px 12px rgba(0,0,0,.04);
+  transition: transform .2s;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
 }
-.qa-btn:active { transform: scale(.96); box-shadow: none; }
-.qa-ic  { font-size: 22px; margin-bottom: 6px; }
-.qa-lbl { font-size: 10.5px; font-weight: 700; color: var(--ink); line-height: 1.25; }
+.qa-btn:active { transform: scale(.95); }
+.qa-lavender { background: #EAE8FF; }
+.qa-coral    { background: #FFE8E8; }
+.qa-mint     { background: #D0F2EC; }
+.qa-neutral  { background: #EFECFF; }
+.qa-mat-ic   { font-size: 28px; margin-bottom: 6px; font-variation-settings: 'FILL' 1; }
+.qa-lbl { font-size: 11px; font-weight: 700; color: #5744cf; line-height: 1.25; }
 
 /* ── Timeline ── */
 .tl-card {

@@ -95,16 +95,27 @@
 
     <!-- DASHBOARD -->
     <div class="screen" id="screen-dash">
-      <div class="scroll">
-        <!-- header -->
-        <div class="dash-header">
-          <div>
-            <div class="dash-greeting" id="dash-greeting">שלום 👋</div>
-            <div class="dash-title" id="dash-title">מה קורה עכשיו?</div>
-          </div>
-          <div class="dash-updated" id="dash-updated" style="display:none"></div>
-          <div class="beta-badge dash-beta">BETA</div>
+      <!-- TopAppBar -->
+      <header class="dash-topbar">
+        <div class="dash-topbar-inner">
+          <button class="dash-avatar-btn" onclick="App.tab('screen-settings')">
+            <div class="dash-avatar" id="dash-avatar-img">
+              <span class="material-symbols-outlined" style="font-size:22px;color:#5744cf;">person</span>
+            </div>
+          </button>
+          <span class="dash-topbar-title">Medickids</span>
+          <button class="dash-notif-btn" id="dash-notif-btn" onclick="App.toggleNotif()">
+            <span class="material-symbols-outlined" style="font-size:24px;">notifications</span>
+          </button>
         </div>
+      </header>
+
+      <div class="scroll dash-scroll">
+        <!-- Hero Greeting -->
+        <section class="dash-greeting-section">
+          <div class="dash-greeting" id="dash-greeting">בוקר טוב 👋</div>
+          <div class="dash-title" id="dash-title">הנה הסקירה היומית שלכם.</div>
+        </section>
 
         <!-- dynamic hero card -->
         <div class="hero-card calm" id="dash-hero" onclick="App.heroClick()"></div>
@@ -112,20 +123,41 @@
         <!-- family summary -->
         <div class="fam-summary" id="dash-fam-summary" style="display:none"></div>
 
-        <!-- active treatments (Step 1E — read-only card, shown only if a COURSE is active) -->
+        <!-- active treatments -->
         <div id="dash-active-treatments" style="display:none"></div>
 
         <!-- child cards -->
         <div id="dash-children"></div>
 
         <!-- quick actions -->
-        <div class="qa-grid">
-          <button class="qa-btn" onclick="App.openMedSheet()"><div class="qa-ic">💊</div><div class="qa-lbl">נתתי תרופה</div></button>
-          <button class="qa-btn" onclick="App.openTempSheet()"><div class="qa-ic">🌡️</div><div class="qa-lbl">מדדתי חום</div></button>
-          <button class="qa-btn" onclick="App.openDoseSheet()"><div class="qa-ic">🧮</div><div class="qa-lbl">חישוב מינון</div></button>
-          <button class="qa-btn" onclick="App.quickWeightUpdate()"><div class="qa-ic">⚖️</div><div class="qa-lbl">עדכון משקל</div></button>
-          <button class="qa-btn" onclick="App.tab('screen-hist')"><div class="qa-ic">📋</div><div class="qa-lbl">היסטוריה</div></button>
-          <button class="qa-btn" onclick="App.openCourseSheet()"><div class="qa-ic">🗓️</div><div class="qa-lbl">התחל טיפול</div></button>
+        <div class="qa-section">
+          <div class="qa-section-title">פעולות מהירות</div>
+          <div class="qa-grid">
+            <button class="qa-btn qa-lavender" onclick="App.openMedSheet()">
+              <span class="material-symbols-outlined qa-mat-ic" style="color:#5744cf;font-variation-settings:'FILL' 1;">medication_liquid</span>
+              <div class="qa-lbl">נתתי תרופה</div>
+            </button>
+            <button class="qa-btn qa-coral" onclick="App.openTempSheet()">
+              <span class="material-symbols-outlined qa-mat-ic" style="color:#9b3e32;font-variation-settings:'FILL' 1;">device_thermostat</span>
+              <div class="qa-lbl" style="color:#9b3e32;">מדדתי חום</div>
+            </button>
+            <button class="qa-btn qa-neutral" onclick="App.openDoseSheet()">
+              <span class="material-symbols-outlined qa-mat-ic" style="color:#9E93FF;font-variation-settings:'FILL' 1;">calculate</span>
+              <div class="qa-lbl">חישוב מינון</div>
+            </button>
+            <button class="qa-btn qa-neutral" onclick="App.quickWeightUpdate()">
+              <span class="material-symbols-outlined qa-mat-ic" style="color:#9E93FF;font-variation-settings:'FILL' 1;">monitor_weight</span>
+              <div class="qa-lbl">עדכון משקל</div>
+            </button>
+            <button class="qa-btn qa-neutral" onclick="App.tab('screen-hist')">
+              <span class="material-symbols-outlined qa-mat-ic" style="color:#9E93FF;font-variation-settings:'FILL' 1;">history</span>
+              <div class="qa-lbl">היסטוריה</div>
+            </button>
+            <button class="qa-btn qa-mint" onclick="App.openCourseSheet()">
+              <span class="material-symbols-outlined qa-mat-ic" style="color:#006b5c;font-variation-settings:'FILL' 1;">health_and_safety</span>
+              <div class="qa-lbl" style="color:#006b5c;">התחל טיפול</div>
+            </button>
+          </div>
         </div>
 
         <!-- timeline -->
@@ -143,10 +175,10 @@
       </div>
 
       <div class="navbar">
-        <button class="navitem" data-nav="screen-dash" onclick="App.tab('screen-dash')"><span class="ic">🏠</span>בית</button>
-        <button class="navitem" data-nav="screen-hist" onclick="App.tab('screen-hist')"><span class="ic">🕒</span>היסטוריה</button>
-        <button class="navitem" data-nav="screen-temp" onclick="App.tab('screen-temp')"><span class="ic">📈</span>חום</button>
-        <button class="navitem" data-nav="screen-settings" onclick="App.tab('screen-settings')"><span class="ic">⚙️</span>הגדרות</button>
+        <button class="navitem" data-nav="screen-dash" onclick="App.tab('screen-dash')"><span class="material-symbols-outlined nav-ic">home</span>בית</button>
+        <button class="navitem" data-nav="screen-hist" onclick="App.tab('screen-hist')"><span class="material-symbols-outlined nav-ic">history</span>היסטוריה</button>
+        <button class="navitem" data-nav="screen-temp" onclick="App.tab('screen-temp')"><span class="material-symbols-outlined nav-ic">device_thermostat</span>חום</button>
+        <button class="navitem" data-nav="screen-settings" onclick="App.tab('screen-settings')"><span class="material-symbols-outlined nav-ic">settings</span>הגדרות</button>
       </div>
     </div>
 
@@ -158,10 +190,10 @@
         <div id="hist-list"></div>
       </div>
       <div class="navbar">
-        <button class="navitem" data-nav="screen-dash" onclick="App.tab('screen-dash')"><span class="ic">🏠</span>בית</button>
-        <button class="navitem" data-nav="screen-hist" onclick="App.tab('screen-hist')"><span class="ic">🕒</span>היסטוריה</button>
-        <button class="navitem" data-nav="screen-temp" onclick="App.tab('screen-temp')"><span class="ic">📈</span>חום</button>
-        <button class="navitem" data-nav="screen-settings" onclick="App.tab('screen-settings')"><span class="ic">⚙️</span>הגדרות</button>
+        <button class="navitem" data-nav="screen-dash" onclick="App.tab('screen-dash')"><span class="material-symbols-outlined nav-ic">home</span>בית</button>
+        <button class="navitem" data-nav="screen-hist" onclick="App.tab('screen-hist')"><span class="material-symbols-outlined nav-ic">history</span>היסטוריה</button>
+        <button class="navitem" data-nav="screen-temp" onclick="App.tab('screen-temp')"><span class="material-symbols-outlined nav-ic">device_thermostat</span>חום</button>
+        <button class="navitem" data-nav="screen-settings" onclick="App.tab('screen-settings')"><span class="material-symbols-outlined nav-ic">settings</span>הגדרות</button>
       </div>
     </div>
 
@@ -178,10 +210,10 @@
       </div>
       <button class="fab" onclick="App.openTempSheet()">➕ הוספת מדידה</button>
       <div class="navbar">
-        <button class="navitem" data-nav="screen-dash" onclick="App.tab('screen-dash')"><span class="ic">🏠</span>בית</button>
-        <button class="navitem" data-nav="screen-hist" onclick="App.tab('screen-hist')"><span class="ic">🕒</span>היסטוריה</button>
-        <button class="navitem" data-nav="screen-temp" onclick="App.tab('screen-temp')"><span class="ic">📈</span>חום</button>
-        <button class="navitem" data-nav="screen-settings" onclick="App.tab('screen-settings')"><span class="ic">⚙️</span>הגדרות</button>
+        <button class="navitem" data-nav="screen-dash" onclick="App.tab('screen-dash')"><span class="material-symbols-outlined nav-ic">home</span>בית</button>
+        <button class="navitem" data-nav="screen-hist" onclick="App.tab('screen-hist')"><span class="material-symbols-outlined nav-ic">history</span>היסטוריה</button>
+        <button class="navitem" data-nav="screen-temp" onclick="App.tab('screen-temp')"><span class="material-symbols-outlined nav-ic">device_thermostat</span>חום</button>
+        <button class="navitem" data-nav="screen-settings" onclick="App.tab('screen-settings')"><span class="material-symbols-outlined nav-ic">settings</span>הגדרות</button>
       </div>
     </div>
 
@@ -210,10 +242,10 @@
         </div>
       </div>
       <div class="navbar">
-        <button class="navitem" data-nav="screen-dash" onclick="App.tab('screen-dash')"><span class="ic">🏠</span>בית</button>
-        <button class="navitem" data-nav="screen-hist" onclick="App.tab('screen-hist')"><span class="ic">🕒</span>היסטוריה</button>
-        <button class="navitem" data-nav="screen-temp" onclick="App.tab('screen-temp')"><span class="ic">📈</span>חום</button>
-        <button class="navitem" data-nav="screen-settings" onclick="App.tab('screen-settings')"><span class="ic">⚙️</span>הגדרות</button>
+        <button class="navitem" data-nav="screen-dash" onclick="App.tab('screen-dash')"><span class="material-symbols-outlined nav-ic">home</span>בית</button>
+        <button class="navitem" data-nav="screen-hist" onclick="App.tab('screen-hist')"><span class="material-symbols-outlined nav-ic">history</span>היסטוריה</button>
+        <button class="navitem" data-nav="screen-temp" onclick="App.tab('screen-temp')"><span class="material-symbols-outlined nav-ic">device_thermostat</span>חום</button>
+        <button class="navitem" data-nav="screen-settings" onclick="App.tab('screen-settings')"><span class="material-symbols-outlined nav-ic">settings</span>הגדרות</button>
       </div>
     </div>
 
