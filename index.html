@@ -11,6 +11,80 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<script id="tailwind-config-stitch">
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        "surface-container-high": "#e8e5ff",
+        "coral-subtle": "#FFE8E8",
+        "surface-container-low": "#f5f2ff",
+        "error": "#FF6B6B",
+        "secondary-container": "#83f3dc",
+        "lavender-subtle": "#EAE8FF",
+        "surface-dim": "#dad7f3",
+        "surface-container": "#efecff",
+        "inverse-primary": "#c7bfff",
+        "surface": "#FFFFFF",
+        "primary-fixed-dim": "#c7bfff",
+        "primary": "#5744cf",
+        "on-error": "#ffffff",
+        "tertiary": "#9b3e32",
+        "error-container": "#ffdad6",
+        "surface-bright": "#fcf8ff",
+        "primary-muted": "#9E93FF",
+        "on-error-container": "#93000a",
+        "on-primary-fixed": "#170065",
+        "mint-subtle": "#D0F2EC",
+        "outline-variant": "#c8c4d6",
+        "on-surface-variant": "#474554",
+        "on-secondary": "#ffffff",
+        "tertiary-container": "#bb5548",
+        "tertiary-fixed": "#ffdad5",
+        "primary-fixed": "#e4dfff",
+        "inverse-surface": "#2f2e43",
+        "on-primary": "#ffffff",
+        "on-primary-container": "#fffbff",
+        "surface-tint": "#5947d1",
+        "primary-container": "#705fe9",
+        "outline": "#787586",
+        "on-secondary-container": "#007061",
+        "on-tertiary": "#ffffff",
+        "surface-container-highest": "#e2e0fc",
+        "tertiary-fixed-dim": "#ffb4a9",
+        "on-tertiary-container": "#fffbff",
+        "surface-container-lowest": "#ffffff",
+        "on-secondary-fixed": "#00201b",
+        "secondary-fixed-dim": "#68d9c3",
+        "secondary": "#006b5c",
+        "surface-variant": "#e2e0fc",
+        "background": "#FAFBFE",
+        "inverse-on-surface": "#f2efff",
+        "secondary-fixed": "#86f6df",
+        "on-surface": "#1a1a2e",
+        "on-background": "#1a1a2e"
+      },
+      fontFamily: {
+        "sans": ["Be Vietnam Pro", "Heebo", "sans-serif"]
+      },
+      fontSize: {
+        "display-hero": ["34px", { lineHeight: "42px", letterSpacing: "-0.02em", fontWeight: "700" }],
+        "headline-lg-mobile": ["22px", { lineHeight: "28px", fontWeight: "600" }],
+        "headline-md": ["20px", { lineHeight: "26px", fontWeight: "600" }],
+        "headline-lg": ["24px", { lineHeight: "32px", fontWeight: "600" }],
+        "body-lg": ["17px", { lineHeight: "24px", fontWeight: "400" }],
+        "body-md": ["15px", { lineHeight: "22px", fontWeight: "400" }],
+        "label-sm": ["12px", { lineHeight: "16px", fontWeight: "500" }],
+        "label-bold": ["13px", { lineHeight: "18px", letterSpacing: "0.05em", fontWeight: "700" }]
+      }
+    }
+  }
+}
+</script>
+<link rel="stylesheet" href="css/stitch-dashboard.css">
   <!-- OneSignal Web Push -->
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
   <script>
@@ -48,8 +122,17 @@
   </style>
 </head>
 <body>
-  <header class="mk-topbar">
-    <span class="mk-topbar-title">Medickids</span>
+  <!-- Stitch Header — Glassmorphic TopAppBar -->
+  <header class="stitch-topbar" id="stitch-topbar">
+    <div class="stitch-topbar-inner">
+      <div class="stitch-topbar-avatar">
+        <span class="material-symbols-outlined" style="font-size:28px;color:#5744cf;">family_restroom</span>
+      </div>
+      <div class="stitch-topbar-title">Medickids</div>
+      <button class="stitch-topbar-notif" onclick="App.toggleNotif()">
+        <span class="material-symbols-outlined">notifications</span>
+      </button>
+    </div>
   </header>
 
 <div id="app">
@@ -162,59 +245,90 @@
 
     <!-- DASHBOARD -->
     <div class="screen" id="screen-dash">
-      <div class="scroll">
-        <!-- header -->
-        <div class="dash-header">
-          <div>
-            <div class="dash-greeting" id="dash-greeting">שלום 👋</div>
-            <div class="dash-title" id="dash-title">מה קורה עכשיו?</div>
-          </div>
-          <div class="dash-updated" id="dash-updated" style="display:none"></div>
-          <div class="beta-badge dash-beta">BETA</div>
+      <div class="sd-scroll">
+
+        <!-- ── Greeting ── -->
+        <div class="sd-greeting-block">
+          <div id="dash-greeting" class="sd-greeting-sub">שלום 👋</div>
+          <div id="dash-title" class="sd-greeting-title">מה קורה עכשיו?</div>
+          <div id="dash-updated" class="sd-updated" style="display:none"></div>
         </div>
 
-        <!-- dynamic hero card -->
+        <!-- ── Hero Card (JS controls className: hero-card calm/fever/med/weight) ── -->
         <div class="hero-card calm" id="dash-hero" onclick="App.heroClick()"></div>
 
-        <!-- family summary -->
-        <div class="fam-summary" id="dash-fam-summary" style="display:none"></div>
+        <!-- ── Family Summary (JS shows/hides) ── -->
+        <div id="dash-fam-summary" style="display:none"></div>
 
-        <!-- active treatments (Step 1E — read-only card, shown only if a COURSE is active) -->
+        <!-- ── Active Treatments (JS shows/hides) ── -->
         <div id="dash-active-treatments" style="display:none"></div>
 
-        <!-- child cards -->
+        <!-- ── Child Cards (JS renders) ── -->
         <div id="dash-children"></div>
 
-        <!-- quick actions -->
-        <div class="qa-grid">
-          <button class="qa-btn" onclick="App.openMedSheet()"><div class="qa-ic">💊</div><div class="qa-lbl">נתתי תרופה</div></button>
-          <button class="qa-btn" onclick="App.openTempSheet()"><div class="qa-ic">🌡️</div><div class="qa-lbl">מדדתי חום</div></button>
-          <button class="qa-btn" onclick="App.openDoseSheet()"><div class="qa-ic">🧮</div><div class="qa-lbl">חישוב מינון</div></button>
-          <button class="qa-btn" onclick="App.quickWeightUpdate()"><div class="qa-ic">⚖️</div><div class="qa-lbl">עדכון משקל</div></button>
-          <button class="qa-btn" onclick="App.tab('screen-hist')"><div class="qa-ic">📋</div><div class="qa-lbl">היסטוריה</div></button>
-          <button class="qa-btn" onclick="App.openCourseSheet()"><div class="qa-ic">🗓️</div><div class="qa-lbl">התחל טיפול</div></button>
+        <!-- ── Quick Actions — Stitch Design ── -->
+        <div class="sd-section-title">פעולות מהירות</div>
+        <div class="sd-qa-grid">
+          <button class="sd-qa-btn sd-qa-lavender" onclick="App.openMedSheet()">
+            <span class="material-symbols-outlined sd-qa-icon" style="font-variation-settings:'FILL' 1">medication_liquid</span>
+            <span class="sd-qa-lbl">נתתי תרופה</span>
+          </button>
+          <button class="sd-qa-btn sd-qa-coral" onclick="App.openTempSheet()">
+            <span class="material-symbols-outlined sd-qa-icon" style="font-variation-settings:'FILL' 1">device_thermostat</span>
+            <span class="sd-qa-lbl">מדדתי חום</span>
+          </button>
+          <button class="sd-qa-btn sd-qa-mint" onclick="App.openCourseSheet()">
+            <span class="material-symbols-outlined sd-qa-icon" style="font-variation-settings:'FILL' 1">health_and_safety</span>
+            <span class="sd-qa-lbl">התחל טיפול</span>
+          </button>
+          <button class="sd-qa-btn sd-qa-neutral" onclick="App.openDoseSheet()">
+            <span class="material-symbols-outlined sd-qa-icon" style="font-variation-settings:'FILL' 1">calculate</span>
+            <span class="sd-qa-lbl">חישוב מינון</span>
+          </button>
+          <button class="sd-qa-btn sd-qa-neutral" onclick="App.quickWeightUpdate()">
+            <span class="material-symbols-outlined sd-qa-icon" style="font-variation-settings:'FILL' 1">monitor_weight</span>
+            <span class="sd-qa-lbl">עדכון משקל</span>
+          </button>
+          <button class="sd-qa-btn sd-qa-neutral" onclick="App.tab('screen-hist')">
+            <span class="material-symbols-outlined sd-qa-icon" style="font-variation-settings:'FILL' 1">history</span>
+            <span class="sd-qa-lbl">היסטוריה</span>
+          </button>
         </div>
 
-        <!-- timeline -->
-        <div class="tl-card" id="dash-timeline" style="display:none">
-          <div class="tl-title">אירועים אחרונים</div>
+        <!-- ── Timeline (JS shows/hides) ── -->
+        <div class="sd-tl-card" id="dash-timeline" style="display:none">
+          <div class="sd-tl-title">אירועים אחרונים</div>
           <div id="dash-tl-rows"></div>
-          <button class="tl-more" onclick="App.tab('screen-hist')">הצג הכול ›</button>
+          <button class="sd-tl-more" onclick="App.tab('screen-hist')">הצג הכול ›</button>
         </div>
 
-        <!-- insight -->
-        <div class="insight-card" id="dash-insight" style="display:none">
-          <div class="insight-ic">💡</div>
-          <div class="insight-text" id="dash-insight-text"></div>
+        <!-- ── Insight (JS shows/hides) ── -->
+        <div class="sd-insight-card" id="dash-insight" style="display:none">
+          <span class="material-symbols-outlined sd-insight-ic">lightbulb</span>
+          <div id="dash-insight-text" class="sd-insight-text"></div>
         </div>
-      </div>
 
-      <div class="navbar">
-        <button class="navitem" data-nav="screen-dash" onclick="App.tab('screen-dash')"><span class="ic">🏠</span>בית</button>
-        <button class="navitem" data-nav="screen-hist" onclick="App.tab('screen-hist')"><span class="ic">🕒</span>היסטוריה</button>
-        <button class="navitem" data-nav="screen-temp" onclick="App.tab('screen-temp')"><span class="ic">📈</span>חום</button>
-        <button class="navitem" data-nav="screen-settings" onclick="App.tab('screen-settings')"><span class="ic">⚙️</span>הגדרות</button>
-      </div>
+      </div><!-- /sd-scroll -->
+
+      <!-- ── Bottom Navbar — Stitch Glassmorphic ── -->
+      <nav class="sd-navbar">
+        <button class="navitem" data-nav="screen-dash" onclick="App.tab('screen-dash')">
+          <span class="material-symbols-outlined sd-nav-ic">home</span>
+          <span>בית</span>
+        </button>
+        <button class="navitem" data-nav="screen-hist" onclick="App.tab('screen-hist')">
+          <span class="material-symbols-outlined sd-nav-ic">history</span>
+          <span>היסטוריה</span>
+        </button>
+        <button class="navitem" data-nav="screen-temp" onclick="App.tab('screen-temp')">
+          <span class="material-symbols-outlined sd-nav-ic">medical_services</span>
+          <span>בריאות</span>
+        </button>
+        <button class="navitem" data-nav="screen-settings" onclick="App.tab('screen-settings')">
+          <span class="material-symbols-outlined sd-nav-ic">settings</span>
+          <span>הגדרות</span>
+        </button>
+      </nav>
     </div>
 
     <!-- HISTORY -->
@@ -485,6 +599,7 @@
 
 </body>
 </html>
+
 
 
 
