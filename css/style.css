@@ -731,3 +731,154 @@ body {
 .dose-warning { border-radius: 14px; padding: 14px 16px; margin-top: 14px; font-size: 13px; line-height: 1.6; font-weight: 500; }
 .dose-warning-alert { background: #fff4e5; border: 1.5px solid #ffcf8a; color: #8a5a00; }
 .dose-warning-block { background: var(--error-bg); border: 1.5px solid #ffb3ae; color: #9c1c14; }
+
+/* ═══════════════════════════════════════════
+   STITCH DESIGN SYSTEM — Delta v1.0
+   מוסיף על הקיים, לא מחליף
+   ═══════════════════════════════════════════ */
+
+/* ── Be Vietnam Pro כ-primary font בדשבורד ── */
+.dash-greeting,
+.dash-title,
+.dash-greeting-section,
+.dash-topbar-title,
+.qa-section-title,
+.qa-lbl,
+.child-name,
+.hero-main,
+.hero-label,
+.hero-sub,
+.fam-title {
+  font-family: 'Be Vietnam Pro', 'Rubik', sans-serif;
+}
+
+/* ── Hero card — Stitch shadow + border ── */
+.hero-card {
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(124,108,246,0.15);
+  border: 1px solid rgba(200,196,214,0.35);
+}
+.hero-card.calm  { background: linear-gradient(135deg, #f0edff 0%, #e4f5eb 100%); }
+.hero-card.med   { background: linear-gradient(135deg, #e4f5eb 0%, #d4f0e4 100%); }
+.hero-card.fever { background: linear-gradient(135deg, #ffe8e8 0%, #fff0ec 100%); }
+.hero-card.weight{ background: linear-gradient(135deg, #fff5e6 0%, #ffefd8 100%); }
+
+/* ── Intervention alert card (כשיש תרופה דחופה) ── */
+.hero-card.med .hero-ic {
+  background: rgba(0,107,92,0.12);
+}
+.hero-card.fever .hero-ic {
+  background: rgba(155,62,50,0.10);
+}
+
+/* ── Child cards — Stitch border-right accent ── */
+.child-card {
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+  border: 1px solid rgba(200,196,214,0.3);
+  border-right: 4px solid var(--primary);
+  transition: transform 0.15s;
+}
+.child-card:active { transform: scale(0.99); }
+.child-card.warm {
+  border-right-color: #FF6B6B;
+}
+.child-card.ok-card {
+  border-right-color: #006b5c;
+}
+
+/* ── QA grid — Stitch 2-column on mobile ── */
+.qa-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.qa-btn {
+  border-radius: 20px;
+  aspect-ratio: 1;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+  transition: transform 0.2s;
+  padding: 16px 10px;
+}
+.qa-btn:active { transform: scale(0.95); }
+.qa-mat-ic { font-size: 30px; margin-bottom: 8px; }
+.qa-lbl {
+  font-size: 12px; font-weight: 700; line-height: 1.3;
+}
+
+/* ── Navbar — Stitch rounded-top + active pill ── */
+.navbar {
+  border-radius: 24px 24px 0 0;
+  height: calc(68px + env(safe-area-inset-bottom, 0px));
+  padding-top: 10px;
+  box-shadow: 0 -8px 30px rgba(87,68,207,0.07);
+}
+.navitem {
+  border-radius: 16px;
+  padding: 6px 14px;
+  transition: all 0.2s;
+}
+.navitem.active {
+  background: rgba(87,68,207,0.12);
+  color: var(--primary);
+}
+.navitem:active { transform: scale(0.9); }
+
+/* ── Dashboard TopBar — glassmorphism upgrade ── */
+.dash-topbar {
+  box-shadow: 0 1px 12px rgba(87,68,207,0.06);
+}
+.dash-avatar {
+  background: #EAE8FF;
+  border: 2px solid rgba(87,68,207,0.15);
+}
+
+/* ── Family summary — Stitch style ── */
+.fam-summary {
+  background: #EAE8FF;
+  border-radius: 20px;
+  border: 1px solid rgba(200,196,214,0.4);
+  box-shadow: 0 4px 16px rgba(87,68,207,0.06);
+}
+.fam-chip {
+  border-radius: 50px;
+  padding: 5px 12px;
+  font-size: 11.5px;
+  border: 1px solid rgba(200,196,214,0.3);
+}
+.fam-chip.warn { background: #FFE8E8; color: #9b3e32; }
+.fam-chip.ok   { background: #D0F2EC; color: #006b5c; }
+
+/* ── Timeline card — Stitch ── */
+.tl-card {
+  border-radius: 20px;
+  box-shadow: 0 4px 16px rgba(87,68,207,0.06);
+}
+
+/* ── Active treatment card — Stitch accent ── */
+#dash-active-treatments .active-tx-card {
+  border-right: 4px solid var(--error);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(255,107,107,0.12);
+}
+#dash-active-treatments .active-tx-card .atx-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+/* ── Greeting section ── */
+.dash-greeting { font-size: 28px; }
+.dash-greeting-section { padding: 20px 0 10px; }
+
+/* ── Scroll bottom padding (navbar height) ── */
+.dash-scroll { padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important; }
+
+/* ── softPulse animation (status chips) ── */
+@keyframes softPulse {
+  0%   { transform: scale(1);    opacity: 1;   }
+  50%  { transform: scale(1.04); opacity: 0.8; }
+  100% { transform: scale(1);    opacity: 1;   }
+}
+.pulse { animation: softPulse 2s infinite; }
+
