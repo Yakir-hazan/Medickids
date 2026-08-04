@@ -882,3 +882,162 @@ body {
 }
 .pulse { animation: softPulse 2s infinite; }
 
+
+/* ═══════════════════════════════════════════
+   STITCH v2 — Hero card & Child card redesign
+   ═══════════════════════════════════════════ */
+
+/* ── Hero card — Stitch purple gradient (med state) ── */
+.hero-card.med {
+  background: linear-gradient(145deg, #6B5CE7 0%, #8B7FF0 50%, #A89BF5 100%);
+  color: #fff;
+  cursor: default;
+}
+.hero-card.med .hero-badge,
+.hero-card.med .hero-main,
+.hero-card.med .hero-sub { color: rgba(255,255,255,0.9); }
+
+.hero-card.fever {
+  background: linear-gradient(145deg, #E05C3A 0%, #F07B5A 50%, #F5967A 100%);
+  color: #fff;
+}
+.hero-card.fever .hero-badge,
+.hero-card.fever .hero-main,
+.hero-card.fever .hero-sub { color: rgba(255,255,255,0.9); }
+
+.hero-card.calm {
+  background: linear-gradient(145deg, #5744cf 0%, #7B6BE8 60%, #A89BF5 100%);
+  color: #fff;
+}
+.hero-card.calm .hero-badge,
+.hero-card.calm .hero-main,
+.hero-card.calm .hero-sub { color: rgba(255,255,255,0.85); }
+
+/* badge בחלק העליון */
+.hero-badge {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.4px;
+  color: rgba(255,255,255,0.75);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+/* hero-top — row ראשי */
+.hero-top {
+  display: flex; align-items: center; gap: 14px;
+  margin-bottom: 16px;
+}
+.hero-main {
+  font-size: 19px; font-weight: 700; line-height: 1.3;
+  color: #fff; margin-bottom: 4px;
+}
+.hero-sub {
+  font-size: 13px; font-weight: 500;
+  color: rgba(255,255,255,0.8);
+}
+/* circle icon בצד שמאל */
+.hero-ic-circle {
+  width: 56px; height: 56px; border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+/* timer גדול */
+.hero-timer-big {
+  font-size: 36px; font-weight: 800; color: #fff;
+  direction: ltr; margin-bottom: 12px; line-height: 1;
+}
+/* כפתור CTA לבן בתחתית */
+.hero-cta {
+  display: block; width: 100%;
+  background: rgba(255,255,255,0.95);
+  color: #5744cf;
+  border: none; border-radius: 50px;
+  padding: 14px 20px;
+  font-size: 15px; font-weight: 700;
+  font-family: 'Be Vietnam Pro', 'Rubik', sans-serif;
+  cursor: pointer; text-align: center;
+  transition: transform 0.2s, opacity 0.2s;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+}
+.hero-cta:active { transform: scale(0.97); }
+.hero-card.fever .hero-cta { color: #9b3e32; }
+
+/* ── Child card — Stitch redesign ── */
+.child-card {
+  background: #fff;
+  border-radius: 24px;
+  border: 1px solid rgba(200,196,214,0.35);
+  border-right: none; /* מסיר את border-right מה-delta הקודם */
+  padding: 18px 16px 14px;
+  margin-bottom: 14px;
+  box-shadow: 0 6px 24px rgba(87,68,207,0.07);
+}
+
+/* header של הכרטיס — avatar + שם + menu */
+.child-top {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 12px; cursor: default;
+}
+.child-avatar-wrap {
+  position: relative; flex-shrink: 0;
+}
+.child-avatar-circle {
+  width: 54px; height: 54px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px;
+  border: 3px solid rgba(255,182,193,0.6); /* ורוד כמו בצילום */
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.child-card.warm .child-avatar-circle {
+  border-color: rgba(255,107,107,0.5);
+}
+.child-fever-dot {
+  position: absolute; bottom: 2px; left: 2px;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: #FF6B6B; border: 2px solid #fff;
+}
+
+/* שם + status */
+.child-status-row {
+  display: flex; align-items: center; gap: 6px; margin-top: 4px;
+}
+.child-status-chip {
+  font-size: 11px; font-weight: 600;
+  padding: 2px 8px; border-radius: 50px;
+}
+.fever-chip { background: #FFE8E8; color: #9b3e32; }
+.ok-chip    { background: #EAE8FF; color: #5744cf; }
+.child-status-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #5744cf;
+}
+.child-menu-btn {
+  margin-right: auto; background: none; border: none;
+  cursor: pointer; padding: 4px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* sub-cards — חום ותרופה */
+.child-subcard {
+  background: #f5f2ff;
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.child-subcard:last-child { margin-bottom: 0; }
+.child-subcard.subcard-fever { background: #FFF5F5; }
+.child-subcard.subcard-ok    { background: #F0FBF8; }
+.child-subcard.subcard-wait  { background: #F5F2FF; }
+
+.subcard-label {
+  font-size: 12px; font-weight: 600; color: #474554;
+  display: flex; align-items: center; gap: 4px;
+}
+.subcard-val {
+  font-size: 15px; font-weight: 700; color: #1a1a2e;
+}
+.subcard-val.fever-val { color: #D96B2F; font-size: 20px; }
+.subcard-status {
+  font-size: 12px; font-weight: 600; color: #474554;
+}
+
