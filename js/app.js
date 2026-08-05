@@ -242,7 +242,10 @@ const App = (() => {
     const hour = new Date().getHours();
     const timeGreet = hour < 5 ? 'לילה טוב' : hour < 12 ? 'בוקר טוב' : hour < 17 ? 'צהריים טובים' : hour < 21 ? 'ערב טוב' : 'לילה טוב';
     const famName = state.family ? `משפחת ${state.family}` : '';
-    document.getElementById('dash-greeting').textContent = famName ? `${timeGreet}, ${famName} 👋` : `${timeGreet} 👋`;
+    // mockup layout: small greeting line = "שלום, X 👋", big line = time greeting
+    document.getElementById('dash-greeting').textContent = famName ? `שלום, ${famName} 👋` : 'שלום 👋';
+    // Only override dash-title with time greeting if not overridden later by empty-state / fever logic
+    document.getElementById('dash-title').dataset.timeGreet = timeGreet;
     // date pill
     const _dp = document.getElementById('dash-date-text');
     if (_dp) {
@@ -295,7 +298,8 @@ const App = (() => {
 
     // ---------- title ----------
     const anyFever = childData.some((d) => d.hasFever);
-    document.getElementById('dash-title').textContent = anyFever ? 'מה קורה הלילה?' : 'מה קורה עכשיו?';
+    const _tg = document.getElementById('dash-title').dataset.timeGreet || timeGreet;
+    document.getElementById('dash-title').textContent = _tg;
 
     // ---------- header: last updated ----------
     const latestEvent = DB.feed(null)[0] || null;
