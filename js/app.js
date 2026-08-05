@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.2 → 1.0.0-beta.2 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.46';
+  const APP_VERSION = '1.0.0-beta.40';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -113,6 +113,7 @@ const App = (() => {
   }
   function showSplash() {
     goto('screen-splash');
+    animateSplashThermo();
     // בקש רשות התראות OneSignal — רק ב-PWA מותקן (standalone)
     if (isStandalone()) {
       window.OneSignalDeferred = window.OneSignalDeferred || [];
@@ -320,16 +321,15 @@ const App = (() => {
       heroState = { type: 'fever', childId: feverChild.c.id };
       hero.className = 'hero-card fever';
       hero.innerHTML = `
-        <div class="hero-badge"><span class="material-symbols-outlined" style="font-size:13px;vertical-align:middle;">warning</span> שימו לב</div>
         <div class="hero-top">
+          <div class="hero-ic">${feverChild.lastTemp.value >= 39.5 ? '🔥' : '🌡️'}</div>
           <div style="flex:1;">
+            <div class="hero-label">שימו לב</div>
             <div class="hero-main">ל${feverChild.c.name} יש חום גבוה</div>
             <div class="hero-sub">מדדתם לפני ${elapsedString(feverChild.lastTemp.time)}</div>
           </div>
-          <div class="hero-ic-circle">${feverChild.lastTemp.value >= 39.5 ? '<span class="material-symbols-outlined" style="font-size:28px;color:#fff;">thermostat</span>' : '<span class="material-symbols-outlined" style="font-size:28px;color:#fff;">device_thermostat</span>'}</div>
-        </div>
-        <div class="hero-timer-big">${feverChild.lastTemp.value}°C</div>
-        <button class="hero-cta" onclick="App.openTempSheet()">מדוד שוב</button>`;
+          <div class="hero-timer">${feverChild.lastTemp.value}°</div>
+        </div>`;
     } else if (urgentDose) {
       heroState = { type: 'med', childId: urgentDose.c.id };
       const totalMin = Math.ceil(urgentDose.nextDoseMs / 60000);
@@ -337,15 +337,15 @@ const App = (() => {
       const mm = String(totalMin % 60).padStart(2, '0');
       hero.className = 'hero-card med';
       hero.innerHTML = `
-        <div class="hero-badge">הפעולה הבאה</div>
         <div class="hero-top">
+          <div class="hero-ic">⏰</div>
           <div style="flex:1;">
-            <div class="hero-main">זמן ל${urgentDose.nextDrugName} – ${urgentDose.c.name}</div>
-            <div class="hero-sub">מנה אחרונה ניתנה לפני ${elapsedString(urgentDose.lastMed.time)}</div>
+            <div class="hero-label">הפעולה הבאה</div>
+            <div class="hero-main">אפשר לתת שוב ${urgentDose.nextDrugName} ל${urgentDose.c.name} בעוד</div>
+            <div class="hero-sub">מנה אחרונה ב־${formatClock(urgentDose.lastMed.time)}</div>
           </div>
-          <div class="hero-ic-circle"><span class="material-symbols-outlined" style="font-size:28px;color:#fff;font-variation-settings:'FILL' 1;">medication_liquid</span></div>
-        </div>
-        <button class="hero-cta" onclick="App.openMedSheet()">סמן כבוצע</button>`;
+          <div class="hero-timer">${hh}:${mm}</div>
+        </div>`;
     } else if (staleWeight) {
       heroState = { type: 'weight', childId: staleWeight.id };
       const months = Math.floor((now - staleWeight.weightUpdatedAt) / (30 * 24 * 3600000));
@@ -366,13 +366,13 @@ const App = (() => {
         .sort((a, b) => b.lastTemp.time - a.lastTemp.time)[0] || null;
       hero.className = 'hero-card calm';
       hero.innerHTML = `
-        <div class="hero-badge">הכול רגוע</div>
         <div class="hero-top">
+          <div class="hero-ic">🌙</div>
           <div style="flex:1;">
+            <div class="hero-label">הכול רגוע</div>
             <div class="hero-main">אין פעולות דחופות כרגע</div>
             ${latestTemp ? `<div class="hero-sub">המדידה האחרונה: ${latestTemp.lastTemp.value}°</div>` : ''}
           </div>
-          <div class="hero-ic-circle"><span class="material-symbols-outlined" style="font-size:28px;color:#fff;">nightlight</span></div>
         </div>`;
     }
 
@@ -406,18 +406,24 @@ const App = (() => {
 
       let tempRow = '';
       if (lastTemp) {
-        tempRow = `<div class="child-subcard${hasFever ? ' subcard-fever' : ''}">
-          <div class="subcard-label">חום נוכחי <span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;font-variation-settings:'FILL' 1;">device_thermostat</span></div>
-          <div class="subcard-val${hasFever ? ' fever-val' : ''}">${lastTemp.value}°C</div>
+        tempRow = `<div class="crow">
+          <div class="crow-ic">🌡️</div>
+          <div class="crow-body">
+            <div class="crow-val${hasFever ? ' fever' : ''}">${lastTemp.value}°</div>
+            <div class="crow-lbl">מדידה אחרונה: לפני ${elapsedString(lastTemp.time)}</div>
+          </div>
         </div>`;
       }
 
       let medRow = '';
       if (lastMed) {
-        const canGiveNow = nextDoseMs === null;
-        medRow = `<div class="child-subcard${canGiveNow ? ' subcard-ok' : ' subcard-wait'}">
-          <div class="subcard-label">${lastMed.medicine} <span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;font-variation-settings:'FILL' 1;">medication_liquid</span></div>
-          <div class="subcard-status">${canGiveNow ? 'אפשר לתת מנה' : 'ממתין למנה'}</div>
+        medRow = `<div class="crow">
+          <div class="crow-ic">💊</div>
+          <div class="crow-body">
+            <div class="crow-val">${lastMed.medicine}</div>
+            <div class="crow-lbl">ניתן לפני ${elapsedString(lastMed.time)}</div>
+          </div>
+          <div class="crow-time">${formatClock(lastMed.time)}</div>
         </div>`;
       }
 
@@ -442,20 +448,12 @@ const App = (() => {
 
       return `<div class="child-card${cardClass}">
         <div class="child-top" onclick="App.openEditKid('${c.id}')">
-          <div class="child-avatar-wrap">
-            <div class="child-avatar-circle" style="background:${AVATAR_GRADIENT[c.color]}">${c.emoji}</div>
-            ${hasFever ? '<div class="child-fever-dot"></div>' : ''}
-          </div>
+          <div class="avatar" style="background:${AVATAR_GRADIENT[c.color]}">${c.emoji}</div>
           <div class="child-info">
             <div class="child-name">${c.name}</div>
-            <div class="child-status-row">
-              ${hasFever ? '<span class="child-status-chip fever-chip">🌡️ עם חום</span>' : '<span class="child-status-chip ok-chip">טיפול פעיל</span>'}
-              <span class="child-status-dot"></span>
-            </div>
+            <div class="child-mood">${moodText}</div>
           </div>
-          <button class="child-menu-btn" onclick="event.stopPropagation();App.openEditKid('${c.id}')">
-            <span class="material-symbols-outlined" style="font-size:20px;color:#787586;">more_vert</span>
-          </button>
+          <div class="child-edit-hint">עריכה ›</div>
         </div>
         ${tempRow}
         ${tempRow && medRow ? '<div class="child-divider"></div>' : ''}
