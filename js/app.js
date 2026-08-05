@@ -243,6 +243,14 @@ const App = (() => {
     const timeGreet = hour < 5 ? 'לילה טוב' : hour < 12 ? 'בוקר טוב' : hour < 17 ? 'צהריים טובים' : hour < 21 ? 'ערב טוב' : 'לילה טוב';
     const famName = state.family ? `משפחת ${state.family}` : '';
     document.getElementById('dash-greeting').textContent = famName ? `${timeGreet}, ${famName} 👋` : `${timeGreet} 👋`;
+    // date pill
+    const _dp = document.getElementById('dash-date-text');
+    if (_dp) {
+      const _d = new Date();
+      const _days = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
+      const _months = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+      _dp.textContent = `${_days[_d.getDay()]}, ${_d.getDate()} ${_months[_d.getMonth()]} ${_d.getFullYear()}`;
+    }
 
     // ---------- empty state ----------
     const wrap = document.getElementById('dash-children');
