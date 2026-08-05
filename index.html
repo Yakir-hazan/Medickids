@@ -9,8 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&family=Heebo:wght@300;400;500;600;700&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
   <!-- OneSignal Web Push -->
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
@@ -22,7 +21,31 @@
       });
     });
   </script>
-
+  <style>
+    .mk-topbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 52px;
+      background: #7B68EE;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      box-shadow: none;
+    }
+    .mk-topbar-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: 0.5px;
+      font-family: 'Heebo', sans-serif;
+    }
+    body {
+      padding-top: 0;
+    }
+  </style>
 </head>
 <body>
   <header class="mk-topbar">
@@ -69,54 +92,86 @@
 
     <!-- SPLASH -->
     <div class="screen" id="screen-splash">
-      <div class="splash-new">
-        <!-- Ambient glow layers -->
-        <div class="splash-glow-primary"></div>
-        <div class="splash-glow-secondary"></div>
-        <!-- Icon -->
-        <div class="splash-icon-wrap">
-          <div class="splash-icon-halo"></div>
-          <div class="splash-icon-box">
-            <span class="material-symbols-outlined" style="font-size:48px;color:#5744cf;font-variation-settings:'FILL' 1;">medical_services</span>
-          </div>
+      <div class="scroll">
+        <div class="thermo-box">
+          <svg width="175" height="310" viewBox="0 0 175 310">
+            <!-- Tube background -->
+            <rect x="60" y="10" width="28" height="248" rx="14" fill="#C5C6E0"/>
+            <!-- Tube inner -->
+            <rect x="64" y="14" width="20" height="236" rx="10" fill="#F0F0FA"/>
+            <!-- Mercury fill — clipped to tube inner -->
+            <defs>
+              <clipPath id="splash-clip">
+                <rect x="64" y="14" width="20" height="236" rx="10"/>
+              </clipPath>
+            </defs>
+            <rect id="splash-mercury" x="64" y="250" width="20" height="0" fill="#D82020" clip-path="url(#splash-clip)"/>
+
+            <!-- Bulb -->
+            <circle cx="74" cy="282" r="24" fill="#C5C6E0"/>
+            <circle cx="74" cy="282" r="22" fill="#D82020"/>
+            <circle cx="67" cy="274" r="5" fill="rgba(255,255,255,0.35)"/>
+
+            <!-- Major ticks + labels -->
+            <line x1="88" y1="14"    x2="100" y2="14"    stroke="#9090B8" stroke-width="1.5"/>
+            <text x="124" y="14"    class="sl">42°</text>
+
+            <line x1="88" y1="43.5"  x2="100" y2="43.5"  stroke="#9090B8" stroke-width="1.5"/>
+            <text x="124" y="43.5"  class="sl">41°</text>
+
+            <line x1="88" y1="73"    x2="100" y2="73"    stroke="#9090B8" stroke-width="1.5"/>
+            <text x="124" y="73"    class="sl">40°</text>
+
+            <line x1="88" y1="102.5" x2="100" y2="102.5" stroke="#9090B8" stroke-width="1.5"/>
+            <text x="124" y="102.5" class="sl">39°</text>
+
+            <line x1="88" y1="117.25" x2="93" y2="117.25" stroke="#B0B2D0" stroke-width="1"/>
+
+            <line x1="88" y1="132"   x2="100" y2="132"   stroke="#9090B8" stroke-width="1.5"/>
+            <text x="124" y="132"   class="sl">38°</text>
+
+            <line x1="88" y1="161.5" x2="100" y2="161.5" stroke="#9090B8" stroke-width="1.5"/>
+            <text x="124" y="161.5" class="sl">37°</text>
+
+            <line x1="88" y1="191"   x2="100" y2="191"   stroke="#9090B8" stroke-width="1.5"/>
+            <text x="124" y="191"   class="sl">36°</text>
+
+            <line x1="88" y1="220.5" x2="100" y2="220.5" stroke="#9090B8" stroke-width="1.5"/>
+            <text x="124" y="220.5" class="sl">35°</text>
+
+            <line x1="88" y1="250"   x2="100" y2="250"   stroke="#9090B8" stroke-width="1.5"/>
+            <text x="124" y="250"   class="sl">34°</text>
+
+            <!-- Minor half-ticks -->
+            <line x1="88" y1="28.75"  x2="92" y2="28.75"  stroke="#C8CAE0" stroke-width="1"/>
+            <line x1="88" y1="58.25"  x2="92" y2="58.25"  stroke="#C8CAE0" stroke-width="1"/>
+            <line x1="88" y1="87.75"  x2="92" y2="87.75"  stroke="#C8CAE0" stroke-width="1"/>
+            <line x1="88" y1="146.75" x2="92" y2="146.75" stroke="#C8CAE0" stroke-width="1"/>
+            <line x1="88" y1="176.25" x2="92" y2="176.25" stroke="#C8CAE0" stroke-width="1"/>
+            <line x1="88" y1="205.75" x2="92" y2="205.75" stroke="#C8CAE0" stroke-width="1"/>
+            <line x1="88" y1="235.25" x2="92" y2="235.25" stroke="#C8CAE0" stroke-width="1"/>
+          </svg>
         </div>
-        <!-- Brand -->
-        <h1 class="splash-brand" id="splash-temp">Medickids</h1>
-        <p class="splash-tagline" id="splash-loading-sub">טיפול מרגיע, בכל צעד בדרך.</p>
-        <!-- Dots loader -->
-        <div class="splash-dots">
-          <div class="splash-dot" style="animation-delay:0s"></div>
-          <div class="splash-dot" style="animation-delay:0.2s"></div>
-          <div class="splash-dot" style="animation-delay:0.4s"></div>
-        </div>
+        <div class="temp-display" id="splash-temp">34.0°C</div>
+        <div class="loading-sub" id="splash-loading-sub">טוען...</div>
+        <div class="splash-title">Medickids <span class="beta-badge">BETA</span></div>
+        <div class="splash-sub">כל התרופות, כל המדידות, במקום אחד רגוע —<br>גם ב־3 בלילה.</div>
         <!-- no manual button — App.init() auto-navigates via setTimeout to screen-dash / screen-kids -->
       </div>
     </div>
 
     <!-- DASHBOARD -->
     <div class="screen" id="screen-dash">
-      <!-- TopAppBar -->
-      <header class="dash-topbar">
-        <div class="dash-topbar-inner">
-          <button class="dash-avatar-btn" onclick="App.tab('screen-settings')">
-            <div class="dash-avatar" id="dash-avatar-img">
-              <span class="material-symbols-outlined" style="font-size:22px;color:#5744cf;">person</span>
-            </div>
-          </button>
-          <span class="dash-topbar-title">Medickids</span>
-          <button class="dash-notif-btn" id="dash-notif-btn" onclick="App.toggleNotif()">
-            <span class="material-symbols-outlined" style="font-size:24px;">notifications</span>
-          </button>
+      <div class="scroll">
+        <!-- header -->
+        <div class="dash-header">
+          <div>
+            <div class="dash-greeting" id="dash-greeting">שלום 👋</div>
+            <div class="dash-title" id="dash-title">מה קורה עכשיו?</div>
+          </div>
+          <div class="dash-updated" id="dash-updated" style="display:none"></div>
+          <div class="beta-badge dash-beta">BETA</div>
         </div>
-      </header>
-
-      <div class="scroll dash-scroll">
-        <!-- Hero Greeting -->
-        <section class="dash-greeting-section">
-          <div class="dash-greeting" id="dash-greeting">בוקר טוב 👋</div>
-          <div class="dash-title" id="dash-title">הנה הסקירה היומית שלכם.</div>
-          <div class="dash-updated" id="dash-updated" style="display:none;font-size:12px;color:#6B7080;margin-top:2px;"></div>
-        </section>
 
         <!-- dynamic hero card -->
         <div class="hero-card calm" id="dash-hero" onclick="App.heroClick()"></div>
@@ -124,41 +179,20 @@
         <!-- family summary -->
         <div class="fam-summary" id="dash-fam-summary" style="display:none"></div>
 
-        <!-- active treatments -->
+        <!-- active treatments (Step 1E — read-only card, shown only if a COURSE is active) -->
         <div id="dash-active-treatments" style="display:none"></div>
 
         <!-- child cards -->
         <div id="dash-children"></div>
 
         <!-- quick actions -->
-        <div class="qa-section">
-          <div class="qa-section-title">פעולות מהירות</div>
-          <div class="qa-grid">
-            <button class="qa-btn qa-lavender" onclick="App.openMedSheet()">
-              <span class="material-symbols-outlined qa-mat-ic" style="color:#5744cf;font-variation-settings:'FILL' 1;">medication_liquid</span>
-              <div class="qa-lbl">נתתי תרופה</div>
-            </button>
-            <button class="qa-btn qa-coral" onclick="App.openTempSheet()">
-              <span class="material-symbols-outlined qa-mat-ic" style="color:#9b3e32;font-variation-settings:'FILL' 1;">device_thermostat</span>
-              <div class="qa-lbl" style="color:#9b3e32;">מדדתי חום</div>
-            </button>
-            <button class="qa-btn qa-neutral" onclick="App.openDoseSheet()">
-              <span class="material-symbols-outlined qa-mat-ic" style="color:#9E93FF;font-variation-settings:'FILL' 1;">calculate</span>
-              <div class="qa-lbl">חישוב מינון</div>
-            </button>
-            <button class="qa-btn qa-neutral" onclick="App.quickWeightUpdate()">
-              <span class="material-symbols-outlined qa-mat-ic" style="color:#9E93FF;font-variation-settings:'FILL' 1;">monitor_weight</span>
-              <div class="qa-lbl">עדכון משקל</div>
-            </button>
-            <button class="qa-btn qa-neutral" onclick="App.tab('screen-hist')">
-              <span class="material-symbols-outlined qa-mat-ic" style="color:#9E93FF;font-variation-settings:'FILL' 1;">history</span>
-              <div class="qa-lbl">היסטוריה</div>
-            </button>
-            <button class="qa-btn qa-mint" onclick="App.openCourseSheet()">
-              <span class="material-symbols-outlined qa-mat-ic" style="color:#006b5c;font-variation-settings:'FILL' 1;">health_and_safety</span>
-              <div class="qa-lbl" style="color:#006b5c;">התחל טיפול</div>
-            </button>
-          </div>
+        <div class="qa-grid">
+          <button class="qa-btn" onclick="App.openMedSheet()"><div class="qa-ic">💊</div><div class="qa-lbl">נתתי תרופה</div></button>
+          <button class="qa-btn" onclick="App.openTempSheet()"><div class="qa-ic">🌡️</div><div class="qa-lbl">מדדתי חום</div></button>
+          <button class="qa-btn" onclick="App.openDoseSheet()"><div class="qa-ic">🧮</div><div class="qa-lbl">חישוב מינון</div></button>
+          <button class="qa-btn" onclick="App.quickWeightUpdate()"><div class="qa-ic">⚖️</div><div class="qa-lbl">עדכון משקל</div></button>
+          <button class="qa-btn" onclick="App.tab('screen-hist')"><div class="qa-ic">📋</div><div class="qa-lbl">היסטוריה</div></button>
+          <button class="qa-btn" onclick="App.openCourseSheet()"><div class="qa-ic">🗓️</div><div class="qa-lbl">התחל טיפול</div></button>
         </div>
 
         <!-- timeline -->
@@ -176,10 +210,10 @@
       </div>
 
       <div class="navbar">
-        <button class="navitem" data-nav="screen-dash" onclick="App.tab('screen-dash')"><span class="material-symbols-outlined nav-ic">home</span>בית</button>
-        <button class="navitem" data-nav="screen-hist" onclick="App.tab('screen-hist')"><span class="material-symbols-outlined nav-ic">history</span>היסטוריה</button>
-        <button class="navitem" data-nav="screen-temp" onclick="App.tab('screen-temp')"><span class="material-symbols-outlined nav-ic">device_thermostat</span>חום</button>
-        <button class="navitem" data-nav="screen-settings" onclick="App.tab('screen-settings')"><span class="material-symbols-outlined nav-ic">settings</span>הגדרות</button>
+        <button class="navitem" data-nav="screen-dash" onclick="App.tab('screen-dash')"><span class="ic">🏠</span>בית</button>
+        <button class="navitem" data-nav="screen-hist" onclick="App.tab('screen-hist')"><span class="ic">🕒</span>היסטוריה</button>
+        <button class="navitem" data-nav="screen-temp" onclick="App.tab('screen-temp')"><span class="ic">📈</span>חום</button>
+        <button class="navitem" data-nav="screen-settings" onclick="App.tab('screen-settings')"><span class="ic">⚙️</span>הגדרות</button>
       </div>
     </div>
 
@@ -191,10 +225,10 @@
         <div id="hist-list"></div>
       </div>
       <div class="navbar">
-        <button class="navitem" data-nav="screen-dash" onclick="App.tab('screen-dash')"><span class="material-symbols-outlined nav-ic">home</span>בית</button>
-        <button class="navitem" data-nav="screen-hist" onclick="App.tab('screen-hist')"><span class="material-symbols-outlined nav-ic">history</span>היסטוריה</button>
-        <button class="navitem" data-nav="screen-temp" onclick="App.tab('screen-temp')"><span class="material-symbols-outlined nav-ic">device_thermostat</span>חום</button>
-        <button class="navitem" data-nav="screen-settings" onclick="App.tab('screen-settings')"><span class="material-symbols-outlined nav-ic">settings</span>הגדרות</button>
+        <button class="navitem" data-nav="screen-dash" onclick="App.tab('screen-dash')"><span class="ic">🏠</span>בית</button>
+        <button class="navitem" data-nav="screen-hist" onclick="App.tab('screen-hist')"><span class="ic">🕒</span>היסטוריה</button>
+        <button class="navitem" data-nav="screen-temp" onclick="App.tab('screen-temp')"><span class="ic">📈</span>חום</button>
+        <button class="navitem" data-nav="screen-settings" onclick="App.tab('screen-settings')"><span class="ic">⚙️</span>הגדרות</button>
       </div>
     </div>
 
@@ -211,10 +245,10 @@
       </div>
       <button class="fab" onclick="App.openTempSheet()">➕ הוספת מדידה</button>
       <div class="navbar">
-        <button class="navitem" data-nav="screen-dash" onclick="App.tab('screen-dash')"><span class="material-symbols-outlined nav-ic">home</span>בית</button>
-        <button class="navitem" data-nav="screen-hist" onclick="App.tab('screen-hist')"><span class="material-symbols-outlined nav-ic">history</span>היסטוריה</button>
-        <button class="navitem" data-nav="screen-temp" onclick="App.tab('screen-temp')"><span class="material-symbols-outlined nav-ic">device_thermostat</span>חום</button>
-        <button class="navitem" data-nav="screen-settings" onclick="App.tab('screen-settings')"><span class="material-symbols-outlined nav-ic">settings</span>הגדרות</button>
+        <button class="navitem" data-nav="screen-dash" onclick="App.tab('screen-dash')"><span class="ic">🏠</span>בית</button>
+        <button class="navitem" data-nav="screen-hist" onclick="App.tab('screen-hist')"><span class="ic">🕒</span>היסטוריה</button>
+        <button class="navitem" data-nav="screen-temp" onclick="App.tab('screen-temp')"><span class="ic">📈</span>חום</button>
+        <button class="navitem" data-nav="screen-settings" onclick="App.tab('screen-settings')"><span class="ic">⚙️</span>הגדרות</button>
       </div>
     </div>
 
@@ -243,10 +277,10 @@
         </div>
       </div>
       <div class="navbar">
-        <button class="navitem" data-nav="screen-dash" onclick="App.tab('screen-dash')"><span class="material-symbols-outlined nav-ic">home</span>בית</button>
-        <button class="navitem" data-nav="screen-hist" onclick="App.tab('screen-hist')"><span class="material-symbols-outlined nav-ic">history</span>היסטוריה</button>
-        <button class="navitem" data-nav="screen-temp" onclick="App.tab('screen-temp')"><span class="material-symbols-outlined nav-ic">device_thermostat</span>חום</button>
-        <button class="navitem" data-nav="screen-settings" onclick="App.tab('screen-settings')"><span class="material-symbols-outlined nav-ic">settings</span>הגדרות</button>
+        <button class="navitem" data-nav="screen-dash" onclick="App.tab('screen-dash')"><span class="ic">🏠</span>בית</button>
+        <button class="navitem" data-nav="screen-hist" onclick="App.tab('screen-hist')"><span class="ic">🕒</span>היסטוריה</button>
+        <button class="navitem" data-nav="screen-temp" onclick="App.tab('screen-temp')"><span class="ic">📈</span>חום</button>
+        <button class="navitem" data-nav="screen-settings" onclick="App.tab('screen-settings')"><span class="ic">⚙️</span>הגדרות</button>
       </div>
     </div>
 
