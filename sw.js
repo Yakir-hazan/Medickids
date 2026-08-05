@@ -2,7 +2,7 @@
    (increment the -vNN suffix here whenever APP_VERSION changes there, e.g. 'v17' here when
    APP_VERSION becomes '1.0.0-beta.2'). Without this bump, users' devices keep serving old
    cached files and "בדוק אם יש עדכון" in Settings will report "already up to date" even when it isn't. */
-const CACHE_NAME = 'madhom-v68';
+const CACHE_NAME = 'madhom-v69';
 const APP_SHELL = [
   './',
   './index.html',
@@ -16,24 +16,57 @@ const APP_SHELL = [
 ];
 
 self.addEventListener('install', (event) => {
+  console.log('[SW-DIAG] install fired — CACHE_NAME:', CACHE_NAME);
+  console.log('[SW-DIAG] APP_SHELL count:', APP_SHELL.length);
+  console.log('[SW-DIAG] APP_SHELL files:', JSON.stringify(APP_SHELL));
+
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL))
+    caches.open(CACHE_NAME).then((cache) => {
+      // cache each file individually so we can identify which one fails
+      return Promise.all(
+        APP_SHELL.map((url) =>
+          cache.add(url).then(() => {
+            console.log('[SW-DIAG] cached OK:', url);
+          }).catch((err) => {
+            console.error('[SW-DIAG] cache FAILED:', url, '—', err.message);
+            throw err; // re-throw so install fails visibly
+          })
+        )
+      );
+    }).then(() => {
+      console.log('[SW-DIAG] cache.addAll complete — all files cached');
+    }).catch((err) => {
+      console.error('[SW-DIAG] install failed — error:', err.name, err.message);
+    })
   );
   self.skipWaiting();
+  console.log('[SW-DIAG] skipWaiting called');
 });
 
 self.addEventListener('activate', (event) => {
+  console.log('[SW-DIAG] activate fired');
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-    )
+    caches.keys().then((keys) => {
+      console.log('[SW-DIAG] existing caches:', JSON.stringify(keys));
+      return Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => {
+        console.log('[SW-DIAG] deleting old cache:', k);
+        return caches.delete(k);
+      }));
+    }).then(() => {
+      console.log('[SW-DIAG] activate complete — clients.claim()');
+    })
   );
   self.clients.claim();
+});
+
+self.addEventListener('message', (event) => {
+  console.log('[SW-DIAG] message received:', event.data);
 });
 
 // Cache-first for app shell, network-first fallback for everything else
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+  console.log('[SW-DIAG] fetch:', event.request.url);
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;

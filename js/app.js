@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.47 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.40';
+  const APP_VERSION = '1.0.0-beta.41';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -1864,7 +1864,48 @@ const App = (() => {
     renderSettings();
     setInterval(renderDashboard, 60000); // keep "elapsed" times fresh
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').catch(() => {});
+      // [SW-DIAG] Registration context
+      console.log('[SW-DIAG] Browser:', navigator.userAgent);
+      console.log('[SW-DIAG] URL:', location.href);
+      console.log('[SW-DIAG] Origin:', location.origin);
+      console.log('[SW-DIAG] Secure context:', window.isSecureContext);
+      console.log('[SW-DIAG] Path:', location.pathname);
+      console.log('[SW-DIAG] Registration started');
+
+      navigator.serviceWorker.register('sw.js')
+        .then((reg) => {
+          console.log('[SW-DIAG] Registration success');
+          console.log('[SW-DIAG] Scope:', reg.scope);
+          console.log('[SW-DIAG] Script URL:', reg.active?.scriptURL ?? '(no active yet)');
+          console.log('[SW-DIAG] Active:', reg.active ? reg.active.state : 'null');
+          console.log('[SW-DIAG] Waiting:', reg.waiting ? reg.waiting.state : 'null');
+          console.log('[SW-DIAG] Installing:', reg.installing ? reg.installing.state : 'null');
+        })
+        .catch((err) => {
+          console.error('[SW-DIAG] Registration failed');
+          console.error('[SW-DIAG] Error name:', err.name);
+          console.error('[SW-DIAG] Error message:', err.message);
+          console.error('[SW-DIAG] Error stack:', err.stack);
+        });
+
+      // [SW-DIAG] Controller + ready state
+      console.log('[SW-DIAG] controller:', navigator.serviceWorker.controller);
+      navigator.serviceWorker.ready.then((reg) => {
+        console.log('[SW-DIAG] ready — scope:', reg.scope);
+        console.log('[SW-DIAG] ready — scriptURL:', reg.active?.scriptURL);
+      });
+
+      // [SW-DIAG] All registrations
+      navigator.serviceWorker.getRegistrations().then((regs) => {
+        console.log('[SW-DIAG] getRegistrations count:', regs.length);
+        regs.forEach((r, i) => {
+          console.log(`[SW-DIAG] Registration[${i}] scriptURL:`, r.active?.scriptURL ?? '(none)');
+          console.log(`[SW-DIAG] Registration[${i}] scope:`, r.scope);
+          console.log(`[SW-DIAG] Registration[${i}] active:`, r.active ? r.active.state : 'null');
+          console.log(`[SW-DIAG] Registration[${i}] waiting:`, r.waiting ? r.waiting.state : 'null');
+          console.log(`[SW-DIAG] Registration[${i}] installing:`, r.installing ? r.installing.state : 'null');
+        });
+      });
     }
 
     // ---------- flow routing ----------
