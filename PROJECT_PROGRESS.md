@@ -1,8 +1,8 @@
 # Project Progress — Medickids
 
 ## Current Version
-- **App Version:** 1.0.0-beta.33
-- **Cache Version:** madhom-v51
+- **App Version:** 1.0.0-beta.47
+- **Cache Version:** madhom-v65
 - **Branch:** main
 - **Last Commit:** 549c91526423 (js/app.js), 0987546eb966 (js/db.js), 3bf4931cedc5 (sw.js)
 
@@ -190,4 +190,4 @@ Step 3B — Auto-remove completed courses + manual delete + history entries
 
 ---
 
-*Last updated: Step 3B — beta.33 / madhom-v51*
+*Last updated: revert to pre-Stitch (43a3a68) — beta.47 / madhom-v65*
