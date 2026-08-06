@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.47 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.42';
+  const APP_VERSION = '1.0.0-beta.43';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -412,9 +412,11 @@ const App = (() => {
     }
 
     // ---------- child cards — row based ----------
-    wrap.innerHTML = childData.map(({ c, lastMed, lastTemp, hasFever, nextDoseMs, nextDrugName, mood }) => {
+    const childCount = childData.length;
+    wrap.innerHTML = childData.map(({ c, lastMed, lastTemp, hasFever, nextDoseMs, nextDrugName, mood }, idx) => {
       const cardClass = hasFever ? ' warm' : '';
       const moodText = hasFever ? '🌡️ עם חום כרגע' : '🙂 רגוע';
+      const isLastOdd = childCount % 2 !== 0 && idx === childCount - 1;
 
       let tempRow = '';
       if (lastTemp) {
@@ -489,7 +491,7 @@ const App = (() => {
         return years > 0 ? `${years} שנים` : 'פחות משנה';
       })() : '';
 
-      return `<div class="card" onclick="App.openEditKid('${c.id}')">
+      return `<div class="card${isLastOdd ? ' card-full' : ''}" onclick="App.openEditKid('${c.id}')">
         <div class="card-top">
           <div>
             <div class="child-name">${c.name}</div>
