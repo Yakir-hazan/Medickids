@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.47 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.58';
+  const APP_VERSION = '1.0.0-beta.59';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -268,6 +268,7 @@ const App = (() => {
       document.getElementById('dash-insight').style.display = 'none';
       document.getElementById('dash-urgent').style.display = 'none';
       if (document.getElementById('dash-fever-tracker')) document.getElementById('dash-fever-tracker').style.display = 'none';
+      if (document.getElementById('dash-tip-card')) document.getElementById('dash-tip-card').style.display = 'none';
 
       return;
     }
@@ -608,7 +609,26 @@ const App = (() => {
       feverTrackerEl.style.display = 'none';
     }
 
-
+    // ---------- tip card (v2 mockup) ----------
+    const tipEl = document.getElementById('dash-tip-card');
+    const tipKid = childData.find((d) => d.hasFever);
+    if (tipKid && tipKid.lastTemp) {
+      const tipVal = tipKid.lastTemp.value;
+      const tipText = tipVal < 39
+        ? 'בחום מתחת ל‑39°C מומלץ לוודא שתיית נוזלים מרובה ומנוחה. אם החום עולה — פנו לרופא.'
+        : 'חום מעל 39°C דורש תשומת לב. מומלץ לפנות לרופא ולא לתת תרופות ללא הנחיה רפואית.';
+      tipEl.innerHTML = `
+        <div class="tip-card-v2">
+          <div class="tip-icon-box">💡</div>
+          <div>
+            <p class="tip-title-v2">טיפ לבריאות היום</p>
+            <p class="tip-body-v2">${tipText}</p>
+          </div>
+        </div>`;
+      tipEl.style.display = '';
+    } else {
+      tipEl.style.display = 'none';
+    }
 
     // ---------- timeline (last 3 events) ----------
     const feed = DB.feed(null).slice(0, 3);
