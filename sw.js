@@ -2,7 +2,7 @@
    (increment the -vNN suffix here whenever APP_VERSION changes there, e.g. 'v17' here when
    APP_VERSION becomes '1.0.0-beta.2'). Without this bump, users' devices keep serving old
    cached files and "בדוק אם יש עדכון" in Settings will report "already up to date" even when it isn't. */
-const CACHE_NAME = 'madhom-v76';
+const CACHE_NAME = 'madhom-v77';
 const APP_SHELL = [
   './',
   './index.html',
@@ -61,6 +61,10 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('message', (event) => {
   console.log('[SW-DIAG] message received:', event.data);
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    console.log('[SW-DIAG] SKIP_WAITING received — skipWaiting()');
+    self.skipWaiting();
+  }
 });
 
 // Cache-first for app shell, network-first fallback for everything else
