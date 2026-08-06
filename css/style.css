@@ -557,14 +557,14 @@ body { background: var(--bg); }
 
 /* child grid */
 .child-grid {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 12px;
   margin-bottom: 4px;
 }
-.child-grid .card      { border-radius: 20px; padding: 16px; box-shadow: var(--shadow-card); border: 1px solid rgba(0,0,0,0.06); background: #fff; flex: 1 1 calc(50% - 6px); min-width: 0; }
-.child-grid .card-full { flex: 1 1 100%; display: flex; flex-direction: column; gap: 0; }
-.child-grid.has-expanded .card-expanded { flex: 1 1 100%; }
+.child-grid .card      { border-radius: 20px; padding: 16px; box-shadow: var(--shadow-card); border: 1px solid rgba(0,0,0,0.06); background: #fff; }
+.child-grid .card-full { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 0; }
+.child-grid.has-expanded .card-expanded { grid-column: 1 / -1; }
 .card-full-inner { display: flex; align-items: center; gap: 14px; }
 
 /* card top row */
