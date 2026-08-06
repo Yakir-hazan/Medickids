@@ -789,3 +789,17 @@ body { background: var(--bg); }
 .card-expanded {
   box-shadow: 0 4px 20px rgba(108,99,255,0.18);
 }
+
+/* ── expand close button ── */
+.expand-close-btn {
+  width: 100%;
+  padding: 10px;
+  background: transparent;
+  color: var(--text-muted, #888);
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 8px;
+}
