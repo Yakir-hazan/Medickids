@@ -734,3 +734,57 @@ body { background: var(--bg); }
   font-weight: 600;
   margin-bottom: 8px;
 }
+
+/* ── child card accordion expand ── */
+.child-expand-details {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.32s ease;
+}
+.child-expand-details.open {
+  max-height: 300px;
+}
+.expand-divider {
+  height: 1px;
+  background: rgba(0,0,0,0.07);
+  margin: 12px 0;
+}
+.expand-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.expand-cell {
+  background: var(--surface, #f5f5fb);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.expand-label {
+  font-size: 11px;
+  color: var(--text-muted, #888);
+  margin-bottom: 3px;
+}
+.expand-val {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text, #1a1a2e);
+}
+.expand-val.expand-fever {
+  color: #e53935;
+}
+.expand-edit-btn {
+  width: 100%;
+  padding: 10px;
+  background: var(--primary, #6c63ff);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 4px;
+}
+.card-expanded {
+  box-shadow: 0 4px 20px rgba(108,99,255,0.18);
+}
