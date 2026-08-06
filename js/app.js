@@ -533,25 +533,23 @@ const App = (() => {
       })() : '';
 
       const cardInner = isLastOdd
-        ? `<div class="card-full-inner">
-             <div class="avatar-md ${avatarClass}" style="flex-shrink:0">${c.emoji}</div>
-             <div style="flex:1;min-width:0;">
-               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-                 <div>
-                   <div class="child-name">${c.name}</div>
-                   ${ageText ? `<div class="child-age">${ageText}</div>` : ''}
-                 </div>
-                 ${statusPill}
+        ? `<div class="avatar-md ${avatarClass}" style="flex-shrink:0">${c.emoji}</div>
+           <div style="flex:1;min-width:0;">
+             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+               <div>
+                 <div class="child-name">${c.name}</div>
+                 ${ageText ? `<div class="child-age">${ageText}</div>` : ''}
                </div>
-               <div class="next-row">
-                 <div class="next-icon">${nextRowIcon}</div>
-                 <div>
-                   <div class="next-label">${nextRowLabel}</div>
-                   ${nextRowTime ? `<div class="next-time">${nextRowTime}</div>` : ''}
-                 </div>
-               </div>
-               ${canGiveHtml}
+               ${statusPill}
              </div>
+             <div class="next-row">
+               <div class="next-icon">${nextRowIcon}</div>
+               <div>
+                 <div class="next-label">${nextRowLabel}</div>
+                 ${nextRowTime ? `<div class="next-time">${nextRowTime}</div>` : ''}
+               </div>
+             </div>
+             ${canGiveHtml}
            </div>`
         : `<div class="card-top">
              <div>
@@ -570,36 +568,8 @@ const App = (() => {
            </div>
            ${canGiveHtml}`;
 
-      // build expanded details block
-      const weightText = c.weight ? c.weight + ' ק״ג' : 'לא הוזן';
-      const expandedDetails = `
-        <div class="child-expand-details" id="expand-${c.id}">
-          <div class="expand-divider"></div>
-          <div class="expand-grid">
-            <div class="expand-cell">
-              <div class="expand-label">גיל</div>
-              <div class="expand-val">${ageText || 'לא ידוע'}</div>
-            </div>
-            <div class="expand-cell">
-              <div class="expand-label">משקל</div>
-              <div class="expand-val">${weightText}</div>
-            </div>
-            ${lastTemp ? `<div class="expand-cell">
-              <div class="expand-label">חום אחרון</div>
-              <div class="expand-val${hasFever ? ' expand-fever' : ''}">${lastTemp.value}°C</div>
-            </div>` : ''}
-            ${lastMed ? `<div class="expand-cell">
-              <div class="expand-label">תרופה אחרונה</div>
-              <div class="expand-val">${lastMed.medicine}</div>
-            </div>` : ''}
-          </div>
-          <button class="expand-edit-btn" onclick="event.stopPropagation();App.openEditKid('${c.id}')">✏️ עריכת פרטים</button>
-      <button class="expand-close-btn" onclick="event.stopPropagation();App.toggleChildDetail('${c.id}')">סגור ✕</button>
-        </div>`;
-
-      return `<div class="card${isLastOdd ? ' card-full' : ''}" id="card-${c.id}" onclick="App.toggleChildDetail('${c.id}')">
+      return `<div class="card${isLastOdd ? ' card-full' : ''}" onclick="App.openEditKid('${c.id}')">
         ${cardInner}
-        ${expandedDetails}
       </div>`;
     }).join('');
 
@@ -1229,42 +1199,6 @@ const App = (() => {
         <button class="kid-edit" onclick="App.openEditKid('${c.id}')">עריכה</button>
       </div>`).join('') || `<div class="empty-state"><div class="ic">👶</div><div class="t">עדיין אין ילדים</div></div>`;
   }
-  // keeps original DOM positions for swap-back
-  var _childGridOrigOrder = null;
-
-  function toggleChildDetail(id) {
-    const el = document.getElementById('expand-' + id);
-    if (!el) return;
-    const card = document.getElementById('card-' + id);
-    const grid = card && card.closest('.child-grid');
-    const isOpen = el.classList.contains('open');
-
-    // close & restore
-    grid.querySelectorAll('.child-expand-details.open').forEach(function(e) {
-      e.classList.remove('open');
-    });
-    grid.querySelectorAll('.card').forEach(function(c) {
-      c.classList.remove('card-expanded');
-    });
-    // restore original DOM order if we swapped
-    if (_childGridOrigOrder) {
-      _childGridOrigOrder.forEach(function(c) { grid.appendChild(c); });
-      _childGridOrigOrder = null;
-    }
-    grid.classList.remove('has-expanded');
-
-    if (!isOpen) {
-      // save current order
-      _childGridOrigOrder = Array.from(grid.querySelectorAll('.card'));
-      // move clicked card to end of grid
-      grid.appendChild(card);
-      el.classList.add('open');
-      card.classList.add('card-expanded');
-      grid.classList.add('has-expanded');
-    }
-  }
-
-
   function openEditKid(id) {
     editingKidId = id;
     const title = document.getElementById('editkid-title');
@@ -2188,7 +2122,7 @@ const App = (() => {
     goto, tab, openSheet, closeSheet,
     openMedSheet, pickMedChild, pickMedMedicine, addCustomMedicine, saveMed, pickReminderMode, toggleDailyReminder,
     setHistFilter, setTempFilter, openTempSheet, pickTempChild, saveTemp,
-    openEditKid, toggleChildDetail, saveKid, toggleNotif, init,
+    openEditKid, saveKid, toggleNotif, init,
     installNow, skipLanding,
     openDoseSheet, pickDoseChild, pickDoseMed, pickDoseConc, calcDose,
     openCourseSheet, pickCourseChild, pickCourseDrug, saveCourse,
