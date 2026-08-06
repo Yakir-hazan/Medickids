@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.47 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.56';
+  const APP_VERSION = '1.0.0-beta.57';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -494,7 +494,7 @@ const App = (() => {
         const tipText = lastTemp.value >= 39
           ? `💊 חום ${lastTemp.value}° — כדאי לשקול תרופה להורדת חום`
           : `💊 חום ${lastTemp.value}° — אפשר לתת תרופה להורדת חום`;
-        canGiveHtml = `<div class="can-give-bar warn-bar">${tipText}</div>`;
+        canGiveHtml = `<div class="can-give-bar fever-bar">${tipText}</div>`;
       }
 
       // avatar color class from AVATAR_GRADIENT index
