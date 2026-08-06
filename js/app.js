@@ -594,6 +594,7 @@ const App = (() => {
             </div>` : ''}
           </div>
           <button class="expand-edit-btn" onclick="event.stopPropagation();App.openEditKid('${c.id}')">✏️ עריכת פרטים</button>
+      <button class="expand-close-btn" onclick="event.stopPropagation();App.toggleChildDetail('${c.id}')">סגור ✕</button>
         </div>`;
 
       return `<div class="card${isLastOdd ? ' card-full' : ''}" id="card-${c.id}" onclick="App.toggleChildDetail('${c.id}')">
@@ -1237,11 +1238,14 @@ const App = (() => {
     document.querySelectorAll('.child-expand-details.open').forEach(function(e) {
       e.classList.remove('open');
       const c = e.closest('.card');
-      if (c) c.classList.remove('card-expanded');
+      if (c) { c.classList.remove('card-expanded'); c.style.gridColumn = ''; }
     });
     if (!isOpen) {
       el.classList.add('open');
-      if (card) card.classList.add('card-expanded');
+      if (card) {
+        card.classList.add('card-expanded');
+        card.style.gridColumn = '1 / -1';
+      }
     }
   }
 
