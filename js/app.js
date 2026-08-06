@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.47 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.64';
+  const APP_VERSION = '1.0.0-beta.65';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -24,6 +24,7 @@ const App = (() => {
   let editTempEntryId = null;
   let editingKidId = null; // null = add mode
   let deferredInstallPrompt = null;
+  let expandedChildId = null; // Stage 1: which child card is expanded (null = none)
 
   /* ---------- add-to-home-screen detection ---------- */
   function isStandalone() {
@@ -568,8 +569,12 @@ const App = (() => {
            </div>
            ${canGiveHtml}`;
 
-      return `<div class="card${isLastOdd ? ' card-full' : ''}" onclick="App.openEditKid('${c.id}')">
+      const isExpanded = expandedChildId === c.id;
+      const expandPanel = `<div class="card-expand-panel${isExpanded ? ' open' : ''}"></div>`;
+      const expandedClass = isExpanded ? ' card-expanded' : '';
+      return `<div class="card${isLastOdd ? ' card-full' : ''}${expandedClass}" onclick="App.toggleChildCard('${c.id}')">
         ${cardInner}
+        ${expandPanel}
       </div>`;
     }).join('');
 
@@ -2118,6 +2123,18 @@ const App = (() => {
     }
   }
 
+  /* ---------- Stage 1: child card expand/collapse ---------- */
+  function toggleChildCard(id) {
+    if (expandedChildId === id) {
+      // same card — collapse it
+      expandedChildId = null;
+    } else {
+      // different card (or none open) — expand it
+      expandedChildId = id;
+    }
+    renderDashboard();
+  }
+
   return {
     goto, tab, openSheet, closeSheet,
     openMedSheet, pickMedChild, pickMedMedicine, addCustomMedicine, saveMed, pickReminderMode, toggleDailyReminder,
@@ -2127,7 +2144,7 @@ const App = (() => {
     openDoseSheet, pickDoseChild, pickDoseMed, pickDoseConc, calcDose,
     openCourseSheet, pickCourseChild, pickCourseDrug, saveCourse,
     markCourseDose, deleteCourse,
-    heroClick, quickWeightUpdate,
+    heroClick, quickWeightUpdate, toggleChildCard,
     deleteMedEntry, deleteTempEntry, confirmReset,
     checkForUpdate,
     stub,
@@ -2135,6 +2152,7 @@ const App = (() => {
 })();
 
 document.addEventListener('DOMContentLoaded', App.init);
+
 
 
 
