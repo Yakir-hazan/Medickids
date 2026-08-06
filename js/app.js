@@ -568,8 +568,35 @@ const App = (() => {
            </div>
            ${canGiveHtml}`;
 
-      return `<div class="card${isLastOdd ? ' card-full' : ''}" onclick="App.openChildDetail('${c.id}')">
+      // build expanded details block
+      const weightText = c.weight ? c.weight + ' ק״ג' : 'לא הוזן';
+      const expandedDetails = `
+        <div class="child-expand-details" id="expand-${c.id}">
+          <div class="expand-divider"></div>
+          <div class="expand-grid">
+            <div class="expand-cell">
+              <div class="expand-label">גיל</div>
+              <div class="expand-val">${ageText || 'לא ידוע'}</div>
+            </div>
+            <div class="expand-cell">
+              <div class="expand-label">משקל</div>
+              <div class="expand-val">${weightText}</div>
+            </div>
+            ${lastTemp ? `<div class="expand-cell">
+              <div class="expand-label">חום אחרון</div>
+              <div class="expand-val${hasFever ? ' expand-fever' : ''}">${lastTemp.value}°C</div>
+            </div>` : ''}
+            ${lastMed ? `<div class="expand-cell">
+              <div class="expand-label">תרופה אחרונה</div>
+              <div class="expand-val">${lastMed.medicine}</div>
+            </div>` : ''}
+          </div>
+          <button class="expand-edit-btn" onclick="event.stopPropagation();App.openEditKid('${c.id}')">✏️ עריכת פרטים</button>
+        </div>`;
+
+      return `<div class="card${isLastOdd ? ' card-full' : ''}" id="card-${c.id}" onclick="App.toggleChildDetail('${c.id}')">
         ${cardInner}
+        ${expandedDetails}
       </div>`;
     }).join('');
 
@@ -1199,77 +1226,23 @@ const App = (() => {
         <button class="kid-edit" onclick="App.openEditKid('${c.id}')">עריכה</button>
       </div>`).join('') || `<div class="empty-state"><div class="ic">👶</div><div class="t">עדיין אין ילדים</div></div>`;
   }
-  function openChildDetail(id) {
-    const state = DB.get();
-    const c = childById(id);
-    if (!c) return;
-
-    // calc age
-    let ageText = 'לא ידוע';
-    if (c.birthYear) {
-      const age = new Date().getFullYear() - c.birthYear;
-      ageText = age > 0 ? age + ' שנים' : 'פחות משנה';
+  function toggleChildDetail(id) {
+    const el = document.getElementById('expand-' + id);
+    if (!el) return;
+    const card = document.getElementById('card-' + id);
+    const isOpen = el.classList.contains('open');
+    // close all others
+    document.querySelectorAll('.child-expand-details.open').forEach(function(e) {
+      e.classList.remove('open');
+      const c = e.closest('.card');
+      if (c) c.classList.remove('card-expanded');
+    });
+    if (!isOpen) {
+      el.classList.add('open');
+      if (card) card.classList.add('card-expanded');
     }
-
-    // find last med & temp for this child
-    const meds = (state.medLog || []).filter(m => m.childId === id);
-    const temps = (state.tempLog || []).filter(t => t.childId === id);
-    const lastMed = meds.sort((a,b) => b.time - a.time)[0] || null;
-    const lastTemp = temps.sort((a,b) => b.time - a.time)[0] || null;
-    const hasFever = lastTemp && lastTemp.value >= 37.5;
-
-    // next dose countdown
-    let nextHtml = '';
-    if (lastMed) {
-      const drug = DRUGS ? DRUGS.find(d => d.name === lastMed.medicine) : null;
-      const intervalMs = drug ? drug.intervalHours * 3600000 : 6 * 3600000;
-      const nextMs = lastMed.time + intervalMs - Date.now();
-      if (nextMs > 0) {
-        const totalMin = Math.ceil(nextMs / 60000);
-        const hh = String(Math.floor(totalMin / 60)).padStart(2,'0');
-        const mm = String(totalMin % 60).padStart(2,'0');
-        nextHtml = `<div class="detail-row warn-bar">⏱️ אפשר לתת שוב ${lastMed.medicine} בעוד ${hh}:${mm}</div>`;
-      }
-    }
-
-    const statusPill = hasFever
-      ? `<div class="status-pill fever"><div class="status-dot-sm"></div><span>חום פעיל</span></div>`
-      : `<div class="status-pill ok"><div class="status-dot-sm"></div><span>הכל תקין</span></div>`;
-
-    const avatarColors = ['avatar-pink','avatar-blue','avatar-green','avatar-pink','avatar-blue'];
-    const avatarClass = avatarColors[(c.color || 0) % avatarColors.length];
-
-    document.getElementById('childdetail-content').innerHTML = `
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
-        <div class="avatar-md ${avatarClass}" style="font-size:32px;width:64px;height:64px;">${c.emoji}</div>
-        <div>
-          <div class="child-name" style="font-size:22px;">${c.name}</div>
-          ${statusPill}
-        </div>
-      </div>
-      <div class="detail-info-grid">
-        <div class="detail-info-item">
-          <div class="detail-info-label">גיל</div>
-          <div class="detail-info-val">${ageText}</div>
-        </div>
-        <div class="detail-info-item">
-          <div class="detail-info-label">משקל</div>
-          <div class="detail-info-val">${c.weight ? c.weight + ' ק״ג' : 'לא הוזן'}</div>
-        </div>
-        ${lastTemp ? `<div class="detail-info-item">
-          <div class="detail-info-label">חום אחרון</div>
-          <div class="detail-info-val${hasFever ? ' fever' : ''}">${lastTemp.value}°C</div>
-        </div>` : ''}
-        ${lastMed ? `<div class="detail-info-item">
-          <div class="detail-info-label">תרופה אחרונה</div>
-          <div class="detail-info-val">${lastMed.medicine}</div>
-        </div>` : ''}
-      </div>
-      ${nextHtml}
-      <button class="sheet-cta" style="margin-top:24px;" onclick="App.closeSheet('sheet-childdetail');App.openEditKid('${id}')">✏️ עריכת פרטים</button>
-    `;
-    openSheet('sheet-childdetail');
   }
+
 
   function openEditKid(id) {
     editingKidId = id;
@@ -2194,7 +2167,7 @@ const App = (() => {
     goto, tab, openSheet, closeSheet,
     openMedSheet, pickMedChild, pickMedMedicine, addCustomMedicine, saveMed, pickReminderMode, toggleDailyReminder,
     setHistFilter, setTempFilter, openTempSheet, pickTempChild, saveTemp,
-    openEditKid, openChildDetail, saveKid, toggleNotif, init,
+    openEditKid, toggleChildDetail, saveKid, toggleNotif, init,
     installNow, skipLanding,
     openDoseSheet, pickDoseChild, pickDoseMed, pickDoseConc, calcDose,
     openCourseSheet, pickCourseChild, pickCourseDrug, saveCourse,
