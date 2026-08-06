@@ -490,6 +490,11 @@ const App = (() => {
         } else {
           canGiveHtml = `<div class="can-give-bar ok-bar">✅ אפשר לתת מנה נוספת אם צריך</div>`;
         }
+      } else if (hasFever) {
+        const tipText = lastTemp.value >= 39
+          ? `💊 חום ${lastTemp.value}° — כדאי לשקול תרופה להורדת חום`
+          : `💊 חום ${lastTemp.value}° — אפשר לתת תרופה להורדת חום`;
+        canGiveHtml = `<div class="can-give-bar warn-bar">${tipText}</div>`;
       }
 
       // avatar color class from AVATAR_GRADIENT index
@@ -2118,6 +2123,7 @@ const App = (() => {
 })();
 
 document.addEventListener('DOMContentLoaded', App.init);
+
 
 
 
