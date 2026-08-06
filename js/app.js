@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.47 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.44';
+  const APP_VERSION = '1.0.0-beta.45';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -491,23 +491,44 @@ const App = (() => {
         return years > 0 ? `${years} שנים` : 'פחות משנה';
       })() : '';
 
+      const cardInner = isLastOdd
+        ? `<div class="avatar-md ${avatarClass}" style="flex-shrink:0">${c.emoji}</div>
+           <div style="flex:1;min-width:0;">
+             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+               <div>
+                 <div class="child-name">${c.name}</div>
+                 ${ageText ? `<div class="child-age">${ageText}</div>` : ''}
+               </div>
+               ${statusPill}
+             </div>
+             <div class="next-row">
+               <div class="next-icon">${nextRowIcon}</div>
+               <div>
+                 <div class="next-label">${nextRowLabel}</div>
+                 ${nextRowTime ? `<div class="next-time">${nextRowTime}</div>` : ''}
+               </div>
+             </div>
+             ${canGiveHtml}
+           </div>`
+        : `<div class="card-top">
+             <div>
+               <div class="child-name">${c.name}</div>
+               ${ageText ? `<div class="child-age">${ageText}</div>` : ''}
+             </div>
+             <div class="avatar-md ${avatarClass}">${c.emoji}</div>
+           </div>
+           ${statusPill}
+           <div class="next-row">
+             <div class="next-icon">${nextRowIcon}</div>
+             <div>
+               <div class="next-label">${nextRowLabel}</div>
+               ${nextRowTime ? `<div class="next-time">${nextRowTime}</div>` : ''}
+             </div>
+           </div>
+           ${canGiveHtml}`;
+
       return `<div class="card${isLastOdd ? ' card-full' : ''}" onclick="App.openEditKid('${c.id}')">
-        <div class="card-top">
-          <div>
-            <div class="child-name">${c.name}</div>
-            ${ageText ? `<div class="child-age">${ageText}</div>` : ''}
-          </div>
-          <div class="avatar-md ${avatarClass}">${c.emoji}</div>
-        </div>
-        ${statusPill}
-        <div class="next-row">
-          <div class="next-icon">${nextRowIcon}</div>
-          <div>
-            <div class="next-label">${nextRowLabel}</div>
-            ${nextRowTime ? `<div class="next-time">${nextRowTime}</div>` : ''}
-          </div>
-        </div>
-        ${canGiveHtml}
+        ${cardInner}
       </div>`;
     }).join('');
 
