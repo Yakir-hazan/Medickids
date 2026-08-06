@@ -804,7 +804,3 @@ body { background: var(--bg); }
   margin-top: 8px;
 }
 
-/* ── when any card is expanded, switch grid to single column ── */
-.child-grid.has-expanded {
-  grid-template-columns: 1fr;
-}
