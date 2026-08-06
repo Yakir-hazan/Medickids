@@ -20,7 +20,7 @@
   --green-tint:  rgba(75,191,170,0.13);
 
   --line:        #ECEDF5;
-  --shadow-card: 0 2px 16px rgba(0,0,0,0.055);
+  --shadow-card: 0 2px 16px rgba(0,0,0,0.09);
   --shadow-hero: 0 6px 28px rgba(123,108,245,0.13);
 
   /* legacy aliases — keep existing code working */
@@ -561,7 +561,7 @@ body { background: var(--bg); }
   gap: 12px;
   margin-bottom: 4px;
 }
-.child-grid .card      { border-radius: 20px; padding: 16px; box-shadow: var(--shadow-card); border: none; }
+.child-grid .card      { border-radius: 20px; padding: 16px; box-shadow: var(--shadow-card); border: 1px solid rgba(0,0,0,0.06); }
 .child-grid .card-full { grid-column: 1 / -1; display: flex; align-items: center; gap: 14px; }
 
 /* card top row */
