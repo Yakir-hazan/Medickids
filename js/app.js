@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.47 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.48';
+  const APP_VERSION = '1.0.0-beta.47';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -266,9 +266,6 @@ const App = (() => {
       document.getElementById('dash-active-treatments').style.display = 'none';
       document.getElementById('dash-timeline').style.display = 'none';
       document.getElementById('dash-insight').style.display = 'none';
-      document.getElementById('dash-urgent').style.display = 'none';
-      document.getElementById('dash-fever-tracker').style.display = 'none';
-      document.getElementById('dash-tip-card').style.display = 'none';
       return;
     }
     document.getElementById('dash-hero').style.display = 'none'; // v2: hero hidden
@@ -573,62 +570,6 @@ const App = (() => {
         ${cardInner}
       </div>`;
     }).join('');
-
-    // ---------- fever tracker card (v2 mockup) ----------
-    const feverTrackerEl = document.getElementById('dash-fever-tracker');
-    const feverChild = childData.find((d) => d.hasFever) || childData.find((d) => d.lastTemp);
-    if (feverChild && feverChild.lastTemp) {
-      const { c, lastTemp, hasFever } = feverChild;
-      const val = lastTemp.value;
-      const MIN_TEMP = 37.0, MAX_TEMP = 40.0;
-      const pct = Math.min(100, Math.max(0, ((val - MIN_TEMP) / (MAX_TEMP - MIN_TEMP)) * 100));
-      feverTrackerEl.innerHTML = `
-        <p class="section-title">מדד חום</p>
-        <div class="fever-tracker-card">
-          <div class="fever-header-row">
-            <div>
-              <p class="fever-label-sm">מדד חום</p>
-              <p class="fever-sub-text">${c.name} — עדכון אחרון ${formatClock(lastTemp.time)}</p>
-            </div>
-            <div class="fever-badge">
-              <span class="fever-val">${val}</span>
-              <span class="fever-unit">°C</span>
-            </div>
-          </div>
-          <div class="progress-track">
-            <div class="progress-fill" style="width:${pct}%"></div>
-          </div>
-          <div class="progress-labels">
-            <span>${MIN_TEMP}°</span>
-            <span class="pl-current">${val}° עכשיו</span>
-            <span>${MAX_TEMP}°</span>
-          </div>
-        </div>`;
-      feverTrackerEl.style.display = '';
-    } else {
-      feverTrackerEl.style.display = 'none';
-    }
-
-    // ---------- tip card (v2 mockup) ----------
-    const tipEl = document.getElementById('dash-tip-card');
-    const tipChild = childData.find((d) => d.hasFever);
-    if (tipChild && tipChild.lastTemp) {
-      const tipVal = tipChild.lastTemp.value;
-      const tipText = tipVal < 39
-        ? 'בחום מתחת ל‑39°C מומלץ לוודא שתיית נוזלים מרובה ומנוחה. אם החום עולה — פנו לרופא.'
-        : 'חום מעל 39°C דורש תשומת לב. מומלץ לפנות לרופא ולא לתת תרופות ללא הנחיה רפואית.';
-      tipEl.innerHTML = `
-        <div class="tip-card-v2">
-          <div class="tip-icon-box">💡</div>
-          <div>
-            <p class="tip-title-v2">טיפ לבריאות היום</p>
-            <p class="tip-body-v2">${tipText}</p>
-          </div>
-        </div>`;
-      tipEl.style.display = '';
-    } else {
-      tipEl.style.display = 'none';
-    }
 
     // ---------- timeline (last 3 events) ----------
     const feed = DB.feed(null).slice(0, 3);
