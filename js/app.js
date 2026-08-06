@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.47 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.46';
+  const APP_VERSION = '1.0.0-beta.47';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -409,6 +409,45 @@ const App = (() => {
       famSummary.style.display = 'none'; // v2: fam-summary hidden
     } else {
       famSummary.style.display = 'none';
+    }
+
+    // ---------- urgent card (v2 mockup) ----------
+    const urgentEl = document.getElementById('dash-urgent');
+    // find child with overdue dose (nextDoseMs === 0 means ready, negative means overdue)
+    const overdueDose = childData
+      .filter((d) => d.lastMed && d.nextDoseMs !== null && d.nextDoseMs <= 0)
+      .sort((a, b) => a.nextDoseMs - b.nextDoseMs)[0] || null;
+
+    // also show if next dose is ready now (within 15 min past due)
+    const readyNow = childData
+      .filter((d) => d.lastMed && d.nextDoseMs !== null && d.nextDoseMs <= 15 * 60 * 1000)
+      .sort((a, b) => a.nextDoseMs - b.nextDoseMs)[0] || null;
+
+    const urgentTarget = overdueDose || readyNow;
+    if (urgentTarget) {
+      const { c, lastMed, nextDoseMs } = urgentTarget;
+      const avatarColors = ['avatar-pink','avatar-blue','avatar-green','avatar-pink','avatar-blue'];
+      const avatarClass = avatarColors[c.color % avatarColors.length] || 'avatar-blue';
+      const minsLate = Math.abs(Math.round((nextDoseMs || 0) / 60000));
+      const subText = nextDoseMs <= 0
+        ? `מינון — לפני ${minsLate} דקות`
+        : 'המינון הבא מוכן';
+      urgentEl.innerHTML = `
+        <div class="urgent-label">
+          <div class="pulse-dot"></div>
+          <span class="urgent-label-text">פעולה דחופה</span>
+        </div>
+        <div class="urgent-row">
+          <div class="avatar-lg ${avatarClass}">${c.emoji}</div>
+          <div class="urgent-info">
+            <p class="urgent-name">${c.name} | ${lastMed.medicine}</p>
+            <p class="urgent-sub">${subText}</p>
+          </div>
+          <button class="btn-done" onclick="App.openMedSheet();event.stopPropagation()">סומן ✓</button>
+        </div>`;
+      urgentEl.style.display = '';
+    } else {
+      urgentEl.style.display = 'none';
     }
 
     // ---------- child cards — row based ----------
