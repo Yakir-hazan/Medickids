@@ -1233,19 +1233,22 @@ const App = (() => {
     const el = document.getElementById('expand-' + id);
     if (!el) return;
     const card = document.getElementById('card-' + id);
+    const grid = card && card.closest('.child-grid');
     const isOpen = el.classList.contains('open');
-    // close all others
+    // close all others + reset grid
     document.querySelectorAll('.child-expand-details.open').forEach(function(e) {
       e.classList.remove('open');
       const c = e.closest('.card');
       if (c) { c.classList.remove('card-expanded'); c.style.gridColumn = ''; }
     });
+    if (grid) grid.classList.remove('has-expanded');
     if (!isOpen) {
       el.classList.add('open');
       if (card) {
         card.classList.add('card-expanded');
         card.style.gridColumn = '1 / -1';
       }
+      if (grid) grid.classList.add('has-expanded');
     }
   }
 
