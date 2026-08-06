@@ -1229,6 +1229,9 @@ const App = (() => {
         <button class="kid-edit" onclick="App.openEditKid('${c.id}')">עריכה</button>
       </div>`).join('') || `<div class="empty-state"><div class="ic">👶</div><div class="t">עדיין אין ילדים</div></div>`;
   }
+  // keeps original DOM positions for swap-back
+  var _childGridOrigOrder = null;
+
   function toggleChildDetail(id) {
     const el = document.getElementById('expand-' + id);
     if (!el) return;
@@ -1236,28 +1239,28 @@ const App = (() => {
     const grid = card && card.closest('.child-grid');
     const isOpen = el.classList.contains('open');
 
-    // reset everything
-    if (grid) {
-      grid.querySelectorAll('.card').forEach(function(c) {
-        c.classList.remove('card-expanded');
-        c.style.order = '';
-      });
-      grid.querySelectorAll('.child-expand-details').forEach(function(e) {
-        e.classList.remove('open');
-      });
-      grid.classList.remove('has-expanded');
+    // close & restore
+    grid.querySelectorAll('.child-expand-details.open').forEach(function(e) {
+      e.classList.remove('open');
+    });
+    grid.querySelectorAll('.card').forEach(function(c) {
+      c.classList.remove('card-expanded');
+    });
+    // restore original DOM order if we swapped
+    if (_childGridOrigOrder) {
+      _childGridOrigOrder.forEach(function(c) { grid.appendChild(c); });
+      _childGridOrigOrder = null;
     }
+    grid.classList.remove('has-expanded');
 
     if (!isOpen) {
+      // save current order
+      _childGridOrigOrder = Array.from(grid.querySelectorAll('.card'));
+      // move clicked card to end of grid
+      grid.appendChild(card);
       el.classList.add('open');
       card.classList.add('card-expanded');
-      // push expanded card to end, others to start
-      if (grid) {
-        grid.querySelectorAll('.card').forEach(function(c) {
-          c.style.order = c === card ? '2' : '1';
-        });
-        grid.classList.add('has-expanded');
-      }
+      grid.classList.add('has-expanded');
     }
   }
 
