@@ -701,27 +701,3 @@ body { background: var(--bg); }
 .tip-title-v2 { font-size: 13px; font-weight: 700; color: #0B6B57; margin-bottom: 4px; }
 .tip-body-v2  { font-size: 13px; color: #2A3A35; line-height: 1.6; }
 
-
-
-/* ---------- Stage 1: child card expand/collapse ---------- */
-
-/* expanded card spans full width in the grid */
-.child-grid .card-expanded {
-  grid-column: 1 / -1;
-}
-
-/* expand panel — collapsed by default */
-.card-expand-panel {
-  max-height: 0;
-  overflow: hidden;
-  opacity: 0;
-  transition: max-height 0.35s ease, opacity 0.25s ease;
-  margin-top: 0;
-}
-
-/* expanded state */
-.card-expand-panel.open {
-  max-height: 260px;
-  opacity: 1;
-  margin-top: 14px;
-}
