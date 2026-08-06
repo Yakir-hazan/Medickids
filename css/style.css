@@ -703,6 +703,51 @@ body { background: var(--bg); }
 
 
 
+/* ---------- Stage 2A: Selected Child Highlight ---------- */
+.child-grid .card.selected {
+  border: 2px solid var(--purple);
+  box-shadow: 0 0 0 3px rgba(124,111,240,0.13), var(--shadow-card);
+  background: rgba(124,111,240,0.03);
+}
+
+/* ---------- Stage 2A: Selected Child Panel ---------- */
+#dash-selected-child { margin-top: 4px; margin-bottom: 4px; }
+
+.selected-child-panel {
+  background: #fff;
+  border-radius: 20px;
+  padding: 16px;
+  box-shadow: var(--shadow-card);
+  border: 1px solid rgba(0,0,0,0.06);
+}
+.scp-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.scp-name { font-size: 16px; font-weight: 700; color: var(--ink); }
+.scp-sub  { font-size: 12px; color: var(--ink-muted); margin-top: 2px; }
+
+.scp-body { display: flex; flex-direction: column; gap: 10px; }
+.scp-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--ink);
+  line-height: 1.4;
+}
+.scp-ic {
+  width: 30px; height: 30px;
+  border-radius: 9px;
+  background: var(--purple-tint);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.scp-row.scp-empty { color: var(--ink-muted); }
+
 /* ---------- Stage 1: child card expand/collapse ---------- */
 
 /* expanded card spans full width in the grid */
@@ -725,3 +770,4 @@ body { background: var(--bg); }
   opacity: 1;
   margin-top: 14px;
 }
+
