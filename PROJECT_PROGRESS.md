@@ -1,8 +1,8 @@
 # Project Progress — Medickids
 
 ## Current Version
-- **App Version:** 1.0.0-beta.54
-- **Cache Version:** madhom-v82
+- **App Version:** 1.0.0-beta.55
+- **Cache Version:** madhom-v83
 - **Branch:** main
 - **Last Commit:** 549c91526423 (js/app.js), 0987546eb966 (js/db.js), 3bf4931cedc5 (sw.js)
 
@@ -190,4 +190,4 @@ Step 3B — Auto-remove completed courses + manual delete + history entries
 
 ---
 
-*Last updated: פעולות מהירות label + margin — beta.54 / madhom-v82*
+*Last updated: אירועים אחרונים label + margin above timeline — beta.55 / madhom-v83*
