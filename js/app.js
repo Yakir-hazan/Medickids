@@ -1200,6 +1200,7 @@ const App = (() => {
       </div>`).join('') || `<div class="empty-state"><div class="ic">👶</div><div class="t">עדיין אין ילדים</div></div>`;
   }
   function openChildDetail(id) {
+    const state = DB.get();
     const c = childById(id);
     if (!c) return;
 
