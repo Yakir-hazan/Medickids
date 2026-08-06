@@ -172,6 +172,7 @@ body{
 .can-give-bar{border-radius:11px;padding:8px 11px;margin-top:9px;font-size:11.5px;font-weight:600;}
 .can-give-bar.ok-bar{background:#EEF9F3;color:#2A7D52;}
 .can-give-bar.warn-bar{background:#FFF5E6;color:#C07020;}
+.can-give-bar.fever-bar{background:#FFF0F0;color:#C0392B;}
 
 /* quick actions */
 .qa-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;}
@@ -699,3 +700,4 @@ body { background: var(--bg); }
 }
 .tip-title-v2 { font-size: 13px; font-weight: 700; color: #0B6B57; margin-bottom: 4px; }
 .tip-body-v2  { font-size: 13px; color: #2A3A35; line-height: 1.6; }
+
