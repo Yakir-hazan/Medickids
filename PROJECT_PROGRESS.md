@@ -1,8 +1,8 @@
 # Project Progress — Medickids
 
 ## Current Version
-- **App Version:** 1.0.0-beta.50
-- **Cache Version:** madhom-v78
+- **App Version:** 1.0.0-beta.51
+- **Cache Version:** madhom-v79
 - **Branch:** main
 - **Last Commit:** 549c91526423 (js/app.js), 0987546eb966 (js/db.js), 3bf4931cedc5 (sw.js)
 
@@ -190,4 +190,4 @@ Step 3B — Auto-remove completed courses + manual delete + history entries
 
 ---
 
-*Last updated: fever+tip moved above child grid — beta.50 / madhom-v78*
+*Last updated: child card contrast — stronger shadow + border — beta.51 / madhom-v79*
