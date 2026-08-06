@@ -25,6 +25,7 @@ const App = (() => {
   let editingKidId = null; // null = add mode
   let deferredInstallPrompt = null;
   let expandedChildId = null; // Stage 1: which child card is expanded (null = none)
+  let selectedChildId = null; // Stage 2A: Master/Detail — which child is selected in the panel
 
   /* ---------- add-to-home-screen detection ---------- */
   function isStandalone() {
@@ -450,6 +451,9 @@ const App = (() => {
 
     // ---------- child cards — row based ----------
     const childCount = childData.length;
+    // Stage 2A: ודא selectedChildId תקין לפני רינדור הגריד
+    _resolveSelectedChild(state.children);
+
     wrap.innerHTML = childData.map(({ c, lastMed, lastTemp, hasFever, nextDoseMs, nextDrugName, mood }, idx) => {
       const cardClass = hasFever ? ' warm' : '';
       const moodText = hasFever ? '🌡️ עם חום כרגע' : '🙂 רגוע';
@@ -572,11 +576,15 @@ const App = (() => {
       const isExpanded = expandedChildId === c.id;
       const expandPanel = `<div class="card-expand-panel${isExpanded ? ' open' : ''}"></div>`;
       const expandedClass = isExpanded ? ' card-expanded' : '';
-      return `<div class="card${isLastOdd ? ' card-full' : ''}${expandedClass}" onclick="App.toggleChildCard('${c.id}')">
+      const isSelected = selectedChildId === c.id;
+      return `<div class="card${isLastOdd ? ' card-full' : ''}${expandedClass}${isSelected ? ' selected' : ''}" data-child-id="${c.id}" onclick="App.selectChild('${c.id}')">
         ${cardInner}
         ${expandPanel}
       </div>`;
     }).join('');
+
+    // Stage 2A: רינדור פאנל הילד הנבחר
+    renderSelectedChildPanel(childData);
 
     // ---------- fever tracker card (v2 mockup) ----------
     const feverTrackerEl = document.getElementById('dash-fever-tracker');
@@ -2123,6 +2131,82 @@ const App = (() => {
     }
   }
 
+  /* ---------- Stage 2A: Master/Detail — Selected Child Panel ---------- */
+
+  /**
+   * מוודא ש-selectedChildId תמיד מצביע על ילד קיים.
+   * קורא ב-renderDashboard לפני שמשתמשים ב-selectedChildId.
+   * - אם הילד הנבחר כבר לא קיים — עבור לראשון.
+   * - אם לא נבחר כלל — בחר את הראשון.
+   * - אם אין ילדים כלל — null.
+   */
+  function _resolveSelectedChild(children) {
+    if (!children.length) { selectedChildId = null; return; }
+    const exists = children.some((c) => c.id === selectedChildId);
+    if (!exists) selectedChildId = children[0].id;
+  }
+
+  /** לחיצה על כרטיס — מעדכן selectedChildId ומרנדר רק את הפאנל */
+  function selectChild(id) {
+    selectedChildId = id;
+    const state = DB.get();
+    const childData = state.children.map((c) => ({
+      c,
+      lastMed:  DB.lastMedFor(c.id),
+      lastTemp: DB.lastTempFor(c.id),
+    }));
+    renderSelectedChildPanel(childData);
+    // עדכון highlight על הכרטיסים בלבד — בלי renderDashboard מלא
+    document.querySelectorAll('#dash-children .card').forEach((el) => {
+      el.classList.toggle('selected', el.dataset.childId === id);
+    });
+  }
+
+  /** מרנדר את הפאנל #dash-selected-child לפי selectedChildId */
+  function renderSelectedChildPanel(childData) {
+    const el = document.getElementById('dash-selected-child');
+    if (!el) return;
+
+    if (!selectedChildId) { el.innerHTML = ''; return; }
+
+    const entry = childData.find((d) => d.c.id === selectedChildId);
+    if (!entry) { el.innerHTML = ''; return; }
+
+    const { c, lastMed, lastTemp } = entry;
+    const now = Date.now();
+
+    // שורת מדידת חום אחרונה
+    const tempLine = lastTemp
+      ? `<div class="scp-row"><span class="scp-ic">🌡️</span><span>חום אחרון: <b>${lastTemp.value}°C</b> — ${elapsedString(lastTemp.time)}</span></div>`
+      : `<div class="scp-row scp-empty"><span class="scp-ic">🌡️</span><span>אין מדידות חום עדיין</span></div>`;
+
+    // שורת תרופה אחרונה
+    const medLine = lastMed
+      ? `<div class="scp-row"><span class="scp-ic">💊</span><span>${lastMed.medicine} — ${elapsedString(lastMed.time)}</span></div>`
+      : `<div class="scp-row scp-empty"><span class="scp-ic">💊</span><span>אין רישום תרופה עדיין</span></div>`;
+
+    // משקל
+    const weightLine = c.weight
+      ? `<div class="scp-row"><span class="scp-ic">⚖️</span><span>משקל: <b>${c.weight} ק"ג</b></span></div>`
+      : '';
+
+    el.innerHTML = `
+      <div class="selected-child-panel">
+        <div class="scp-header">
+          <div class="avatar-md ${c.color === 'a2' ? 'avatar-blue' : 'avatar-pink'}">${c.emoji}</div>
+          <div>
+            <div class="scp-name">${c.name}</div>
+            <div class="scp-sub">פרטים מהירים</div>
+          </div>
+        </div>
+        <div class="scp-body">
+          ${tempLine}
+          ${medLine}
+          ${weightLine}
+        </div>
+      </div>`;
+  }
+
   /* ---------- Stage 1: child card expand/collapse ---------- */
   function toggleChildCard(id) {
     if (expandedChildId === id) {
@@ -2144,7 +2228,7 @@ const App = (() => {
     openDoseSheet, pickDoseChild, pickDoseMed, pickDoseConc, calcDose,
     openCourseSheet, pickCourseChild, pickCourseDrug, saveCourse,
     markCourseDose, deleteCourse,
-    heroClick, quickWeightUpdate, toggleChildCard,
+    heroClick, quickWeightUpdate, toggleChildCard, selectChild,
     deleteMedEntry, deleteTempEntry, confirmReset,
     checkForUpdate,
     stub,
@@ -2152,6 +2236,7 @@ const App = (() => {
 })();
 
 document.addEventListener('DOMContentLoaded', App.init);
+
 
 
 
