@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.47 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.62';
+  const APP_VERSION = '1.0.0-beta.63';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -630,14 +630,24 @@ const App = (() => {
     }
 
     // ---------- timeline (last 3 events) ----------
-    const feed = DB.feed(null).slice(0, 3);
+    const feedBase = DB.feed(null);
+    // inject course dose entries
+    const courseDoseEntries = [];
+    state.prescriptions.filter((p) => p.isCourse && p.doseLog && p.doseLog.length).forEach((rx) => {
+      const entry = _catalogEntryById(rx.productId);
+      const drugName = entry ? entry.key : 'תרופה';
+      rx.doseLog.forEach((d) => {
+        courseDoseEntries.push({ kind: 'course-dose', childId: rx.childId, time: d.at, medicine: drugName, reason: rx.reason || '' });
+      });
+    });
+    const feed = [...feedBase, ...courseDoseEntries].sort((a, b) => b.time - a.time).slice(0, 3);
     const tlCard = document.getElementById('dash-timeline');
     if (feed.length) {
       document.getElementById('dash-tl-rows').innerHTML = feed.map((e) => {
         const child = state.children.find((c) => c.id === e.childId);
         const childName = child ? child.name : '';
-        const ic = e.kind === 'med' ? '💊' : '🌡️';
-        const txt = e.kind === 'med' ? `${e.medicine}${e.dose ? ' ' + e.dose : ''}` : `${e.value}°`;
+        const ic = e.kind === 'temp' ? '🌡️' : '💊';
+        const txt = e.kind === 'temp' ? `${e.value}°` : `${e.medicine}${e.dose ? ' ' + e.dose : ''}${e.reason ? ' · ' + e.reason : ''}`;
         return `<div class="tl-row">
           <div class="tl-time">${formatClock(e.time)}</div>
           <div class="tl-ic">${ic}</div>
@@ -1497,7 +1507,7 @@ const App = (() => {
       activeCourses.forEach((rx) => {
         const entry = _catalogEntryById(rx.productId);
         const drugName = entry ? entry.key : 'טיפול פעיל';
-        const cardTitle = rx.reason ? `${c.name} — ${rx.reason}` : `${c.name} · ${drugName}`;
+        const cardTitle = rx.reason ? `${c.name} — ${rx.reason} · ${drugName}` : `${c.name} · ${drugName}`;
         const border = rows.length ? 'border-top:1px solid var(--line);' : '';
         const totalDoses = (rx.totalDays || 0) * (rx.dosesPerDay || 1);
         const dosesDone = rx.doseLog ? rx.doseLog.length : 0;
