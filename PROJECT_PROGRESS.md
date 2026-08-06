@@ -1,8 +1,8 @@
 # Project Progress — Medickids
 
 ## Current Version
-- **App Version:** 1.0.0-beta.48
-- **Cache Version:** madhom-v76
+- **App Version:** 1.0.0-beta.49
+- **Cache Version:** madhom-v77
 - **Branch:** main
 - **Last Commit:** 549c91526423 (js/app.js), 0987546eb966 (js/db.js), 3bf4931cedc5 (sw.js)
 
@@ -190,4 +190,4 @@ Step 3B — Auto-remove completed courses + manual delete + history entries
 
 ---
 
-*Last updated: fix fever tracker visibility + hide dash-updated — beta.48 / madhom-v76*
+*Last updated: iOS SW update fix (SKIP_WAITING) — beta.49 / madhom-v77*
