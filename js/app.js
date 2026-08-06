@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.47 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.41';
+  const APP_VERSION = '1.0.0-beta.42';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -454,23 +454,57 @@ const App = (() => {
         }
       }
 
-      const emptyRow = (!tempRow && !medRow)
-        ? `<div class="crow"><div class="crow-ic">✨</div><div class="crow-body"><div class="crow-lbl">אין נתונים עדיין היום</div></div></div>`
-        : '';
+      // avatar color class from AVATAR_GRADIENT index
+      const avatarColors = ['avatar-pink','avatar-blue','avatar-green','avatar-pink','avatar-blue'];
+      const avatarClass = avatarColors[c.color % avatarColors.length] || 'avatar-blue';
 
-      return `<div class="child-card${cardClass}">
-        <div class="child-top" onclick="App.openEditKid('${c.id}')">
-          <div class="avatar" style="background:${AVATAR_GRADIENT[c.color]}">${c.emoji}</div>
-          <div class="child-info">
+      const statusPill = hasFever
+        ? `<div class="status-pill fever"><div class="status-dot-sm"></div><span class="status-pill-text">קדחת פעילה</span></div>`
+        : `<div class="status-pill ok"><div class="status-dot-sm"></div><span class="status-pill-text">הכל תקין</span></div>`;
+
+      let nextRowIcon = '✨';
+      let nextRowLabel = 'אין נתונים עדיין';
+      let nextRowTime = '';
+
+      if (nextDoseMs !== null) {
+        const totalMin = Math.ceil(nextDoseMs / 60000);
+        const hh = String(Math.floor(totalMin / 60)).padStart(2, '0');
+        const mm = String(totalMin % 60).padStart(2, '0');
+        nextRowIcon = '💊';
+        nextRowLabel = `${nextDrugName} — תרופה הבאה`;
+        nextRowTime = `בעוד ${hh}:${mm}`;
+      } else if (lastMed) {
+        nextRowIcon = '💊';
+        nextRowLabel = lastMed.medicine;
+        nextRowTime = formatClock(lastMed.time);
+      } else if (lastTemp) {
+        nextRowIcon = '🌡️';
+        nextRowLabel = 'מדידה אחרונה';
+        nextRowTime = `${lastTemp.value}°`;
+      }
+
+      const ageText = c.birthdate ? (() => {
+        const diff = Date.now() - new Date(c.birthdate).getTime();
+        const years = Math.floor(diff / (365.25 * 24 * 3600 * 1000));
+        return years > 0 ? `${years} שנים` : 'פחות משנה';
+      })() : '';
+
+      return `<div class="card" onclick="App.openEditKid('${c.id}')">
+        <div class="card-top">
+          <div>
             <div class="child-name">${c.name}</div>
-            <div class="child-mood">${moodText}</div>
+            ${ageText ? `<div class="child-age">${ageText}</div>` : ''}
           </div>
-          <div class="child-edit-hint">עריכה ›</div>
+          <div class="avatar-md ${avatarClass}">${c.emoji}</div>
         </div>
-        ${tempRow}
-        ${tempRow && medRow ? '<div class="child-divider"></div>' : ''}
-        ${medRow}
-        ${emptyRow}
+        ${statusPill}
+        <div class="next-row">
+          <div class="next-icon">${nextRowIcon}</div>
+          <div>
+            <div class="next-label">${nextRowLabel}</div>
+            ${nextRowTime ? `<div class="next-time">${nextRowTime}</div>` : ''}
+          </div>
+        </div>
         ${canGiveHtml}
       </div>`;
     }).join('');
