@@ -533,23 +533,25 @@ const App = (() => {
       })() : '';
 
       const cardInner = isLastOdd
-        ? `<div class="avatar-md ${avatarClass}" style="flex-shrink:0">${c.emoji}</div>
-           <div style="flex:1;min-width:0;">
-             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-               <div>
-                 <div class="child-name">${c.name}</div>
-                 ${ageText ? `<div class="child-age">${ageText}</div>` : ''}
+        ? `<div class="card-full-inner">
+             <div class="avatar-md ${avatarClass}" style="flex-shrink:0">${c.emoji}</div>
+             <div style="flex:1;min-width:0;">
+               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                 <div>
+                   <div class="child-name">${c.name}</div>
+                   ${ageText ? `<div class="child-age">${ageText}</div>` : ''}
+                 </div>
+                 ${statusPill}
                </div>
-               ${statusPill}
-             </div>
-             <div class="next-row">
-               <div class="next-icon">${nextRowIcon}</div>
-               <div>
-                 <div class="next-label">${nextRowLabel}</div>
-                 ${nextRowTime ? `<div class="next-time">${nextRowTime}</div>` : ''}
+               <div class="next-row">
+                 <div class="next-icon">${nextRowIcon}</div>
+                 <div>
+                   <div class="next-label">${nextRowLabel}</div>
+                   ${nextRowTime ? `<div class="next-time">${nextRowTime}</div>` : ''}
+                 </div>
                </div>
+               ${canGiveHtml}
              </div>
-             ${canGiveHtml}
            </div>`
         : `<div class="card-top">
              <div>
