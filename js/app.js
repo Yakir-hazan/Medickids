@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.47 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.63';
+  const APP_VERSION = '1.0.0-beta.64';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -1507,7 +1507,8 @@ const App = (() => {
       activeCourses.forEach((rx) => {
         const entry = _catalogEntryById(rx.productId);
         const drugName = entry ? entry.key : 'טיפול פעיל';
-        const cardTitle = rx.reason ? `${c.name} — ${rx.reason} · ${drugName}` : `${c.name} · ${drugName}`;
+        const cardTitle = rx.reason ? `${c.name} — ${rx.reason}` : `${c.name} · ${drugName}`;
+        const drugSubline = rx.reason ? `<div style="font-size:13px;color:var(--ink-soft);">${drugName}</div>` : '';
         const border = rows.length ? 'border-top:1px solid var(--line);' : '';
         const totalDoses = (rx.totalDays || 0) * (rx.dosesPerDay || 1);
         const dosesDone = rx.doseLog ? rx.doseLog.length : 0;
@@ -1537,6 +1538,7 @@ const App = (() => {
             <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
               <div>
                 <div style="font-weight:600;">${cardTitle}</div>
+                ${drugSubline}
                 <div style="font-size:13px;color:var(--ink-soft);">${summary}</div>
                 ${timerText ? `<div style="font-size:12px;color:var(--ink-soft);margin-top:2px;">${timerText}</div>` : ''}
               </div>
