@@ -246,7 +246,10 @@
     panel.innerHTML = `
       <div style="padding:10px 12px;background:#1a1a2e;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
         <div style="font-weight:700;">🐞 Developer Center <span style="opacity:.5;font-weight:400;font-size:12px;">Session ${SESSION_ID}</span></div>
-        <div onclick="DevCenterUI.close()" style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;">✕</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button onclick="DevCenterUI.copyAllLogs()" style="padding:5px 10px;border-radius:8px;background:#7C6FF0;color:#fff;border:none;font-size:12px;cursor:pointer;">📋 העתק הכל</button>
+          <div onclick="DevCenterUI.close()" style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;">✕</div>
+        </div>
       </div>
       <div id="devctr-tabs" style="display:flex;overflow-x:auto;background:#16162a;flex-shrink:0;"></div>
       <div id="devctr-body" style="flex:1;overflow-y:auto;padding:10px 12px;"></div>
@@ -375,6 +378,7 @@
     exportPackage: exportDebugPackage,
     shareReport: shareReport,
     copyReport: copyReport,
+    copyAllLogs: copyAllLogs,
     testToast: () => { if (typeof App !== 'undefined' && App.stub) App.stub(); logEvent(CATEGORY.INFO, 'tools', 'Test Toast', 'triggered manually'); },
     testRender: () => { try { if (typeof App !== 'undefined') { /* re-open current tab to force a real render path indirectly */ } logEvent(CATEGORY.INFO, 'tools', 'Test Render', 'no dedicated render hook exposed — use Timeline to watch real renders as they happen'); } catch (e) {} },
     disableDevMode: () => {
@@ -606,6 +610,22 @@
     }
   }
 
+  /** העתק את כל הלוגים כטקסט פשוט — נגיש מכל טאב דרך כפתור ה-header */
+  function copyAllLogs() {
+    const lines = DevCenter.getLogs().map((e) => {
+      const time = new Date(e.ts).toTimeString().slice(0, 8);
+      const icon = e.level === 'error' ? '🔴' : e.level === 'warn' ? '🟡' : e.level === 'network' ? '🔵' : e.level === 'db' ? '🟣' : '⚫';
+      const detail = e.detail !== undefined ? '\n  ' + JSON.stringify(e.detail) : '';
+      return `${icon} ${time} ${e.label}${detail}`;
+    }).join('\n');
+    const text = `=== Medickids Dev Log — ${new Date().toLocaleString('he-IL')} ===\n${lines}`;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text)
+        .then(() => { DevCenter.log('📋 לוגים הועתקו ✅', 'ok'); alert('הלוגים הועתקו ✅'); })
+        .catch(() => { alert('העתקה נכשלה — נסה מ-Export'); });
+    }
+  }
+
   /* ---------- utils ---------- */
   function formatTime(ts) {
     const d = new Date(ts);
@@ -616,3 +636,4 @@
     return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
 })();
+
