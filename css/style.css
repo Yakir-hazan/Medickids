@@ -558,7 +558,7 @@ body { background: var(--bg); }
 /* child grid */
 .child-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 12px;
   margin-bottom: 4px;
 }
