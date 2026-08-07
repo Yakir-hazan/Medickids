@@ -480,8 +480,17 @@
         clearTimeout(osTimeout);
         const el = document.getElementById('devctr-health-os');
         if (el) {
-          try { el.textContent = OneSignal.User && OneSignal.User.onesignalId ? 'מחובר' : 'לא מחובר עדיין'; }
-          catch (e) { el.textContent = 'לא ידוע'; }
+          try {
+            const osId    = OneSignal.User && OneSignal.User.onesignalId;
+            const subId   = OneSignal.User && OneSignal.User.PushSubscription && OneSignal.User.PushSubscription.id;
+            const opted   = OneSignal.User && OneSignal.User.PushSubscription && OneSignal.User.PushSubscription.optedIn;
+            const devId   = (window.DB && DB.get().deviceId) || '?';
+            el.innerHTML  =
+              '<div>' + (osId  ? '✅ onesignalId: ' + osId         : '❌ onesignalId: אין') + '</div>' +
+              '<div>' + (subId ? '✅ pushSub: '     + subId        : '❌ pushSub: אין') + '</div>' +
+              '<div>' + (opted ? '✅ optedIn'       : '❌ optedIn: לא') + '</div>' +
+              '<div>📱 deviceId: ' + devId + '</div>';
+          } catch (e) { el.textContent = 'שגיאה: ' + e.message; }
         }
       });
     }, 50);
