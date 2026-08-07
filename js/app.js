@@ -532,8 +532,7 @@ const App = (() => {
         return years > 0 ? `${years} שנים` : 'פחות משנה';
       })() : '';
 
-      const cardInner = isLastOdd
-        ? `<div class="avatar-md ${avatarClass}" style="flex-shrink:0">${c.emoji}</div>
+      const cardInner = `<div class="avatar-md ${avatarClass}" style="flex-shrink:0">${c.emoji}</div>
            <div style="flex:1;min-width:0;">
              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
                <div>
@@ -550,25 +549,9 @@ const App = (() => {
                </div>
              </div>
              ${canGiveHtml}
-           </div>`
-        : `<div class="card-top">
-             <div>
-               <div class="child-name">${c.name}</div>
-               ${ageText ? `<div class="child-age">${ageText}</div>` : ''}
-             </div>
-             <div class="avatar-md ${avatarClass}">${c.emoji}</div>
-           </div>
-           ${statusPill}
-           <div class="next-row">
-             <div class="next-icon">${nextRowIcon}</div>
-             <div>
-               <div class="next-label">${nextRowLabel}</div>
-               ${nextRowTime ? `<div class="next-time">${nextRowTime}</div>` : ''}
-             </div>
-           </div>
-           ${canGiveHtml}`;
+           </div>`;
 
-      return `<div class="card${isLastOdd ? ' card-full' : ''}" onclick="App.openEditKid('${c.id}')">
+      return `<div class="card card-full" onclick="App.openEditKid('${c.id}')">
         ${cardInner}
       </div>`;
     }).join('');
