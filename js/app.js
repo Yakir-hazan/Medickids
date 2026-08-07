@@ -537,40 +537,6 @@ const App = (() => {
         return years > 0 ? `${years} שנים` : 'פחות משנה';
       })() : '';
 
-      // active courses HTML inside the card
-      const courseRowsHtml = activeCourses.map((rx) => {
-        const entry = _catalogEntryById(rx.productId);
-        const drugName = entry ? entry.key : 'טיפול';
-        const title = rx.reason ? rx.reason : drugName;
-        const summary = _courseSummary(rx);
-        const canMark = _canMarkDoseNow(rx);
-        const nextAt  = _courseNextDoseAt(rx);
-        let timerText = '';
-        if (canMark) {
-          timerText = '🟢 זמין עכשיו';
-        } else if (nextAt) {
-          const remaining = nextAt - Date.now();
-          if (remaining > 0) {
-            const hrs  = Math.floor(remaining / 3600000);
-            const mins = Math.floor((remaining % 3600000) / 60000);
-            timerText = hrs > 0
-              ? `⏱ מנה הבאה בעוד ${hrs} שעות${mins > 0 ? ' ו-' + mins + ' דקות' : ''}`
-              : `⏱ מנה הבאה בעוד ${mins} דקות`;
-          }
-        }
-        const markBtn = canMark
-          ? `<button onclick="App.markCourseDose('${rx.id}');event.stopPropagation()" style="padding:4px 12px;border-radius:8px;border:none;background:var(--purple);color:#fff;font-size:12px;cursor:pointer;">✓ סימון מנה</button>`
-          : `<button style="padding:4px 12px;border-radius:8px;border:none;background:#e0e0e0;color:#aaa;font-size:12px;cursor:not-allowed;" disabled>✓ סימון מנה</button>`;
-        const editBtn = `<button onclick="App.openCourseSheet('${rx.id}');event.stopPropagation()" style="padding:4px 8px;border-radius:8px;border:none;background:transparent;color:var(--ink-muted);font-size:12px;cursor:pointer;">✏️</button>`;
-        const delBtn  = `<button onclick="App.deleteCourse('${rx.id}');event.stopPropagation()" style="padding:4px 8px;border-radius:8px;border:none;background:transparent;color:var(--coral,#e57373);font-size:12px;cursor:pointer;">🗑</button>`;
-        return `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line,#eee);">
-          <div style="font-size:12px;font-weight:600;margin-bottom:2px;">💊 ${title}</div>
-          <div style="font-size:11px;color:var(--ink-muted);">${summary}</div>
-          ${timerText ? `<div style="font-size:11px;color:var(--ink-muted);margin-top:2px;">${timerText}</div>` : ''}
-          <div style="display:flex;gap:6px;margin-top:6px;">${markBtn}${editBtn}${delBtn}</div>
-        </div>`;
-      }).join('');
-
       const cardInner = isLastOdd
         ? `<div class="avatar-md ${avatarClass}" style="flex-shrink:0">${c.emoji}</div>
            <div style="flex:1;min-width:0;">
@@ -589,7 +555,6 @@ const App = (() => {
                </div>
              </div>
              ${canGiveHtml}
-             ${courseRowsHtml}
            </div>`
         : `<div class="card-top">
              <div>
@@ -606,8 +571,7 @@ const App = (() => {
                ${nextRowTime ? `<div class="next-time">${nextRowTime}</div>` : ''}
              </div>
            </div>
-           ${canGiveHtml}
-           ${courseRowsHtml}`;
+           ${canGiveHtml}`;
 
       return `<div class="card${isLastOdd ? ' card-full' : ''}" onclick="App.openEditKid('${c.id}')">
         ${cardInner}
@@ -715,8 +679,7 @@ const App = (() => {
       insightEl.style.display = 'none';
     }
 
-    // Step 1E: active treatments now rendered inside each child card — section hidden
-    document.getElementById('dash-active-treatments').style.display = 'none';
+    _renderActiveTreatmentsCard(state.children); // Step 1E — independent, reads only via _activeTreatmentState
   }
 
   /* ---------- add medication sheet ---------- */
