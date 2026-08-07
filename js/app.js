@@ -454,7 +454,7 @@ const App = (() => {
 
     // ---------- child cards — row based ----------
     const childCount = childData.length;
-    wrap.innerHTML = childData.map(({ c, lastMed, lastTemp, hasFever, nextDoseMs, nextDrugName, mood }, idx) => {
+    wrap.innerHTML = childData.map(({ c, lastMed, lastTemp, hasFever, nextDoseMs, nextDrugName, mood, activeCourses }, idx) => {
       const cardClass = hasFever ? ' warm' : '';
       const moodText = hasFever ? '🌡️ עם חום כרגע' : '🙂 רגוע';
       const isLastOdd = childCount % 2 !== 0 && idx === childCount - 1;
