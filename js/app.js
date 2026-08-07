@@ -537,38 +537,18 @@ const App = (() => {
         return years > 0 ? `${years} שנים` : 'פחות משנה';
       })() : '';
 
-      const cardInner = isLastOdd
-        ? `<div class="avatar-md ${avatarClass}" style="flex-shrink:0">${c.emoji}</div>
-           <div style="flex:1;min-width:0;">
-             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-               <div>
-                 <div class="child-name">${c.name}</div>
-                 ${ageText ? `<div class="child-age">${ageText}</div>` : ''}
-               </div>
-               ${statusPill}
-             </div>
-             <div class="next-row">
-               <div class="next-icon">${nextRowIcon}</div>
-               <div>
-                 <div class="next-label">${nextRowLabel}</div>
-                 ${nextRowTime ? `<div class="next-time">${nextRowTime}</div>` : ''}
-               </div>
-             </div>
-             ${canGiveHtml}
-           </div>`
-        : `<div class="card-top">
-             <div>
-               <div class="child-name">${c.name}</div>
-               ${ageText ? `<div class="child-age">${ageText}</div>` : ''}
-             </div>
-             <div class="avatar-md ${avatarClass}">${c.emoji}</div>
+      // עיצוב B — avatar מרכז (חל על כל הכרטיסים כולל isLastOdd)
+      const cardInner = `<div style="text-align:center;padding-bottom:8px;">
+             <div class="avatar-lg ${avatarClass}" style="margin:0 auto 8px;">${c.emoji}</div>
+             <div class="child-name">${c.name}</div>
+             ${ageText ? `<div class="child-age">${ageText}</div>` : ''}
+             <div style="margin-top:6px;">${statusPill}</div>
            </div>
-           ${statusPill}
-           <div class="next-row">
+           <div class="next-row" style="justify-content:center;">
              <div class="next-icon">${nextRowIcon}</div>
              <div>
                <div class="next-label">${nextRowLabel}</div>
-               ${nextRowTime ? `<div class="next-time">${nextRowTime}</div>` : ''}
+               ${nextRowTime ? `<div class="next-time" style="text-align:center;">${nextRowTime}</div>` : ''}
              </div>
            </div>
            ${canGiveHtml}`;
