@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.47 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.66';
+  const APP_VERSION = '1.0.0-beta.67';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -452,84 +452,59 @@ const App = (() => {
       urgentEl.style.display = 'none';
     }
 
-    // ---------- child cards — row based ----------
-    const childCount = childData.length;
-    wrap.innerHTML = childData.map(({ c, lastMed, lastTemp, hasFever, nextDoseMs, nextDrugName, mood, activeCourses }, idx) => {
-      const cardClass = hasFever ? ' warm' : '';
-      const moodText = hasFever ? '🌡️ עם חום כרגע' : '🙂 רגוע';
+    // ---------- child cards — שלב 2: מבוסס childStatusViewModel ----------
+    const childCount = state.children.length;
+    wrap.innerHTML = state.children.map((c, idx) => {
+      const vm = childStatusViewModel(c.id);
       const isLastOdd = childCount % 2 !== 0 && idx === childCount - 1;
 
-      let tempRow = '';
-      if (lastTemp) {
-        tempRow = `<div class="crow">
-          <div class="crow-ic">🌡️</div>
-          <div class="crow-body">
-            <div class="crow-val${hasFever ? ' fever' : ''}">${lastTemp.value}°</div>
-            <div class="crow-lbl">מדידה אחרונה: לפני ${elapsedString(lastTemp.time)}</div>
-          </div>
-        </div>`;
+      // status pill — דינמי מ-vm.tags
+      let statusPill;
+      if (vm.tags.length) {
+        statusPill = vm.tags.map(t =>
+          t.type === 'fever'
+            ? `<div class="status-pill fever"><div class="status-dot-sm"></div><span class="status-pill-text">🌡️ חום ${t.value}°</span></div>`
+            : `<div class="status-pill treatment"><div class="status-dot-sm"></div><span class="status-pill-text">💊 טיפול</span></div>`
+        ).join('');
+      } else if (!vm.nextEvent) {
+        statusPill = `<div class="status-pill ok"><div class="status-dot-sm"></div><span class="status-pill-text">🟢 הכל תקין</span></div>`;
+      } else {
+        statusPill = `<div class="status-pill ok"><div class="status-dot-sm"></div><span class="status-pill-text">💊 פעיל</span></div>`;
       }
 
-      let medRow = '';
-      if (lastMed) {
-        medRow = `<div class="crow">
-          <div class="crow-ic">💊</div>
-          <div class="crow-body">
-            <div class="crow-val">${lastMed.medicine}</div>
-            <div class="crow-lbl">ניתן לפני ${elapsedString(lastMed.time)}</div>
-          </div>
-          <div class="crow-time">${formatClock(lastMed.time)}</div>
-        </div>`;
-      }
-
-      let canGiveHtml = '';
-      if (nextDoseMs !== null) {
-        const totalMin = Math.ceil(nextDoseMs / 60000);
-        const hh = String(Math.floor(totalMin / 60)).padStart(2, '0');
-        const mm = String(totalMin % 60).padStart(2, '0');
-        canGiveHtml = `<div class="can-give-bar warn-bar">⏱️ אפשר לתת שוב ${nextDrugName} בעוד ${hh}:${mm}</div>`;
-      } else if (lastMed) {
-        const recentNormalTemp = lastTemp && !hasFever && (Date.now() - lastTemp.time < 6 * 3600 * 1000);
-        if (recentNormalTemp) {
-          canGiveHtml = `<div class="can-give-bar ok-bar">🌟 החום תקין — ${c.name} מרגיש/ה טוב!</div>`;
+      // next-row — מבוסס nextEvent
+      let nextRowIcon = '✨', nextRowLabel = 'אין נתונים עדיין', nextRowTime = '';
+      if (vm.nextEvent) {
+        const ev = vm.nextEvent;
+        nextRowIcon = '💊';
+        if (ev.canGive) {
+          nextRowLabel = ev.name;
+          nextRowTime = '🟢 אפשר לתת עכשיו';
         } else {
-          canGiveHtml = `<div class="can-give-bar ok-bar">✅ אפשר לתת מנה נוספת אם צריך</div>`;
+          nextRowLabel = ev.name;
+          nextRowTime = `ניתן לתת ב־${formatClock(ev.at)}`;
         }
-      } else if (hasFever) {
-        const tipText = lastTemp.value >= 39
-          ? `💊 חום ${lastTemp.value}° — כדאי לשקול תרופה להורדת חום`
-          : `💊 חום ${lastTemp.value}° — אפשר לתת תרופה להורדת חום`;
+      } else if (vm.lastTemp) {
+        nextRowIcon = '🌡️';
+        nextRowLabel = 'מדידה אחרונה';
+        nextRowTime = `${vm.lastTemp.value}°`;
+      }
+
+      // canGiveBar
+      let canGiveHtml = '';
+      if (vm.nextEvent && vm.nextEvent.canGive) {
+        canGiveHtml = `<div class="can-give-bar ok-bar">🟢 אפשר לתת ${vm.nextEvent.name} עכשיו</div>`;
+      } else if (vm.nextEvent && vm.nextEvent.at) {
+        canGiveHtml = `<div class="can-give-bar warn-bar">⏱️ ניתן לתת ${vm.nextEvent.name} ב־${formatClock(vm.nextEvent.at)}</div>`;
+      } else if (vm.hasFever && !vm.nextEvent) {
+        const tipText = vm.lastTemp.value >= 39
+          ? `💊 חום ${vm.lastTemp.value}° — כדאי לשקול תרופה להורדת חום`
+          : `💊 חום ${vm.lastTemp.value}° — אפשר לתת תרופה להורדת חום`;
         canGiveHtml = `<div class="can-give-bar fever-bar">${tipText}</div>`;
       }
 
-      // avatar color class from AVATAR_GRADIENT index
       const avatarColors = ['avatar-pink','avatar-blue','avatar-green','avatar-pink','avatar-blue'];
       const avatarClass = avatarColors[c.color % avatarColors.length] || 'avatar-blue';
-
-      const statusPill = hasFever
-        ? `<div class="status-pill fever"><div class="status-dot-sm"></div><span class="status-pill-text">חום פעיל</span></div>`
-        : `<div class="status-pill ok"><div class="status-dot-sm"></div><span class="status-pill-text">הכל תקין</span></div>`;
-
-      let nextRowIcon = '✨';
-      let nextRowLabel = 'אין נתונים עדיין';
-      let nextRowTime = '';
-
-      if (nextDoseMs !== null) {
-        const totalMin = Math.ceil(nextDoseMs / 60000);
-        const hh = String(Math.floor(totalMin / 60)).padStart(2, '0');
-        const mm = String(totalMin % 60).padStart(2, '0');
-        nextRowIcon = '💊';
-        nextRowLabel = `${nextDrugName} — תרופה הבאה`;
-        nextRowTime = `בעוד ${hh}:${mm}`;
-      } else if (lastMed) {
-        nextRowIcon = '💊';
-        nextRowLabel = lastMed.medicine;
-        nextRowTime = formatClock(lastMed.time);
-      } else if (lastTemp) {
-        nextRowIcon = '🌡️';
-        nextRowLabel = 'מדידה אחרונה';
-        nextRowTime = `${lastTemp.value}°`;
-      }
 
       const ageText = c.birthdate ? (() => {
         const diff = Date.now() - new Date(c.birthdate).getTime();
@@ -537,7 +512,6 @@ const App = (() => {
         return years > 0 ? `${years} שנים` : 'פחות משנה';
       })() : '';
 
-      // עיצוב B — avatar מרכז (חל על כל הכרטיסים כולל isLastOdd)
       const cardInner = `<div style="text-align:center;padding-bottom:8px;">
              <div class="avatar-lg ${avatarClass}" style="margin:0 auto 8px;">${c.emoji}</div>
              <div class="child-name">${c.name}</div>
@@ -1455,6 +1429,62 @@ const App = (() => {
      of UI recomputing this itself. Built entirely on the 4 helpers above; does not touch DB, does
      not render, does not schedule anything.
      "next" = the course whose next dose is soonest among this child's active courses. */
+  /* ── childStatusViewModel (שלב 1+2) ─────────────────────────────────────────
+     מרכז את המידע הקיים לכדי snapshot קריא לכל ילד.
+     לא מחשב לוגיקה רפואית חדשה — רק מאחד קריאות קיימות.
+     at: timestamp מוחלט עתידי — null כשcanGive=true (זמין עכשיו). */
+  function childStatusViewModel(childId) {
+    const now = Date.now();
+
+    /* חום */
+    const lastTemp = DB.lastTempFor(childId);
+    const hasFever = !!(lastTemp && lastTemp.value >= 38);
+
+    /* תרופת PRN אחרונה */
+    const lastMed = DB.lastMedFor(childId);
+    let prnNextAt = null, canGivePRN = false, prnDrugName = null;
+    if (lastMed) {
+      const drugKey = Object.keys(MEDICATION_CATALOG).find(k => _matchesDrug(lastMed.medicine, k));
+      const drug = drugKey ? MEDICATION_CATALOG[drugKey] : null;
+      if (drug && drug.protocol.intervalHours) {
+        const readyAt = lastMed.time + drug.protocol.intervalHours * 3600000;
+        prnDrugName = lastMed.medicine;
+        if (readyAt > now) { prnNextAt = readyAt; }
+        else               { canGivePRN = true; }
+      }
+    }
+
+    /* COURSE — משתמש ב-_activeTreatmentState הקיים בלבד */
+    const courseState = _activeTreatmentState(childId);
+    const courseAt = courseState.nextDoseAt;
+
+    const _buildCourseEvent = () => {
+      const entry = courseState.nextCourse ? _catalogEntryById(courseState.nextCourse.productId) : null;
+      return { type: 'course', name: entry ? entry.key : '', at: courseAt,
+               canGive: courseState.nextCourse ? _canMarkDoseNow(courseState.nextCourse) : false };
+    };
+    const _buildPrnEvent = () => ({ type: 'prn', name: prnDrugName, at: prnNextAt, canGive: canGivePRN });
+
+    let nextEvent = null;
+    if (canGivePRN) {
+      nextEvent = _buildPrnEvent();
+    } else if (prnNextAt !== null && courseAt !== null) {
+      nextEvent = prnNextAt <= courseAt ? _buildPrnEvent() : _buildCourseEvent();
+    } else if (prnNextAt !== null) {
+      nextEvent = _buildPrnEvent();
+    } else if (courseAt !== null) {
+      nextEvent = _buildCourseEvent();
+    }
+
+    /* tags */
+    const tags = [];
+    if (hasFever)                    tags.push({ type: 'fever',     label: '🌡️ חום', value: lastTemp.value });
+    if (courseState.hasActiveCourse) tags.push({ type: 'treatment', label: '💊 טיפול' });
+
+    return { hasFever, lastTemp, lastMed, canGivePRN, nextEvent, courseState, tags };
+  }
+  /* ── end childStatusViewModel ──────────────────────────────────────── */
+
   function _activeTreatmentState(childId) {
     const activeCourses = _activeCourses(childId);
     let nextCourse = null, nextDoseAt = null, overdueCount = 0;
