@@ -782,4 +782,46 @@ body { background: var(--bg); }
 .scp-btn-primary   { background: var(--purple); color: #fff; }
 .scp-btn-secondary { background: var(--red-tint); color: var(--red-dark); }
 .scp-btn-ghost     { background: var(--bg); color: var(--ink-soft); border: 1px solid rgba(0,0,0,0.1); }
-/* ── end שלב 3 ───────────────────────────────────────────────────────────── */
+/* ── scp2 — כרטיס ילד נבחר (layout חדש) ─────────────────────────────────── */
+.scp2-header {
+  text-align: center;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  margin-bottom: 4px;
+}
+.scp2-name {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--ink);
+  margin-bottom: 2px;
+}
+.scp2-age {
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+.scp2-rows {
+  padding: 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  margin-bottom: 12px;
+}
+.scp2-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 4px;
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+  direction: rtl;
+}
+.scp2-row:last-child { border-bottom: none; }
+.scp2-ic  { font-size: 18px; flex-shrink: 0; }
+.scp2-lbl { font-size: 13px; color: var(--ink-soft); flex: 1; }
+.scp2-val { font-size: 16px; font-weight: 700; }
+.scp2-val-blue   { color: var(--purple, #6c63ff); }
+.scp2-val-red    { color: var(--red, #e05252); }
+.scp2-val-green  { color: var(--green, #2A7D52); }
+.scp2-val-normal { color: var(--ink); }
+/* ── end scp2 ───────────────────────────────────────────────────────────── */
+
