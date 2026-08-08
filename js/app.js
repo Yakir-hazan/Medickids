@@ -23,6 +23,7 @@ const App = (() => {
   let dailyReminderOn = true; // for DAILY-protocol medicines — whether to keep a recurring reminder
   let editTempEntryId = null;
   let editingKidId = null; // null = add mode
+  let selectedChildId = null; // שלב 3 — selected child panel
   let deferredInstallPrompt = null;
 
   /* ---------- add-to-home-screen detection ---------- */
@@ -527,7 +528,8 @@ const App = (() => {
            </div>
            ${canGiveHtml}`;
 
-      return `<div class="card${isLastOdd ? ' card-full' : ''}" onclick="App.openEditKid('${c.id}')">
+      const isSelected = c.id === selectedChildId;
+      return `<div class="card${isLastOdd ? ' card-full' : ''}${isSelected ? ' card-selected' : ''}" onclick="App.selectChild('${c.id}')">
         ${cardInner}
       </div>`;
     }).join('');
@@ -634,6 +636,7 @@ const App = (() => {
     }
 
     _renderActiveTreatmentsCard(state.children); // Step 1E — independent, reads only via _activeTreatmentState
+    _renderSelectedChildPanel(); // שלב 3 — selected child panel
   }
 
   /* ---------- add medication sheet ---------- */
@@ -1158,6 +1161,120 @@ const App = (() => {
         <button class="kid-edit" onclick="App.openEditKid('${c.id}')">עריכה</button>
       </div>`).join('') || `<div class="empty-state"><div class="ic">👶</div><div class="t">עדיין אין ילדים</div></div>`;
   }
+  /* ── שלב 3: Selected Child Panel ────────────────────────────────────────── */
+  function selectChild(id) {
+    // toggle — לחיצה שנייה על אותו ילד סוגרת את הפאנל
+    selectedChildId = selectedChildId === id ? null : id;
+    renderDashboard();
+    if (selectedChildId) {
+      setTimeout(() => {
+        const panel = document.getElementById('dash-selected-child');
+        if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 80);
+    }
+  }
+
+  function _renderSelectedChildPanel() {
+    const el = document.getElementById('dash-selected-child');
+    if (!el) return;
+    if (!selectedChildId) { el.style.display = 'none'; el.innerHTML = ''; return; }
+
+    const c = childById(selectedChildId);
+    if (!c) { el.style.display = 'none'; return; }
+
+    const vm = childStatusViewModel(selectedChildId);
+
+    // pills
+    let pillsHtml = '';
+    if (vm.tags.length) {
+      pillsHtml = vm.tags.map(t =>
+        t.type === 'fever'
+          ? `<div class="status-pill fever"><div class="status-dot-sm"></div><span class="status-pill-text">🌡️ חום ${t.value}°</span></div>`
+          : `<div class="status-pill treatment"><div class="status-dot-sm"></div><span class="status-pill-text">💊 טיפול פעיל</span></div>`
+      ).join('');
+    } else {
+      pillsHtml = `<div class="status-pill ok"><div class="status-dot-sm"></div><span class="status-pill-text">🟢 הכל תקין</span></div>`;
+    }
+
+    // חום אחרון
+    let feverRow = '';
+    if (vm.lastTemp) {
+      const when = formatClock(vm.lastTemp.time);
+      const cls = vm.hasFever ? 'scp-row-alert' : 'scp-row-normal';
+      feverRow = `<div class="scp-row ${cls}">
+        <span class="scp-row-ic">🌡️</span>
+        <span class="scp-row-lbl">חום אחרון</span>
+        <span class="scp-row-val">${vm.lastTemp.value}° בשעה ${when}</span>
+      </div>`;
+    }
+
+    // תרופה / canGive
+    let medRow = '';
+    if (vm.nextEvent) {
+      const ev = vm.nextEvent;
+      if (ev.canGive) {
+        medRow = `<div class="scp-row scp-row-ok">
+          <span class="scp-row-ic">💊</span>
+          <span class="scp-row-lbl">${ev.name}</span>
+          <span class="scp-row-val scp-val-green">אפשר לתת עכשיו</span>
+        </div>`;
+      } else if (ev.at) {
+        medRow = `<div class="scp-row scp-row-normal">
+          <span class="scp-row-ic">⏱️</span>
+          <span class="scp-row-lbl">${ev.name}</span>
+          <span class="scp-row-val">ניתן לתת ב־${formatClock(ev.at)}</span>
+        </div>`;
+      }
+    } else if (vm.lastMed) {
+      medRow = `<div class="scp-row scp-row-normal">
+        <span class="scp-row-ic">💊</span>
+        <span class="scp-row-lbl">תרופה אחרונה</span>
+        <span class="scp-row-val">${vm.lastMed.medicine} — ${formatClock(vm.lastMed.time)}</span>
+      </div>`;
+    }
+
+    // course פעיל
+    let courseRow = '';
+    if (vm.courseState.hasActiveCourse && vm.courseState.nextCourse) {
+      const entry = _catalogEntryById(vm.courseState.nextCourse.productId);
+      const name = entry ? entry.key : 'טיפול';
+      const summary = vm.courseState.summary || '';
+      courseRow = `<div class="scp-row scp-row-normal">
+        <span class="scp-row-ic">🗓️</span>
+        <span class="scp-row-lbl">טיפול פעיל — ${name}</span>
+        <span class="scp-row-val">${summary}</span>
+      </div>`;
+    }
+
+    const avatarColors = ['avatar-pink','avatar-blue','avatar-green','avatar-pink','avatar-blue'];
+    const avatarClass = avatarColors[c.color % avatarColors.length] || 'avatar-blue';
+
+    el.style.display = '';
+    el.innerHTML = `
+      <div class="scp-card">
+        <div class="scp-header">
+          <div class="scp-title-row">
+            <div class="avatar-md ${avatarClass}">${c.emoji}</div>
+            <div class="scp-name">${c.name}</div>
+            <button class="scp-close" onclick="App.selectChild('${c.id}')" aria-label="סגור">✕</button>
+          </div>
+          <div class="scp-pills">${pillsHtml}</div>
+        </div>
+        <div class="scp-rows">
+          ${feverRow}
+          ${medRow}
+          ${courseRow}
+          ${!feverRow && !medRow && !courseRow ? `<div class="scp-empty">אין נתונים אחרונים לילד/ה זה</div>` : ''}
+        </div>
+        <div class="scp-actions">
+          <button class="scp-btn scp-btn-primary" onclick="App.openMedSheet()">💊 נתתי תרופה</button>
+          <button class="scp-btn scp-btn-secondary" onclick="App.openTempSheet()">🌡️ מדדתי חום</button>
+          <button class="scp-btn scp-btn-ghost" onclick="App.openEditKid('${c.id}')">✏️ עריכה</button>
+        </div>
+      </div>`;
+  }
+  /* ── end שלב 3 ──────────────────────────────────────────────────────────── */
+
   function openEditKid(id) {
     editingKidId = id;
     const title = document.getElementById('editkid-title');
@@ -2137,7 +2254,7 @@ const App = (() => {
     goto, tab, openSheet, closeSheet,
     openMedSheet, pickMedChild, pickMedMedicine, addCustomMedicine, saveMed, pickReminderMode, toggleDailyReminder,
     setHistFilter, setTempFilter, openTempSheet, pickTempChild, saveTemp,
-    openEditKid, saveKid, toggleNotif, init,
+    openEditKid, saveKid, toggleNotif, init, selectChild,
     installNow, skipLanding,
     openDoseSheet, pickDoseChild, pickDoseMed, pickDoseConc, calcDose,
     openCourseSheet, pickCourseChild, pickCourseDrug, saveCourse,
