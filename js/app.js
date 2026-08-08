@@ -511,49 +511,71 @@ const App = (() => {
       const vm = childStatusViewModel(c.id);
       const isLastOdd = childCount % 2 !== 0 && idx === childCount - 1;
 
-      // status pill — דינמי מ-vm.tags
-      let statusPill;
+      // ── badges ──
+      let badgesHtml;
       if (vm.tags.length) {
-        statusPill = vm.tags.map(t =>
+        badgesHtml = vm.tags.map(t =>
           t.type === 'fever'
-            ? `<div class="status-pill fever"><div class="status-dot-sm"></div><span class="status-pill-text">🌡️ חום ${t.value}°</span></div>`
-            : `<div class="status-pill treatment"><div class="status-dot-sm"></div><span class="status-pill-text">💊 טיפול</span></div>`
+            ? `<div class="status-pill fever"><div class="status-dot-sm"></div><span class="status-pill-text">• חום פעיל</span></div>`
+            : `<div class="status-pill treatment"><div class="status-dot-sm"></div><span class="status-pill-text">• טיפול</span></div>`
         ).join('');
-      } else if (!vm.nextEvent) {
-        statusPill = `<div class="status-pill ok"><div class="status-dot-sm"></div><span class="status-pill-text">🟢 הכל תקין</span></div>`;
       } else {
-        statusPill = `<div class="status-pill ok"><div class="status-dot-sm"></div><span class="status-pill-text">💊 פעיל</span></div>`;
+        badgesHtml = `<div class="status-pill ok"><div class="status-dot-sm"></div><span class="status-pill-text">• הכל תקין</span></div>`;
       }
 
-      // next-row + canGiveBar — מבוסס nextEvent, ללא כפילות
-      // next-row: מציג את שם התרופה בלבד
-      // canGiveBar: מציג את הסטטוס (זמין/שעה)
-      let nextRowIcon = '✨', nextRowLabel = 'אין נתונים עדיין', nextRowTime = '';
-      let canGiveHtml = '';
+      // ── שורת תרופה ──
+      let medRowHtml = '';
+      if (vm.lastMed) {
+        medRowHtml = `<div class="cc-row">
+          <span class="cc-ic">💊</span>
+          <span class="cc-lbl">תרופה</span>
+          <span class="cc-val cc-val-blue">${formatClock(vm.lastMed.time)}</span>
+        </div>`;
+      }
 
-      if (vm.nextEvent) {
-        const ev = vm.nextEvent;
-        nextRowIcon = '💊';
-        nextRowLabel = ev.name;
-        nextRowTime = '';   // שעה תוצג ב-canGiveBar בלבד
+      // ── שורת חום ──
+      let tempRowHtml = '';
+      if (vm.lastTemp) {
+        const cls = vm.hasFever ? 'cc-val-red' : 'cc-val-normal';
+        tempRowHtml = `<div class="cc-row">
+          <span class="cc-ic">🌡️</span>
+          <span class="cc-lbl">חום</span>
+          <span class="cc-val ${cls}">${vm.lastTemp.value}°</span>
+        </div>`;
+      }
 
-        if (ev.canGive) {
-          canGiveHtml = `<div class="can-give-bar ok-bar">🟢 אפשר לתת ${ev.name} עכשיו</div>`;
-        } else if (ev.at) {
-          canGiveHtml = `<div class="can-give-bar warn-bar">⏱️ ניתן לתת ${ev.name} ב־${formatClock(ev.at)}</div>`;
+      // ── שורת מנה הבאה — min מכל הטיפולים ──
+      let nextDoseRowHtml = '';
+      {
+        let nextAtMs = null;
+        if (vm.nextEvent && vm.nextEvent.at && !vm.nextEvent.canGive) nextAtMs = vm.nextEvent.at;
+        if (vm.courseState.hasActiveCourse) {
+          vm.courseState.activeCourses.forEach(rx => {
+            if (_canMarkDoseNow(rx) || _courseIsDoseOverdue(rx)) {
+              if (nextAtMs === null) nextAtMs = Date.now();
+            } else {
+              const at = _courseNextDoseAt(rx);
+              if (at && (nextAtMs === null || at < nextAtMs)) nextAtMs = at;
+            }
+          });
         }
-      } else if (vm.hasFever) {
-        nextRowIcon = '🌡️';
-        nextRowLabel = `חום ${vm.lastTemp.value}°`;
-        nextRowTime = '';
-        const tipText = vm.lastTemp.value >= 39
-          ? `💊 כדאי לשקול תרופה להורדת חום`
-          : `💊 אפשר לתת תרופה להורדת חום`;
-        canGiveHtml = `<div class="can-give-bar fever-bar">${tipText}</div>`;
-      } else if (vm.lastTemp) {
-        nextRowIcon = '🌡️';
-        nextRowLabel = 'מדידה אחרונה';
-        nextRowTime = `${vm.lastTemp.value}°`;
+        if (nextAtMs !== null) {
+          const remaining = nextAtMs - Date.now();
+          let valHtml;
+          if (remaining <= 0) {
+            valHtml = `<span class="cc-val cc-val-green">עכשיו</span>`;
+          } else {
+            const h = Math.floor(remaining / 3600000);
+            const m = Math.floor((remaining % 3600000) / 60000);
+            const label = h > 0 ? `${h}:${String(m).padStart(2,'0')}` : `${m} דק'`;
+            valHtml = `<span class="cc-val cc-val-normal">${label}</span>`;
+          }
+          nextDoseRowHtml = `<div class="cc-row">
+            <span class="cc-ic">⏰</span>
+            <span class="cc-lbl">מנה הבאה</span>
+            ${valHtml}
+          </div>`;
+        }
       }
 
       const avatarColors = ['avatar-pink','avatar-blue','avatar-green','avatar-pink','avatar-blue'];
@@ -565,20 +587,15 @@ const App = (() => {
         return years > 0 ? `${years} שנים` : 'פחות משנה';
       })() : '';
 
-      const cardInner = `<div style="text-align:center;padding-bottom:8px;">
-             <div class="avatar-lg ${avatarClass}" style="margin:0 auto 8px;">${c.emoji}</div>
-             <div class="child-name">${c.name}</div>
-             ${ageText ? `<div class="child-age">${ageText}</div>` : ''}
-             <div style="margin-top:6px;">${statusPill}</div>
-           </div>
-           <div class="next-row" style="justify-content:center;">
-             <div class="next-icon">${nextRowIcon}</div>
-             <div>
-               <div class="next-label">${nextRowLabel}</div>
-               ${nextRowTime ? `<div class="next-time" style="text-align:center;">${nextRowTime}</div>` : ''}
-             </div>
-           </div>
-           ${canGiveHtml}`;
+      const hasRows = medRowHtml || tempRowHtml || nextDoseRowHtml;
+      const cardInner = `
+        <div class="cc-top">
+          <div class="avatar-lg ${avatarClass}" style="margin:0 auto 8px;">${c.emoji}</div>
+          <div class="child-name">${c.name}</div>
+          ${ageText ? `<div class="child-age">${ageText}</div>` : ''}
+          <div class="cc-badges">${badgesHtml}</div>
+        </div>
+        ${hasRows ? `<div class="cc-rows">${medRowHtml}${tempRowHtml}${nextDoseRowHtml}</div>` : ''}`;
 
       const isSelected = c.id === selectedChildId;
       return `<div class="card${isLastOdd ? ' card-full' : ''}${isSelected ? ' card-selected' : ''}" onclick="App.selectChild('${c.id}')">
