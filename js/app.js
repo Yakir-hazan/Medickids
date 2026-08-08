@@ -516,7 +516,7 @@ const App = (() => {
       if (vm.tags.length) {
         badgesHtml = vm.tags.map(t =>
           t.type === 'fever'
-            ? `<div class="status-pill fever"><div class="status-dot-sm"></div><span class="status-pill-text">• חום פעיל</span></div>`
+            ? `<div class="status-pill fever"><div class="status-dot-sm"></div><span class="status-pill-text">• חום</span></div>`
             : `<div class="status-pill treatment"><div class="status-dot-sm"></div><span class="status-pill-text">• טיפול</span></div>`
         ).join('');
       } else {
@@ -1282,8 +1282,8 @@ const App = (() => {
     if (vm.tags.length) {
       pillsHtml = vm.tags.map(t =>
         t.type === 'fever'
-          ? `<div class="status-pill fever"><div class="status-dot-sm"></div><span class="status-pill-text">🌡️ חום ${t.value}°</span></div>`
-          : `<div class="status-pill treatment"><div class="status-dot-sm"></div><span class="status-pill-text">💊 טיפול פעיל</span></div>`
+          ? `<div class="status-pill fever"><div class="status-dot-sm"></div><span class="status-pill-text">• חום</span></div>`
+          : `<div class="status-pill treatment"><div class="status-dot-sm"></div><span class="status-pill-text">• טיפול</span></div>`
       ).join('');
     } else {
       pillsHtml = `<div class="status-pill ok"><div class="status-dot-sm"></div><span class="status-pill-text">🟢 הכל תקין</span></div>`;
