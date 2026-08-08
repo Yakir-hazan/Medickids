@@ -700,7 +700,7 @@ body { background: var(--bg); }
   display: flex;
   gap: 12px;
   align-items: flex-start;
-  margin-top: 16px;
+  margin-top: 46px;
   margin-bottom: 12px;
 }
 .tip-icon-box {
