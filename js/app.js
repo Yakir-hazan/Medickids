@@ -264,7 +264,7 @@ const App = (() => {
       document.getElementById('dash-updated').style.display = 'none';
       document.getElementById('dash-hero').style.display = 'none';
       document.getElementById('dash-fam-summary').style.display = 'none';
-      document.getElementById('dash-active-treatments').style.display = 'none';
+      // dash-active-treatments removed from dashboard
       document.getElementById('dash-timeline').style.display = 'none';
       document.getElementById('dash-insight').style.display = 'none';
       document.getElementById('dash-urgent').style.display = 'none';
@@ -635,7 +635,7 @@ const App = (() => {
       insightEl.style.display = 'none';
     }
 
-    _renderActiveTreatmentsCard(state.children); // Step 1E — independent, reads only via _activeTreatmentState
+    // _renderActiveTreatmentsCard removed — treatment info moved into child card + detail panel
   }
 
   /* ---------- add medication sheet ---------- */
@@ -1233,16 +1233,50 @@ const App = (() => {
       </div>`;
     }
 
-    // course פעיל
+    // course פעיל — section מורחב
     let courseRow = '';
-    if (vm.courseState.hasActiveCourse && vm.courseState.nextCourse) {
-      const entry = _catalogEntryById(vm.courseState.nextCourse.productId);
-      const name = entry ? entry.key : 'טיפול';
-      const summary = vm.courseState.summary || '';
-      courseRow = `<div class="scp-row scp-row-normal">
-        <span class="scp-row-ic">🗓️</span>
-        <span class="scp-row-lbl">טיפול פעיל — ${name}</span>
-        <span class="scp-row-val">${summary}</span>
+    if (vm.courseState.hasActiveCourse) {
+      const courseRows = vm.courseState.activeCourses.map(rx => {
+        const entry = _catalogEntryById(rx.productId);
+        const name = entry ? entry.key : 'טיפול';
+        const summary = _courseSummary(rx);
+        const canMark = _canMarkDoseNow(rx);
+        const nextAt = _courseNextDoseAt(rx);
+        const isOverdue = _courseIsDoseOverdue(rx);
+
+        let timerText = '';
+        if (canMark || isOverdue) {
+          timerText = `<span style="color:var(--mint);font-weight:600;">🟢 זמין עכשיו</span>`;
+        } else if (nextAt) {
+          const remaining = nextAt - Date.now();
+          if (remaining > 0) {
+            const hrs  = Math.floor(remaining / 3600000);
+            const mins = Math.floor((remaining % 3600000) / 60000);
+            const t = hrs > 0
+              ? `${hrs} שעות${mins > 0 ? ' ו-' + mins + ' דקות' : ''}`
+              : `${mins} דקות`;
+            timerText = `<span style="color:var(--ink-soft);">⏱ מנה הבאה בעוד ${t}</span>`;
+          }
+        }
+
+        const markBtn = canMark || isOverdue
+          ? `<button onclick="App.markCourseDose('${rx.id}')" style="margin-top:8px;padding:6px 16px;border-radius:10px;border:none;background:var(--accent,#4a90d9);color:#fff;font-size:14px;cursor:pointer;width:100%;">✓ סימון מנה</button>`
+          : `<button disabled style="margin-top:8px;padding:6px 16px;border-radius:10px;border:none;background:#e0e0e0;color:#aaa;font-size:14px;cursor:not-allowed;width:100%;">✓ סימון מנה</button>`;
+
+        return `<div style="padding:10px 0;border-top:1px solid var(--line);">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-weight:600;">💊 ${name}</div>
+            ${isOverdue ? `<span style="color:var(--coral,#e57373);font-size:12px;">⚠️ באיחור</span>` : ''}
+          </div>
+          <div style="font-size:13px;color:var(--ink-soft);margin-top:2px;">${summary}</div>
+          <div style="font-size:13px;margin-top:4px;">${timerText}</div>
+          ${markBtn}
+        </div>`;
+      }).join('');
+
+      courseRow = `<div style="padding:4px 0;">
+        <div style="font-size:12px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">טיפולים פעילים</div>
+        ${courseRows}
       </div>`;
     }
 
