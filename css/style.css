@@ -15,6 +15,10 @@
   --red-dark:    #C23B3B;
   --red-tint:    rgba(255,107,107,0.12);
 
+  --blue:        #4A90D9;
+  --blue-dark:   #1E5FA8;
+  --blue-tint:   rgba(74,144,217,0.13);
+
   --green:       #4BBFAA;
   --green-dark:  #0C6B57;
   --green-tint:  rgba(75,191,170,0.13);
@@ -613,6 +617,10 @@ body { background: var(--bg); }
 .status-pill.fever { background: var(--red-tint); }
 .status-pill.fever .status-dot-sm  { background: var(--red); animation: pulse-ring 1.6s ease-in-out infinite; }
 .status-pill.fever .status-pill-text { color: var(--red-dark); }
+
+.status-pill.treatment { background: var(--blue-tint); }
+.status-pill.treatment .status-dot-sm  { background: var(--blue); }
+.status-pill.treatment .status-pill-text { color: var(--blue-dark); }
 
 /* next item row */
 .next-row {
