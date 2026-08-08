@@ -604,39 +604,9 @@ const App = (() => {
     }).join('');
 
     // ---------- fever tracker card (v2 mockup) ----------
+    // fever tracker — הוסר (המידע מוצג בכרטיסי הילדים)
     const feverTrackerEl = document.getElementById('dash-fever-tracker');
-    const feverKid = childData.find((d) => d.hasFever) || childData.find((d) => d.lastTemp);
-    if (feverKid && feverKid.lastTemp) {
-      const { c, lastTemp } = feverKid;
-      const val = lastTemp.value;
-      const MIN_TEMP = 37.0, MAX_TEMP = 40.0;
-      const pct = Math.min(100, Math.max(0, ((val - MIN_TEMP) / (MAX_TEMP - MIN_TEMP)) * 100));
-      feverTrackerEl.innerHTML = `
-        <p class="section-title">מדד חום</p>
-        <div class="fever-tracker-card">
-          <div class="fever-header-row">
-            <div>
-              <p class="fever-label-sm">מדד חום</p>
-              <p class="fever-sub-text">${c.name} — עדכון אחרון ${formatClock(lastTemp.time)}</p>
-            </div>
-            <div class="fever-badge">
-              <span class="fever-val">${val}</span>
-              <span class="fever-unit">°C</span>
-            </div>
-          </div>
-          <div class="progress-track">
-            <div class="progress-fill" style="width:${pct}%"></div>
-          </div>
-          <div class="progress-labels">
-            <span>${MIN_TEMP}°</span>
-            <span class="pl-current">${val}° עכשיו</span>
-            <span>${MAX_TEMP}°</span>
-          </div>
-        </div>`;
-      feverTrackerEl.style.display = '';
-    } else {
-      feverTrackerEl.style.display = 'none';
-    }
+    if (feverTrackerEl) feverTrackerEl.style.display = 'none';
 
     // ---------- tip card (v2 mockup) ----------
     const tipEl = document.getElementById('dash-tip-card');
