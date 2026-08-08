@@ -636,7 +636,6 @@ const App = (() => {
     }
 
     _renderActiveTreatmentsCard(state.children); // Step 1E — independent, reads only via _activeTreatmentState
-    _renderSelectedChildPanel(); // שלב 3 — selected child panel
   }
 
   /* ---------- add medication sheet ---------- */
@@ -1161,26 +1160,27 @@ const App = (() => {
         <button class="kid-edit" onclick="App.openEditKid('${c.id}')">עריכה</button>
       </div>`).join('') || `<div class="empty-state"><div class="ic">👶</div><div class="t">עדיין אין ילדים</div></div>`;
   }
-  /* ── שלב 3: Selected Child Panel ────────────────────────────────────────── */
+  /* ── שלב 3: Selected Child Panel — Bottom Sheet ─────────────────────────── */
   function selectChild(id) {
-    // toggle — לחיצה שנייה על אותו ילד סוגרת את הפאנל
-    selectedChildId = selectedChildId === id ? null : id;
-    renderDashboard();
-    if (selectedChildId) {
-      setTimeout(() => {
-        const panel = document.getElementById('dash-selected-child');
-        if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }, 80);
-    }
+    selectedChildId = id;
+    _renderSelectedChildPanel();
+    openSheet('sheet-child-detail');
+  }
+
+  function closeChildDetail() {
+    closeSheet('sheet-child-detail');
+    selectedChildId = null;
+    // הסר card-selected highlight
+    document.querySelectorAll('.child-grid .card-selected')
+      .forEach(el => el.classList.remove('card-selected'));
   }
 
   function _renderSelectedChildPanel() {
-    const el = document.getElementById('dash-selected-child');
-    if (!el) return;
-    if (!selectedChildId) { el.style.display = 'none'; el.innerHTML = ''; return; }
+    const el = document.getElementById('sheet-child-detail-content');
+    if (!el || !selectedChildId) return;
 
     const c = childById(selectedChildId);
-    if (!c) { el.style.display = 'none'; return; }
+    if (!c) return;
 
     const vm = childStatusViewModel(selectedChildId);
 
@@ -1249,28 +1249,24 @@ const App = (() => {
     const avatarColors = ['avatar-pink','avatar-blue','avatar-green','avatar-pink','avatar-blue'];
     const avatarClass = avatarColors[c.color % avatarColors.length] || 'avatar-blue';
 
-    el.style.display = '';
     el.innerHTML = `
-      <div class="scp-card">
-        <div class="scp-header">
-          <div class="scp-title-row">
-            <div class="avatar-md ${avatarClass}">${c.emoji}</div>
-            <div class="scp-name">${c.name}</div>
-            <button class="scp-close" onclick="App.selectChild('${c.id}')" aria-label="סגור">✕</button>
-          </div>
-          <div class="scp-pills">${pillsHtml}</div>
+      <div class="scp-header">
+        <div class="scp-title-row">
+          <div class="avatar-md ${avatarClass}">${c.emoji}</div>
+          <div class="scp-name">${c.name}</div>
         </div>
-        <div class="scp-rows">
-          ${feverRow}
-          ${medRow}
-          ${courseRow}
-          ${!feverRow && !medRow && !courseRow ? `<div class="scp-empty">אין נתונים אחרונים לילד/ה זה</div>` : ''}
-        </div>
-        <div class="scp-actions">
-          <button class="scp-btn scp-btn-primary" onclick="App.openMedSheet()">💊 נתתי תרופה</button>
-          <button class="scp-btn scp-btn-secondary" onclick="App.openTempSheet()">🌡️ מדדתי חום</button>
-          <button class="scp-btn scp-btn-ghost" onclick="App.openEditKid('${c.id}')">✏️ עריכה</button>
-        </div>
+        <div class="scp-pills">${pillsHtml}</div>
+      </div>
+      <div class="scp-rows">
+        ${feverRow}
+        ${medRow}
+        ${courseRow}
+        ${!feverRow && !medRow && !courseRow ? `<div class="scp-empty">אין נתונים אחרונים לילד/ה זה</div>` : ''}
+      </div>
+      <div class="scp-actions">
+        <button class="scp-btn scp-btn-primary" onclick="App.openMedSheet()">💊 נתתי תרופה</button>
+        <button class="scp-btn scp-btn-secondary" onclick="App.openTempSheet()">🌡️ מדדתי חום</button>
+        <button class="scp-btn scp-btn-ghost" onclick="App.openEditKid('${c.id}')">✏️ עריכה</button>
       </div>`;
   }
   /* ── end שלב 3 ──────────────────────────────────────────────────────────── */
@@ -2254,7 +2250,7 @@ const App = (() => {
     goto, tab, openSheet, closeSheet,
     openMedSheet, pickMedChild, pickMedMedicine, addCustomMedicine, saveMed, pickReminderMode, toggleDailyReminder,
     setHistFilter, setTempFilter, openTempSheet, pickTempChild, saveTemp,
-    openEditKid, saveKid, toggleNotif, init, selectChild,
+    openEditKid, saveKid, toggleNotif, init, selectChild, closeChildDetail,
     installNow, skipLanding,
     openDoseSheet, pickDoseChild, pickDoseMed, pickDoseConc, calcDose,
     openCourseSheet, pickCourseChild, pickCourseDrug, saveCourse,

@@ -702,115 +702,72 @@ body { background: var(--bg); }
 .tip-body-v2  { font-size: 13px; color: #2A3A35; line-height: 1.6; }
 
 
-/* ── שלב 3: Selected Child Panel ─────────────────────────────────────────── */
-#dash-selected-child { margin-top: 12px; margin-bottom: 4px; }
-
-.scp-card {
-  background: #fff;
-  border-radius: 20px;
-  box-shadow: var(--shadow-card);
-  border: 1px solid rgba(0,0,0,0.06);
-  overflow: hidden;
-  animation: scp-slide-in 0.22s cubic-bezier(0.34,1.56,0.64,1) both;
-}
-
-@keyframes scp-slide-in {
-  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
-  to   { opacity: 1; transform: translateY(0)   scale(1);    }
-}
-
+/* ── שלב 3: Selected Child Panel — Bottom Sheet ──────────────────────────── */
 .scp-header {
-  padding: 16px 16px 12px;
+  padding: 0 0 14px;
   border-bottom: 1px solid rgba(0,0,0,0.06);
+  margin-bottom: 4px;
 }
-
 .scp-title-row {
   display: flex;
   align-items: center;
   gap: 10px;
   margin-bottom: 10px;
 }
-
 .scp-name {
-  font-size: 17px;
+  font-size: 19px;
   font-weight: 800;
   color: var(--ink);
   flex: 1;
 }
-
-.scp-close {
-  background: none;
-  border: none;
-  font-size: 16px;
-  color: var(--ink-muted);
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 8px;
-  line-height: 1;
-}
-.scp-close:hover { background: var(--bg); }
-
 .scp-pills { display: flex; flex-wrap: wrap; gap: 6px; }
 .scp-pills .status-pill { margin-bottom: 0; }
-
 .scp-rows {
-  padding: 12px 16px;
+  padding: 14px 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
-
 .scp-row {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 12px;
-  border-radius: 12px;
+  padding: 11px 13px;
+  border-radius: 13px;
   background: var(--bg);
 }
 .scp-row-alert  { background: var(--red-tint); }
 .scp-row-ok     { background: var(--green-tint); }
 .scp-row-normal { background: var(--bg); }
-
-.scp-row-ic  { font-size: 18px; flex-shrink: 0; }
+.scp-row-ic  { font-size: 20px; flex-shrink: 0; }
 .scp-row-lbl { font-size: 12px; color: var(--ink-soft); flex: 1; }
 .scp-row-val { font-size: 13px; font-weight: 700; color: var(--ink); }
 .scp-val-green { color: var(--green-dark); }
-
 .scp-empty {
   text-align: center;
   color: var(--ink-muted);
   font-size: 13px;
-  padding: 12px 0;
+  padding: 14px 0;
 }
-
 .scp-actions {
   display: flex;
   gap: 8px;
-  padding: 12px 16px 16px;
+  padding-top: 14px;
   border-top: 1px solid rgba(0,0,0,0.06);
 }
-
 .scp-btn {
   flex: 1;
   border: none;
-  border-radius: 12px;
-  padding: 10px 6px;
-  font-size: 12px;
+  border-radius: 13px;
+  padding: 13px 6px;
+  font-size: 12.5px;
   font-weight: 700;
   cursor: pointer;
   font-family: inherit;
   transition: opacity 0.15s;
 }
 .scp-btn:active { opacity: 0.75; }
-
 .scp-btn-primary   { background: var(--purple); color: #fff; }
 .scp-btn-secondary { background: var(--red-tint); color: var(--red-dark); }
 .scp-btn-ghost     { background: var(--bg); color: var(--ink-soft); border: 1px solid rgba(0,0,0,0.1); }
-
-/* כרטיס נבחר — הדגשה */
-.child-grid .card.card-selected {
-  border-color: var(--purple);
-  box-shadow: 0 0 0 2px rgba(123,108,245, 0.22), var(--shadow-card);
-}
 /* ── end שלב 3 ───────────────────────────────────────────────────────────── */
