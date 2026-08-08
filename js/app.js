@@ -1373,7 +1373,7 @@ const App = (() => {
         <div class="avatar-lg ${avatarClass}" style="width:64px;height:64px;font-size:30px;margin:0 auto 10px;">${c.emoji}</div>
         <div class="scp2-name">${c.name}</div>
         ${ageText ? `<div class="scp2-age">${ageText}</div>` : ''}
-        ${badgeHtml ? `<div style="margin-top:8px;">${badgeHtml}</div>` : ''}
+        ${badgeHtml ? `<div class="scp2-badges">${badgeHtml}</div>` : ''}
       </div>
       ${hasRows ? `<div class="scp2-rows">
         ${medRowHtml}
