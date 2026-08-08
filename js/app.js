@@ -528,7 +528,7 @@ const App = (() => {
       if (vm.lastMed) {
         medRowHtml = `<div class="cc-row">
           <span class="cc-ic">💊</span>
-          <span class="cc-lbl">תרופה</span>
+          <span class="cc-lbl">${vm.lastMed.medicine || 'תרופה'}</span>
           <span class="cc-val cc-val-blue">${formatClock(vm.lastMed.time)}</span>
         </div>`;
       }
