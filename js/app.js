@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.47 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.68';
+  const APP_VERSION = '1.0.0-beta.74';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -1260,119 +1260,127 @@ const App = (() => {
 
     const vm = childStatusViewModel(selectedChildId);
 
-    // pills
-    let pillsHtml = '';
+    // ── גיל ──
+    const ageText = c.birthdate ? (() => {
+      const diff = Date.now() - new Date(c.birthdate).getTime();
+      const years = Math.floor(diff / (365.25 * 24 * 3600 * 1000));
+      return years > 0 ? `${years} שנים` : 'פחות משנה';
+    })() : '';
+
+    // ── badge (רק אם יש מצב פעיל) ──
+    let badgeHtml = '';
     if (vm.tags.length) {
-      pillsHtml = vm.tags.map(t =>
+      badgeHtml = vm.tags.map(t =>
         t.type === 'fever'
-          ? `<div class="status-pill fever"><div class="status-dot-sm"></div><span class="status-pill-text">🌡️ חום ${t.value}°</span></div>`
-          : `<div class="status-pill treatment"><div class="status-dot-sm"></div><span class="status-pill-text">💊 טיפול פעיל</span></div>`
+          ? `<div class="status-pill fever"><div class="status-dot-sm"></div><span class="status-pill-text">• חום פעיל</span></div>`
+          : `<div class="status-pill treatment"><div class="status-dot-sm"></div><span class="status-pill-text">• טיפול פעיל</span></div>`
       ).join('');
-    } else {
-      pillsHtml = `<div class="status-pill ok"><div class="status-dot-sm"></div><span class="status-pill-text">🟢 הכל תקין</span></div>`;
     }
 
-    // חום אחרון
-    let feverRow = '';
-    if (vm.lastTemp) {
-      const when = formatClock(vm.lastTemp.time);
-      const cls = vm.hasFever ? 'scp-row-alert' : 'scp-row-normal';
-      feverRow = `<div class="scp-row ${cls}">
-        <span class="scp-row-ic">🌡️</span>
-        <span class="scp-row-lbl">חום אחרון</span>
-        <span class="scp-row-val">${vm.lastTemp.value}° בשעה ${when}</span>
+    // ── שורת תרופה — שם + שעת מנה אחרונה ──
+    let medRowHtml = '';
+    if (vm.lastMed) {
+      const timeVal = formatClock(vm.lastMed.time);
+      medRowHtml = `<div class="scp2-row">
+        <span class="scp2-ic">💊</span>
+        <span class="scp2-lbl">תרופה</span>
+        <span class="scp2-val scp2-val-blue">${timeVal}</span>
       </div>`;
     }
 
-    // תרופה / canGive
-    let medRow = '';
-    if (vm.nextEvent) {
-      const ev = vm.nextEvent;
-      if (ev.canGive) {
-        medRow = `<div class="scp-row scp-row-ok">
-          <span class="scp-row-ic">💊</span>
-          <span class="scp-row-lbl">${ev.name}</span>
-          <span class="scp-row-val scp-val-green">אפשר לתת עכשיו</span>
-        </div>`;
-      } else if (ev.at) {
-        medRow = `<div class="scp-row scp-row-normal">
-          <span class="scp-row-ic">⏱️</span>
-          <span class="scp-row-lbl">${ev.name}</span>
-          <span class="scp-row-val">ניתן לתת ב־${formatClock(ev.at)}</span>
+    // ── שורת חום — ערך + מחוון צבע ──
+    let tempRowHtml = '';
+    if (vm.lastTemp) {
+      const tempCls = vm.hasFever ? 'scp2-val-red' : 'scp2-val-normal';
+      tempRowHtml = `<div class="scp2-row">
+        <span class="scp2-ic">🌡️</span>
+        <span class="scp2-lbl">חום</span>
+        <span class="scp2-val ${tempCls}">${vm.lastTemp.value}°</span>
+      </div>`;
+    }
+
+    // ── שורת מנה הבאה — מינימום מכל הטיפולים (PRN + קורסים) ──
+    let nextDoseRowHtml = '';
+    {
+      let nextAtMs = null; // timestamp של המנה הבאה
+
+      // PRN
+      if (vm.nextEvent && vm.nextEvent.at && !vm.nextEvent.canGive) {
+        nextAtMs = vm.nextEvent.at;
+      }
+
+      // קורסים — בדוק כל אחד
+      if (vm.courseState.hasActiveCourse) {
+        vm.courseState.activeCourses.forEach(rx => {
+          const canMark = _canMarkDoseNow(rx);
+          const overdue = _courseIsDoseOverdue(rx);
+          if (canMark || overdue) {
+            // זמין עכשיו — nextAt = עכשיו
+            if (nextAtMs === null) nextAtMs = Date.now();
+          } else {
+            const at = _courseNextDoseAt(rx);
+            if (at && (nextAtMs === null || at < nextAtMs)) nextAtMs = at;
+          }
+        });
+      }
+
+      if (nextAtMs !== null) {
+        const remaining = nextAtMs - Date.now();
+        let timeLabel;
+        if (remaining <= 0) {
+          timeLabel = `<span class="scp2-val scp2-val-green">עכשיו</span>`;
+        } else {
+          const totalMin = Math.round(remaining / 60000);
+          const hrs = Math.floor(totalMin / 60);
+          const mins = totalMin % 60;
+          const formatted = hrs > 0 ? `${hrs}:${String(mins).padStart(2,'0')}` : `${mins} דק'`;
+          timeLabel = `<span class="scp2-val scp2-val-normal">${formatted}</span>`;
+        }
+        nextDoseRowHtml = `<div class="scp2-row">
+          <span class="scp2-ic">⏰</span>
+          <span class="scp2-lbl">מנה הבאה</span>
+          ${timeLabel}
         </div>`;
       }
-    } else if (vm.lastMed) {
-      medRow = `<div class="scp-row scp-row-normal">
-        <span class="scp-row-ic">💊</span>
-        <span class="scp-row-lbl">תרופה אחרונה</span>
-        <span class="scp-row-val">${vm.lastMed.medicine} — ${formatClock(vm.lastMed.time)}</span>
-      </div>`;
     }
 
-    // course פעיל — section מורחב
-    let courseRow = '';
+    // ── כפתורי סימון מנה לקורסים פעילים ──
+    let courseActionsHtml = '';
     if (vm.courseState.hasActiveCourse) {
-      const courseRows = vm.courseState.activeCourses.map(rx => {
+      courseActionsHtml = vm.courseState.activeCourses.map(rx => {
         const entry = _catalogEntryById(rx.productId);
         const name = entry ? entry.key : 'טיפול';
-        const summary = _courseSummary(rx);
         const canMark = _canMarkDoseNow(rx);
-        const nextAt = _courseNextDoseAt(rx);
         const isOverdue = _courseIsDoseOverdue(rx);
-
-        let timerText = '';
-        if (canMark || isOverdue) {
-          timerText = `<span style="color:var(--mint);font-weight:600;">🟢 זמין עכשיו</span>`;
-        } else if (nextAt) {
-          const remaining = nextAt - Date.now();
-          if (remaining > 0) {
-            const hrs  = Math.floor(remaining / 3600000);
-            const mins = Math.floor((remaining % 3600000) / 60000);
-            const t = hrs > 0
-              ? `${hrs} שעות${mins > 0 ? ' ו-' + mins + ' דקות' : ''}`
-              : `${mins} דקות`;
-            timerText = `<span style="color:var(--ink-soft);">⏱ מנה הבאה בעוד ${t}</span>`;
-          }
-        }
-
-        const markBtn = canMark || isOverdue
-          ? `<button onclick="App.markCourseDose('${rx.id}')" style="margin-top:8px;padding:6px 16px;border-radius:10px;border:none;background:var(--accent,#4a90d9);color:#fff;font-size:14px;cursor:pointer;width:100%;">✓ סימון מנה</button>`
-          : `<button disabled style="margin-top:8px;padding:6px 16px;border-radius:10px;border:none;background:#e0e0e0;color:#aaa;font-size:14px;cursor:not-allowed;width:100%;">✓ סימון מנה</button>`;
-
-        return `<div style="padding:10px 0;border-top:1px solid var(--line);">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <div style="font-weight:600;">💊 ${name}</div>
-            ${isOverdue ? `<span style="color:var(--coral,#e57373);font-size:12px;">⚠️ באיחור</span>` : ''}
-          </div>
-          <div style="font-size:13px;color:var(--ink-soft);margin-top:2px;">${summary}</div>
-          <div style="font-size:13px;margin-top:4px;">${timerText}</div>
-          ${markBtn}
-        </div>`;
+        const btnStyle = (canMark || isOverdue)
+          ? `background:var(--accent,#4a90d9);color:#fff;cursor:pointer;`
+          : `background:#e0e0e0;color:#aaa;cursor:not-allowed;`;
+        const btn = `<button ${(!canMark && !isOverdue) ? 'disabled' : ''} onclick="App.markCourseDose('${rx.id}')"
+          style="padding:8px 0;border-radius:11px;border:none;font-size:13px;font-weight:700;width:100%;${btnStyle}font-family:inherit;">
+          ✓ סימון מנה — ${name}${isOverdue ? ' ⚠️' : ''}
+        </button>`;
+        return btn;
       }).join('');
-
-      courseRow = `<div style="padding:4px 0;">
-        <div style="font-size:12px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">טיפולים פעילים</div>
-        ${courseRows}
-      </div>`;
+      courseActionsHtml = `<div style="display:flex;flex-direction:column;gap:7px;padding-top:4px;">${courseActionsHtml}</div>`;
     }
 
     const avatarColors = ['avatar-pink','avatar-blue','avatar-green','avatar-pink','avatar-blue'];
     const avatarClass = avatarColors[c.color % avatarColors.length] || 'avatar-blue';
+    const hasRows = medRowHtml || tempRowHtml || nextDoseRowHtml;
 
     el.innerHTML = `
-      <div class="scp-header">
-        <div class="scp-title-row">
-          <div class="avatar-md ${avatarClass}">${c.emoji}</div>
-          <div class="scp-name">${c.name}</div>
-        </div>
-        <div class="scp-pills">${pillsHtml}</div>
+      <div class="scp2-header">
+        <div class="avatar-lg ${avatarClass}" style="width:64px;height:64px;font-size:30px;margin:0 auto 10px;">${c.emoji}</div>
+        <div class="scp2-name">${c.name}</div>
+        ${ageText ? `<div class="scp2-age">${ageText}</div>` : ''}
+        ${badgeHtml ? `<div style="margin-top:8px;">${badgeHtml}</div>` : ''}
       </div>
-      <div class="scp-rows">
-        ${feverRow}
-        ${medRow}
-        ${courseRow}
-        ${!feverRow && !medRow && !courseRow ? `<div class="scp-empty">אין נתונים אחרונים לילד/ה זה</div>` : ''}
-      </div>
+      ${hasRows ? `<div class="scp2-rows">
+        ${medRowHtml}
+        ${tempRowHtml}
+        ${nextDoseRowHtml}
+      </div>` : `<div class="scp-empty">אין נתונים אחרונים</div>`}
+      ${courseActionsHtml}
       <div class="scp-actions">
         <button class="scp-btn scp-btn-primary" onclick="App.openMedSheet()">💊 נתתי תרופה</button>
         <button class="scp-btn scp-btn-secondary" onclick="App.openTempSheet()">🌡️ מדדתי חום</button>
@@ -2373,6 +2381,7 @@ const App = (() => {
 })();
 
 document.addEventListener('DOMContentLoaded', App.init);
+
 
 
 
