@@ -799,6 +799,14 @@ body { background: var(--bg); }
   font-size: 13px;
   color: var(--ink-soft);
 }
+.scp2-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  margin-top: 8px;
+}
+.scp2-badges .status-pill { margin-bottom: 0; }
 .scp2-rows {
   padding: 12px 0;
   display: flex;
