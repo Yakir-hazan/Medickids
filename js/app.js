@@ -1620,9 +1620,8 @@ const App = (() => {
   }
   /* ── end COURSE helpers ───────────────────────────────────────────────── */
 
-  /* Step 1E (updated Step 3B) — Active Treatments dashboard card.
-     Shows only ACTIVE COURSE prescriptions. Completed ones are hidden here — they appear in History.
-     Active courses: "פעיל" badge + "סימון מנה" button (when daily limit not reached) + delete button. */
+  /* Step 1E / שלב 4 — Active Treatments dashboard card.
+     Shows only ACTIVE COURSE prescriptions with progress bar + overdue styling. */
   function _renderActiveTreatmentsCard(children) {
     const wrap = document.getElementById('dash-active-treatments');
     const dbState = DB.get();
@@ -1633,52 +1632,76 @@ const App = (() => {
       );
       if (!activeCourses.length) return;
       activeCourses.forEach((rx) => {
-        const entry = _catalogEntryById(rx.productId);
-        const drugName = entry ? entry.key : 'טיפול פעיל';
-        const cardTitle = rx.reason ? `${c.name} — ${rx.reason}` : `${c.name} · ${drugName}`;
-        const drugSubline = rx.reason ? `<div style="font-size:13px;color:var(--ink-soft);">${drugName}</div>` : '';
-        const border = rows.length ? 'border-top:1px solid var(--line);' : '';
+        const entry      = _catalogEntryById(rx.productId);
+        const drugName   = entry ? entry.key : 'טיפול פעיל';
+        const label      = rx.reason ? `${c.name} — ${rx.reason}` : `${c.name} · ${drugName}`;
+        const subline    = rx.reason ? `<div class="act-drug-sub">${drugName}</div>` : '';
         const totalDoses = (rx.totalDays || 0) * (rx.dosesPerDay || 1);
-        const dosesDone = rx.doseLog ? rx.doseLog.length : 0;
-        const summary = _courseSummary(rx);
-        const canMark = _canMarkDoseNow(rx);
-        const nextAt  = _courseNextDoseAt(rx);
-        let timerText = '';
+        const dosesDone  = rx.doseLog ? rx.doseLog.length : 0;
+        const pct        = totalDoses > 0 ? Math.round((dosesDone / totalDoses) * 100) : 0;
+        const canMark    = _canMarkDoseNow(rx);
+        const isOverdue  = _courseIsDoseOverdue(rx);
+        const nextAt     = _courseNextDoseAt(rx);
+
+        // day progress
+        const daysSinceStart = Math.floor((Date.now() - rx.startAt) / (24 * 3600 * 1000)) + 1;
+        const dayLabel = rx.totalDays
+          ? `יום ${Math.min(daysSinceStart, rx.totalDays)} מתוך ${rx.totalDays}`
+          : '';
+        const dosesLeft  = Math.max(0, totalDoses - dosesDone);
+        const metaText   = [dayLabel, dosesLeft > 0 ? `${dosesLeft} מנות נותרו` : '✓ הכל ניתן'].filter(Boolean).join(' · ');
+
+        // timer row
+        let timerHtml = '';
         if (canMark) {
-          timerText = '🟢 זמין עכשיו';
+          timerHtml = `<div class="act-timer act-timer-ok">🟢 זמין עכשיו</div>`;
+        } else if (isOverdue) {
+          timerHtml = `<div class="act-timer act-timer-overdue">⚠️ המנה באיחור — סמן עכשיו</div>`;
         } else if (nextAt) {
           const remaining = nextAt - Date.now();
           if (remaining > 0) {
             const hrs  = Math.floor(remaining / 3600000);
             const mins = Math.floor((remaining % 3600000) / 60000);
-            timerText = hrs > 0
-              ? `⏱ מנה הבאה בעוד ${hrs} שעות${mins > 0 ? ' ו-' + mins + ' דקות' : ''}`
-              : `⏱ מנה הבאה בעוד ${mins} דקות`;
+            const t = hrs > 0
+              ? `${hrs} שעות${mins > 0 ? ' ו-' + mins + ' דק׳' : ''}`
+              : `${mins} דקות`;
+            timerHtml = `<div class="act-timer act-timer-wait">⏱ מנה הבאה בעוד ${t}</div>`;
           }
         }
-        const markBtn = canMark
-          ? `<button onclick="App.markCourseDose('${rx.id}')" style="padding:5px 12px;border-radius:8px;border:none;background:var(--accent,#4a90d9);color:#fff;font-size:13px;cursor:pointer;">✓ סימון מנה</button>`
-          : `<button onclick="App.markCourseDose('${rx.id}')" style="padding:5px 12px;border-radius:8px;border:none;background:#ccc;color:#888;font-size:13px;cursor:not-allowed;" disabled>✓ סימון מנה</button>`;
-        const deleteBtn = `<button onclick="App.deleteCourse('${rx.id}')" style="padding:5px 10px;border-radius:8px;border:none;background:transparent;color:var(--coral,#e57373);font-size:13px;cursor:pointer;">🗑 מחיקה</button>`;
-        const editBtn   = `<button onclick="App.openCourseSheet('${rx.id}')" style="padding:5px 10px;border-radius:8px;border:none;background:transparent;color:var(--ink-soft);font-size:13px;cursor:pointer;">✏️ עריכה</button>`;
-        rows.push(`
-          <div style="padding:9px 0;${border}">
-            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
-              <div>
-                <div style="font-weight:600;">${cardTitle}</div>
-                ${drugSubline}
-                <div style="font-size:13px;color:var(--ink-soft);">${summary}</div>
-                ${timerText ? `<div style="font-size:12px;color:var(--ink-soft);margin-top:2px;">${timerText}</div>` : ''}
+
+        // buttons
+        const markBtn   = `<button class="act-btn act-btn-mark${canMark ? '' : ' act-btn-disabled'}"
+          onclick="App.markCourseDose('${rx.id}')" ${canMark ? '' : 'disabled'}>✓ סימון מנה</button>`;
+        const editBtn   = `<button class="act-btn act-btn-ghost" onclick="App.openCourseSheet('${rx.id}')">✏️ עריכה</button>`;
+        const deleteBtn = `<button class="act-btn act-btn-danger" onclick="App.deleteCourse('${rx.id}')">🗑</button>`;
+
+        const divider = rows.length ? '<div class="act-divider"></div>' : '';
+        rows.push(`${divider}
+          <div class="act-row${isOverdue ? ' act-row-overdue' : ''}">
+            <div class="act-header">
+              <div class="act-title-col">
+                <div class="act-title">${label}</div>
+                ${subline}
               </div>
-              <span style="color:var(--mint);white-space:nowrap;">🟢 פעיל</span>
+              <span class="act-badge${isOverdue ? ' act-badge-overdue' : ' act-badge-ok'}">
+                ${isOverdue ? '⚠️ באיחור' : '🟢 פעיל'}
+              </span>
             </div>
-            <div style="display:flex;gap:8px;margin-top:6px;">${markBtn}${editBtn}${deleteBtn}</div>
+            <div class="act-progress-wrap">
+              <div class="act-progress-track">
+                <div class="act-progress-fill${isOverdue ? ' act-fill-overdue' : ''}" style="width:${pct}%"></div>
+              </div>
+              <span class="act-pct">${pct}%</span>
+            </div>
+            <div class="act-meta">${metaText}</div>
+            ${timerHtml}
+            <div class="act-btns">${markBtn}${editBtn}${deleteBtn}</div>
           </div>`);
       });
     });
     if (!rows.length) { wrap.style.display = 'none'; wrap.innerHTML = ''; return; }
     wrap.style.display = '';
-    wrap.innerHTML = `<div class="info-card"><div style="font-weight:700;margin-bottom:2px;">💊 טיפולים פעילים</div>${rows.join('')}</div>`;
+    wrap.innerHTML = `<div class="act-card"><div class="act-card-title">💊 טיפולים פעילים</div>${rows.join('')}</div>`;
   }
 
   /* Step 3A — mark a single dose as given for a COURSE prescription.
