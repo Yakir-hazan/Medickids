@@ -812,7 +812,7 @@ body { background: var(--bg); }
 }
 .cc-row:last-child { border-bottom: none; }
 .cc-ic  { font-size: 14px; flex-shrink: 0; }
-.cc-lbl { font-size: 11px; color: var(--ink-soft); flex: 1; }
+.cc-lbl { font-size: 12px; color: var(--ink); opacity: 0.6; flex: 1; font-weight: 500; }
 .cc-val { font-size: 13px; font-weight: 700; }
 .cc-val-blue   { color: var(--purple, #6c63ff); }
 .cc-val-red    { color: var(--red, #e05252); }
