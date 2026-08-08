@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.47 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.67';
+  const APP_VERSION = '1.0.0-beta.68';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -472,35 +472,35 @@ const App = (() => {
         statusPill = `<div class="status-pill ok"><div class="status-dot-sm"></div><span class="status-pill-text">💊 פעיל</span></div>`;
       }
 
-      // next-row — מבוסס nextEvent
+      // next-row + canGiveBar — מבוסס nextEvent, ללא כפילות
+      // next-row: מציג את שם התרופה בלבד
+      // canGiveBar: מציג את הסטטוס (זמין/שעה)
       let nextRowIcon = '✨', nextRowLabel = 'אין נתונים עדיין', nextRowTime = '';
+      let canGiveHtml = '';
+
       if (vm.nextEvent) {
         const ev = vm.nextEvent;
         nextRowIcon = '💊';
+        nextRowLabel = ev.name;
+        nextRowTime = '';   // שעה תוצג ב-canGiveBar בלבד
+
         if (ev.canGive) {
-          nextRowLabel = ev.name;
-          nextRowTime = '🟢 אפשר לתת עכשיו';
-        } else {
-          nextRowLabel = ev.name;
-          nextRowTime = `ניתן לתת ב־${formatClock(ev.at)}`;
+          canGiveHtml = `<div class="can-give-bar ok-bar">🟢 אפשר לתת ${ev.name} עכשיו</div>`;
+        } else if (ev.at) {
+          canGiveHtml = `<div class="can-give-bar warn-bar">⏱️ ניתן לתת ${ev.name} ב־${formatClock(ev.at)}</div>`;
         }
+      } else if (vm.hasFever) {
+        nextRowIcon = '🌡️';
+        nextRowLabel = `חום ${vm.lastTemp.value}°`;
+        nextRowTime = '';
+        const tipText = vm.lastTemp.value >= 39
+          ? `💊 כדאי לשקול תרופה להורדת חום`
+          : `💊 אפשר לתת תרופה להורדת חום`;
+        canGiveHtml = `<div class="can-give-bar fever-bar">${tipText}</div>`;
       } else if (vm.lastTemp) {
         nextRowIcon = '🌡️';
         nextRowLabel = 'מדידה אחרונה';
         nextRowTime = `${vm.lastTemp.value}°`;
-      }
-
-      // canGiveBar
-      let canGiveHtml = '';
-      if (vm.nextEvent && vm.nextEvent.canGive) {
-        canGiveHtml = `<div class="can-give-bar ok-bar">🟢 אפשר לתת ${vm.nextEvent.name} עכשיו</div>`;
-      } else if (vm.nextEvent && vm.nextEvent.at) {
-        canGiveHtml = `<div class="can-give-bar warn-bar">⏱️ ניתן לתת ${vm.nextEvent.name} ב־${formatClock(vm.nextEvent.at)}</div>`;
-      } else if (vm.hasFever && !vm.nextEvent) {
-        const tipText = vm.lastTemp.value >= 39
-          ? `💊 חום ${vm.lastTemp.value}° — כדאי לשקול תרופה להורדת חום`
-          : `💊 חום ${vm.lastTemp.value}° — אפשר לתת תרופה להורדת חום`;
-        canGiveHtml = `<div class="can-give-bar fever-bar">${tipText}</div>`;
       }
 
       const avatarColors = ['avatar-pink','avatar-blue','avatar-green','avatar-pink','avatar-blue'];
