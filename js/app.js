@@ -108,8 +108,28 @@ const App = (() => {
 
   /* ---------- navigation ---------- */
   function goto(id) {
-    document.querySelectorAll('.screen').forEach((s) => s.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      document.querySelectorAll('.screen').forEach((s) => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      if (id === 'screen-kids') renderKids();
+      return;
+    }
+    const next = document.getElementById(id);
+    const curr = document.querySelector('.screen.active');
+    if (curr && curr !== next) {
+      curr.style.transition = 'opacity 180ms ease';
+      curr.style.opacity = '0';
+      setTimeout(() => { curr.classList.remove('active'); curr.style.opacity = ''; curr.style.transition = ''; }, 185);
+    }
+    next.style.transition = 'none';
+    next.style.opacity = '0';
+    next.style.transform = 'translateY(14px)';
+    next.classList.add('active');
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      next.style.transition = 'opacity 200ms ease, transform 220ms ease';
+      next.style.opacity = '';
+      next.style.transform = '';
+    }));
     if (id === 'screen-kids') renderKids();
   }
   function showSplash() {
@@ -179,10 +199,42 @@ const App = (() => {
   }
   function openSheet(id) { document.getElementById(id).classList.add('open'); }
   function closeSheet(id) {
-    document.getElementById(id).classList.remove('open');
+    const el = document.getElementById(id);
+    const sheet = el.querySelector('.sheet');
+    if (sheet) {
+      sheet.style.transition = 'transform 260ms cubic-bezier(0.32,0.72,0,1)';
+      sheet.style.transform = 'translateY(100%)';
+    }
+    el.style.transition = 'opacity 260ms ease';
+    el.style.opacity = '0';
+    setTimeout(() => {
+      el.classList.remove('open');
+      el.style.opacity = '';
+      el.style.transition = '';
+      if (sheet) { sheet.style.transform = ''; sheet.style.transition = ''; }
+    }, 270);
     if (id === 'sheet-med') editMedEntryId = null;
     if (id === 'sheet-temp') editTempEntryId = null;
   }
+
+  /* ── UX Motion: button press feedback (Scale + Opacity) ── */
+  document.addEventListener('pointerdown', (e) => {
+    const btn = e.target.closest('button:not([disabled])');
+    if (!btn) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    btn.style.transition = 'transform 80ms ease, opacity 80ms ease';
+    btn.style.transform = 'scale(0.93)';
+    btn.style.opacity = '0.65';
+    const reset = () => {
+      btn.style.transition = 'transform 160ms ease, opacity 160ms ease';
+      btn.style.transform = '';
+      btn.style.opacity = '';
+      btn.removeEventListener('pointerup', reset);
+      btn.removeEventListener('pointercancel', reset);
+    };
+    btn.addEventListener('pointerup', reset);
+    btn.addEventListener('pointercancel', reset);
+  }, { passive: true });
 
   /* ---------- dashboard ---------- */
   /* one prioritized, actionable line per child — fever alert > dose timing > stale weight.
@@ -1162,9 +1214,33 @@ const App = (() => {
   }
   /* ── שלב 3: Selected Child Panel — Bottom Sheet ─────────────────────────── */
   function selectChild(id) {
+    const sheetEl = document.getElementById('sheet-child-detail');
+    const isOpen = sheetEl.classList.contains('open');
+    const isSameChild = selectedChildId === id;
     selectedChildId = id;
+
+    if (isOpen && !isSameChild) {
+      // מעבר בין ילדים — Slide עדין
+      const content = document.getElementById('sheet-child-detail-content');
+      if (content && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        content.style.transition = 'opacity 140ms ease, transform 140ms ease';
+        content.style.opacity = '0';
+        content.style.transform = 'translateX(20px)';
+        setTimeout(() => {
+          _renderSelectedChildPanel();
+          content.style.transition = 'none';
+          content.style.transform = 'translateX(-20px)';
+          requestAnimationFrame(() => requestAnimationFrame(() => {
+            content.style.transition = 'opacity 180ms ease, transform 180ms ease';
+            content.style.opacity = '1';
+            content.style.transform = 'translateX(0)';
+          }));
+        }, 150);
+        return;
+      }
+    }
     _renderSelectedChildPanel();
-    openSheet('sheet-child-detail');
+    if (!isOpen) openSheet('sheet-child-detail');
   }
 
   function closeChildDetail() {
