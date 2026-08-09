@@ -818,6 +818,24 @@ body { background: var(--bg); }
 .cc-val-red    { color: var(--red, #e05252); }
 .cc-val-green  { color: var(--green, #2A7D52); }
 .cc-val-normal { color: var(--ink); }
+/* ── calm state — ימים בריא ──────────────────────────────────────────────── */
+.cc-healthy {
+  text-align: center;
+  padding: 6px 0 2px;
+  border-top: 1px solid #f2f2f2;
+  margin-top: 4px;
+}
+.cc-healthy-num {
+  font-size: 26px;
+  font-weight: 900;
+  color: #059669;
+  line-height: 1;
+}
+.cc-healthy-lbl {
+  font-size: 10px;
+  color: #aaa;
+  margin-top: 1px;
+}
 /* ── end cc ──────────────────────────────────────────────────────────────── */
 .scp2-header {
   text-align: center;
