@@ -783,7 +783,22 @@ body { background: var(--bg); }
 .scp-btn-primary   { background: var(--purple); color: #fff; }
 .scp-btn-secondary { background: var(--red-tint); color: var(--red-dark); }
 .scp-btn-ghost     { background: var(--bg); color: var(--ink-soft); border: 1px solid rgba(0,0,0,0.1); }
-/* ── cc — child card (dashboard grid) ───────────────────────────────────── */
+/* ── fever card state ────────────────────────────────────────────────────── */
+.card-fever {
+  background: #fff5f5;
+  border-color: #f87171 !important;
+  border-width: 2px !important;
+}
+.card-fever .avatar-lg {
+  border: 3px solid #f87171 !important;
+}
+.card-fever .cc-rows {
+  border-top-color: #fecaca;
+}
+.card-fever .cc-row {
+  border-bottom-color: #fde8e8;
+}
+/* ── end fever card ──────────────────────────────────────────────────────── */
 .cc-top {
   text-align: center;
   padding-bottom: 10px;
