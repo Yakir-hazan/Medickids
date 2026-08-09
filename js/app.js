@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.47 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.84';
+  const APP_VERSION = '1.0.0-beta.85';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -914,6 +914,73 @@ const App = (() => {
       }
     } catch (e) { /* best-effort — never block UI */ }
   }
+  /* Cancel a pending supplement push (stored on the prescription as supplementNotificationId). */
+  async function _cancelSupplementReminder(rx) {
+    if (!rx || !rx.supplementNotificationId) return;
+    await _cancelReminder(rx.supplementNotificationId);
+    DB.updatePrescription(rx.id, { supplementNotificationId: null, supplementReminderAt: null });
+  }
+
+  /* Schedule a daily push for a supplement prescription (vitaminD / iron).
+     readyAt = _nextFixedTime(rx.reminder.time) — fixed clock time, not +24h from now.
+     Called:
+       (a) when _saveSupplementPrescriptions() creates/updates the prescription
+       (b) after the parent marks "given" (step 4/5) to schedule the NEXT day's reminder.
+     Does nothing if: notifications off, rx inactive, or child has aged out. */
+  async function scheduleSupplementReminder(rx) {
+    if (!DB.get().settings.notifications) return;
+    if (!rx || rx.status !== 'active') return;
+    if (!rx.reminder || !rx.reminder.on) return;
+
+    // age gate — cancel and return if child has aged out
+    const child = childById(rx.childId);
+    if (child && child.birthDate) {
+      const ageMonths = calcAgeMonths(child.birthDate);
+      if (rx.productId === 'vitamin_d_drops' && ageMonths >= 12) {
+        await _cancelSupplementReminder(rx);
+        DB.updatePrescription(rx.id, { status: 'completed', endAt: Date.now() });
+        return;
+      }
+      if (rx.productId === 'iron_drops' && ageMonths >= 18) {
+        await _cancelSupplementReminder(rx);
+        DB.updatePrescription(rx.id, { status: 'completed', endAt: Date.now() });
+        return;
+      }
+    }
+
+    const readyAt = _nextFixedTime(rx.reminder.time || '08:00');
+    if (readyAt <= Date.now()) return; // safety — should never happen given _nextFixedTime logic
+
+    // cancel previous pending push before scheduling a new one
+    await _cancelSupplementReminder(rx);
+
+    const entry     = _catalogEntryById(rx.productId);
+    const drugLabel = entry ? entry.key : 'תוסף';
+    const childName = child ? child.name : 'הילד/ה';
+    const emoji     = rx.productId === 'vitamin_d_drops' ? '☀️' : '🩸';
+
+    try {
+      const res = await fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: `תזכורת יומית ${emoji}`,
+          message: `זמן לתת ל${childName} ${drugLabel}`,
+          childName,
+          scheduledTime: new Date(readyAt).toISOString(),
+          targetDeviceId: DB.get().deviceId,
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (data && data.notificationId) {
+        DB.updatePrescription(rx.id, {
+          supplementNotificationId: data.notificationId,
+          supplementReminderAt: readyAt,
+        });
+      }
+    } catch (e) { /* best-effort — never block UI */ }
+  }
+
   async function scheduleDoseReminder(entry, customReadyAt) {
     if (!entry || !DB.get().settings.notifications) return; // user opted out — don't schedule
     const drugKey = Object.keys(MEDICATION_CATALOG).find((k) => _matchesDrug(entry.medicine, k));
@@ -1559,10 +1626,11 @@ const App = (() => {
       );
 
       if (isOn) {
+        let rx;
         if (existingRx) {
-          DB.updatePrescription(existingRx.id, { reminder: { on: true, time } });
+          rx = DB.updatePrescription(existingRx.id, { reminder: { on: true, time } });
         } else {
-          DB.addPrescription({
+          rx = DB.addPrescription({
             childId,
             productId,
             protocolType: 'daily',
@@ -1570,9 +1638,11 @@ const App = (() => {
             reminder: { on: true, time },
           });
         }
+        if (rx) scheduleSupplementReminder(rx); // schedule first push (today or tomorrow at fixed time)
       } else {
-        // user turned it off — cancel the prescription if it exists
+        // user turned it off — cancel any pending push and mark reminder off
         if (existingRx) {
+          _cancelSupplementReminder(existingRx);
           DB.updatePrescription(existingRx.id, { reminder: { on: false, time } });
         }
       }
@@ -2491,12 +2561,27 @@ const App = (() => {
     goto('screen-kids');
   }
 
+  /* On app open: ensure every active supplement prescription either has a future push scheduled,
+     or gets one. Also auto-completes prescriptions where the child has aged out. */
+  function _healSupplementReminders() {
+    if (!DB.get().settings.notifications) return;
+    const now = Date.now();
+    const supplementIds = ['vitamin_d_drops', 'iron_drops'];
+    DB.get().prescriptions
+      .filter((p) => supplementIds.includes(p.productId) && p.status === 'active' && p.reminder && p.reminder.on)
+      .forEach((rx) => {
+        const alreadyScheduled = rx.supplementReminderAt && rx.supplementReminderAt > now;
+        if (!alreadyScheduled) scheduleSupplementReminder(rx);
+      });
+  }
+
   function init() {
     // Render all screens so they're ready before any transition
     renderLanding();
     renderDashboard();
     renderSettings();
     setInterval(renderDashboard, 60000); // keep "elapsed" times fresh
+    setTimeout(_healSupplementReminders, 2000); // heal supplement pushes after app settles
     if ('serviceWorker' in navigator) {
       // [SW-DIAG] Registration context
       console.log('[SW-DIAG] Browser:', navigator.userAgent);
