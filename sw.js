@@ -5,7 +5,7 @@ importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js');
    (increment the -vNN suffix here whenever APP_VERSION changes there, e.g. 'v17' here when
    APP_VERSION becomes '1.0.0-beta.2'). Without this bump, users' devices keep serving old
    cached files and "בדוק אם יש עדכון" in Settings will report "already up to date" even when it isn't. */
-const CACHE_NAME = 'madhom-v108';
+const CACHE_NAME = 'madhom-v109';
 const APP_SHELL = [
   './',
   './index.html',
