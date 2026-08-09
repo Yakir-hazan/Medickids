@@ -366,8 +366,10 @@ const App = (() => {
 
     // ---------- header color — ירוק כשכולם בריאים ----------
     const dashHeader = document.querySelector('.dash-header-new');
+    const themeColorMeta = document.querySelector('meta[name="theme-color"]');
     if (allCalm) {
       dashHeader.style.background = 'linear-gradient(150deg, #059669 0%, #10b981 100%)';
+      if (themeColorMeta) themeColorMeta.setAttribute('content', '#059669');
       // calm sub-message
       let calmMsg = document.getElementById('dash-calm-msg');
       if (!calmMsg) {
@@ -380,6 +382,7 @@ const App = (() => {
       calmMsg.style.display = '';
     } else {
       dashHeader.style.background = 'linear-gradient(150deg, #7B6CF5 0%, #9D90F8 100%)';
+      if (themeColorMeta) themeColorMeta.setAttribute('content', '#7C6FF0');
       const calmMsg = document.getElementById('dash-calm-msg');
       if (calmMsg) calmMsg.style.display = 'none';
     }
