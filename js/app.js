@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.47 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.75';
+  const APP_VERSION = '1.0.0-beta.76';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -359,8 +359,30 @@ const App = (() => {
 
     // ---------- title ----------
     const anyFever = childData.some((d) => d.hasFever);
+    const anyActive = childData.some((d) => d.activeCourses.length > 0);
+    const allCalm = !anyFever && !anyActive;
     const _tg = document.getElementById('dash-title').dataset.timeGreet || timeGreet;
     document.getElementById('dash-title').textContent = _tg;
+
+    // ---------- header color — ירוק כשכולם בריאים ----------
+    const dashHeader = document.querySelector('.dash-header-new');
+    if (allCalm) {
+      dashHeader.style.background = 'linear-gradient(150deg, #059669 0%, #10b981 100%)';
+      // calm sub-message
+      let calmMsg = document.getElementById('dash-calm-msg');
+      if (!calmMsg) {
+        calmMsg = document.createElement('div');
+        calmMsg.id = 'dash-calm-msg';
+        calmMsg.style.cssText = 'margin-top:10px;font-size:13px;font-weight:700;color:rgba(255,255,255,0.95);position:relative;';
+        dashHeader.appendChild(calmMsg);
+      }
+      calmMsg.textContent = '🌟 הכל תקין במשפחה';
+      calmMsg.style.display = '';
+    } else {
+      dashHeader.style.background = 'linear-gradient(150deg, #7B6CF5 0%, #9D90F8 100%)';
+      const calmMsg = document.getElementById('dash-calm-msg');
+      if (calmMsg) calmMsg.style.display = 'none';
+    }
 
     // ---------- header: last updated ----------
     const latestEvent = DB.feed(null)[0] || null;
@@ -580,6 +602,7 @@ const App = (() => {
 
       const avatarColors = ['avatar-pink','avatar-blue','avatar-green','avatar-pink','avatar-blue'];
       const avatarClass = avatarColors[c.color % avatarColors.length] || 'avatar-blue';
+      const isCalm = !vm.hasFever && !vm.courseState.hasActiveCourse;
 
       const ageText = c.birthdate ? (() => {
         const diff = Date.now() - new Date(c.birthdate).getTime();
@@ -587,15 +610,31 @@ const App = (() => {
         return years > 0 ? `${years} שנים` : 'פחות משנה';
       })() : '';
 
+      // avatar ring — ירוק במצב calm
+      const avatarStyle = isCalm
+        ? 'margin:0 auto 8px;box-shadow:0 0 0 3px #6ee7b7;'
+        : 'margin:0 auto 8px;';
+
+      // ימים בריא — רק במצב calm
+      let healthyRowHtml = '';
+      if (isCalm && vm.healthyDays !== null && vm.healthyDays >= 0) {
+        const gender = c.gender === 'male' ? 'בריא' : 'בריאה';
+        healthyRowHtml = `<div class="cc-healthy">
+          <div class="cc-healthy-num">${vm.healthyDays}</div>
+          <div class="cc-healthy-lbl">ימים ${gender}</div>
+        </div>`;
+      }
+
       const hasRows = medRowHtml || tempRowHtml || nextDoseRowHtml;
       const cardInner = `
         <div class="cc-top">
-          <div class="avatar-lg ${avatarClass}" style="margin:0 auto 8px;">${c.emoji}</div>
+          <div class="avatar-lg ${avatarClass}" style="${avatarStyle}">${c.emoji}</div>
           <div class="child-name">${c.name}</div>
           ${ageText ? `<div class="child-age">${ageText}</div>` : ''}
           <div class="cc-badges">${badgesHtml}</div>
         </div>
-        ${hasRows ? `<div class="cc-rows">${medRowHtml}${tempRowHtml}${nextDoseRowHtml}</div>` : ''}`;
+        ${hasRows ? `<div class="cc-rows">${medRowHtml}${tempRowHtml}${nextDoseRowHtml}</div>` : ''}
+        ${healthyRowHtml}`;
 
       const isSelected = c.id === selectedChildId;
       return `<div class="card${isLastOdd ? ' card-full' : ''}${isSelected ? ' card-selected' : ''}" onclick="App.selectChild('${c.id}')">
@@ -1691,7 +1730,23 @@ const App = (() => {
     if (hasFever)                    tags.push({ type: 'fever',     label: '🌡️ חום', value: lastTemp.value });
     if (courseState.hasActiveCourse) tags.push({ type: 'treatment', label: '💊 טיפול' });
 
-    return { hasFever, lastTemp, lastMed, canGivePRN, nextEvent, courseState, tags };
+    /* ימים בריא — מאז הפעם האחרונה שהייתה תרופה או חום ≥38 */
+    let healthyDays = null;
+    const state = DB.get();
+    const allMeds  = state.medEntries.filter(e => e.childId === childId);
+    const allTemps = state.tempEntries.filter(e => e.childId === childId && e.value >= 38);
+    const lastSickEvent = [...allMeds, ...allTemps]
+      .map(e => e.time)
+      .sort((a, b) => b - a)[0] || null;
+    if (!hasFever && !courseState.hasActiveCourse) {
+      if (lastSickEvent) {
+        healthyDays = Math.floor((now - lastSickEvent) / (24 * 3600 * 1000));
+      } else {
+        healthyDays = null; // אף פעם לא חלה — לא מציגים מספר
+      }
+    }
+
+    return { hasFever, lastTemp, lastMed, canGivePRN, nextEvent, courseState, tags, healthyDays };
   }
   /* ── end childStatusViewModel ──────────────────────────────────────── */
 
