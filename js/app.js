@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.47 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.82';
+  const APP_VERSION = '1.0.0-beta.83';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -1452,15 +1452,6 @@ const App = (() => {
       } else {
         DB.addChild({ ...patch, emoji: '🧒' });
       }
-    } catch (e) {
-      toast('⚠️ השמירה נכשלה — בדקו מקום פנוי במכשיר ונסו שוב');
-      return;
-    }
-    closeSheet('sheet-editkid');
-    toast('הפרטים נשמרו ✓');
-    renderKids();
-    renderDashboard();
-  }
     } catch (e) {
       toast('⚠️ השמירה נכשלה — בדקו מקום פנוי במכשיר ונסו שוב');
       return;
