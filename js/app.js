@@ -547,7 +547,7 @@ const App = (() => {
 
       // ── שורת תרופה ──
       let medRowHtml = '';
-      if (vm.lastMed) {
+      if (vm.lastMed && (vm.prnActive || vm.courseState.hasActiveCourse)) {
         medRowHtml = `<div class="cc-row">
           <span class="cc-ic">💊</span>
           <span class="cc-lbl">${vm.lastMed.medicine || 'תרופה'}</span>
@@ -557,12 +557,11 @@ const App = (() => {
 
       // ── שורת חום ──
       let tempRowHtml = '';
-      if (vm.lastTemp) {
-        const cls = vm.hasFever ? 'cc-val-red' : 'cc-val-normal';
+      if (vm.hasFever) {
         tempRowHtml = `<div class="cc-row">
           <span class="cc-ic">🌡️</span>
           <span class="cc-lbl">חום</span>
-          <span class="cc-val ${cls}">${vm.lastTemp.value}°</span>
+          <span class="cc-val cc-val-red">${vm.lastTemp.value}°</span>
         </div>`;
       }
 
@@ -612,7 +611,7 @@ const App = (() => {
 
       // avatar ring — ירוק במצב calm
       const avatarStyle = isCalm
-        ? 'margin:0 auto 8px;box-shadow:0 0 0 3px #6ee7b7;'
+        ? 'margin:0 auto 8px;outline:3px solid #22c55e;outline-offset:2px;'
         : 'margin:0 auto 8px;';
 
       // ימים בריא — רק במצב calm
