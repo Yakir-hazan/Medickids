@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.47 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.80';
+  const APP_VERSION = '1.0.0-beta.81';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -1414,31 +1414,53 @@ const App = (() => {
   function openEditKid(id) {
     editingKidId = id;
     const title = document.getElementById('editkid-title');
+    const hint  = document.getElementById('kid-birth-year-hint');
     if (id) {
       const c = childById(id);
       title.textContent = 'עריכת פרטי ילד/ה';
-      document.getElementById('kid-name').value = c.name;
+      document.getElementById('kid-name').value   = c.name;
       document.getElementById('kid-weight').value = c.weight;
-      document.getElementById('kid-birth').value = c.birthYear || '';
+      if (c.birthDate) {
+        document.getElementById('kid-birth').value = c.birthDate;
+        hint.style.display = 'none';
+      } else {
+        document.getElementById('kid-birth').value = '';
+        hint.style.display = c.birthYear ? 'block' : 'none';
+      }
     } else {
       title.textContent = 'הוספת ילד/ה';
-      document.getElementById('kid-name').value = '';
+      document.getElementById('kid-name').value   = '';
       document.getElementById('kid-weight').value = '';
-      document.getElementById('kid-birth').value = '';
+      document.getElementById('kid-birth').value  = '';
+      hint.style.display = 'none';
     }
     openSheet('sheet-editkid');
   }
   function saveKid() {
-    const name = document.getElementById('kid-name').value.trim();
-    const weight = parseFloat(document.getElementById('kid-weight').value);
-    const birthYear = document.getElementById('kid-birth').value ? parseInt(document.getElementById('kid-birth').value, 10) : null;
+    const name       = document.getElementById('kid-name').value.trim();
+    const weight     = parseFloat(document.getElementById('kid-weight').value);
+    const birthInput = document.getElementById('kid-birth').value; // "YYYY-MM-DD" or ""
     if (!name) { toast('נא להזין שם'); return; }
+    const birthDate = birthInput || null;
+    const birthYear = birthDate
+      ? parseInt(birthDate.slice(0, 4), 10)
+      : (editingKidId ? (childById(editingKidId)?.birthYear ?? null) : null);
+    const patch = { name, weight: isNaN(weight) ? 0 : weight, birthDate, birthYear };
     try {
       if (editingKidId) {
-        DB.updateChild(editingKidId, { name, weight: isNaN(weight) ? 0 : weight, birthYear });
+        DB.updateChild(editingKidId, patch);
       } else {
-        DB.addChild({ name, emoji: '🧒', weight: isNaN(weight) ? 0 : weight, birthYear });
+        DB.addChild({ ...patch, emoji: '🧒' });
       }
+    } catch (e) {
+      toast('⚠️ השמירה נכשלה — בדקו מקום פנוי במכשיר ונסו שוב');
+      return;
+    }
+    closeSheet('sheet-editkid');
+    toast('הפרטים נשמרו ✓');
+    renderKids();
+    renderDashboard();
+  }
     } catch (e) {
       toast('⚠️ השמירה נכשלה — בדקו מקום פנוי במכשיר ונסו שוב');
       return;
