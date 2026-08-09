@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.47 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.79';
+  const APP_VERSION = '1.0.0-beta.80';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -561,9 +561,10 @@ const App = (() => {
       // ── שורת חום ──
       let tempRowHtml = '';
       if (vm.hasFever) {
+        const elapsed = elapsedString(vm.lastTemp.time);
         tempRowHtml = `<div class="cc-row">
           <span class="cc-ic">🌡️</span>
-          <span class="cc-lbl">חום</span>
+          <span class="cc-lbl">חום · לפני ${elapsed}</span>
           <span class="cc-val cc-val-red">${vm.lastTemp.value}°</span>
         </div>`;
       }
@@ -1304,10 +1305,11 @@ const App = (() => {
     let feverRow = '';
     if (vm.lastTemp) {
       const when = formatClock(vm.lastTemp.time);
+      const elapsed = elapsedString(vm.lastTemp.time);
       const cls = vm.hasFever ? 'scp-row-alert' : 'scp-row-normal';
       feverRow = `<div class="scp-row ${cls}">
         <span class="scp-row-ic">🌡️</span>
-        <span class="scp-row-lbl">חום אחרון</span>
+        <span class="scp-row-lbl">חום אחרון · לפני ${elapsed}</span>
         <span class="scp-row-val">${vm.lastTemp.value}° בשעה ${when}</span>
       </div>`;
     }
