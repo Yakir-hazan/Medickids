@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.47 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.76';
+  const APP_VERSION = '1.0.0-beta.77';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -1312,26 +1312,23 @@ const App = (() => {
 
     // תרופה / canGive
     let medRow = '';
-    if (vm.nextEvent) {
+    if (vm.nextEvent && vm.nextEvent.type === 'prn') {
       const ev = vm.nextEvent;
-      if (ev.canGive) {
-        medRow = `<div class="scp-row scp-row-ok">
-          <span class="scp-row-ic">💊</span>
-          <span class="scp-row-lbl">${ev.name}</span>
-          <span class="scp-row-val scp-val-green">אפשר לתת עכשיו</span>
-        </div>`;
-      } else if (ev.at) {
-        medRow = `<div class="scp-row scp-row-normal">
-          <span class="scp-row-ic">⏱️</span>
-          <span class="scp-row-lbl">${ev.name}</span>
-          <span class="scp-row-val">ניתן לתת ב־${formatClock(ev.at)}</span>
-        </div>`;
-      }
-    } else if (vm.lastMed) {
-      medRow = `<div class="scp-row scp-row-normal">
+      const statusHtml = ev.canGive
+        ? `<span class="scp-row-val scp-val-green">אפשר לתת עכשיו</span>`
+        : `<span class="scp-row-val">ניתן לתת ב־${formatClock(ev.at)}</span>`;
+      medRow = `<div class="scp-row scp-row-normal" style="flex-wrap:wrap;gap:6px;">
+        <span class="scp-row-ic">💊</span>
+        <span class="scp-row-lbl">${ev.name}</span>
+        ${statusHtml}
+        <button onclick="App.doneWithPRN('${selectedChildId}')" style="margin-top:4px;width:100%;padding:7px;border-radius:10px;border:1.5px solid #e5e7eb;background:#fff;color:#6b7280;font-size:13px;font-weight:600;cursor:pointer;">סיימתי עם ${ev.name}</button>
+      </div>`;
+    } else if (vm.lastMed && vm.prnActive) {
+      medRow = `<div class="scp-row scp-row-normal" style="flex-wrap:wrap;gap:6px;">
         <span class="scp-row-ic">💊</span>
         <span class="scp-row-lbl">תרופה אחרונה</span>
         <span class="scp-row-val">${vm.lastMed.medicine} — ${formatClock(vm.lastMed.time)}</span>
+        <button onclick="App.doneWithPRN('${selectedChildId}')" style="margin-top:4px;width:100%;padding:7px;border-radius:10px;border:1.5px solid #e5e7eb;background:#fff;color:#6b7280;font-size:13px;font-weight:600;cursor:pointer;">סיימתי עם ${vm.lastMed.medicine}</button>
       </div>`;
     }
 
@@ -1365,6 +1362,8 @@ const App = (() => {
           ? `<button onclick="App.markCourseDose('${rx.id}')" style="margin-top:8px;padding:6px 16px;border-radius:10px;border:none;background:var(--accent,#4a90d9);color:#fff;font-size:14px;cursor:pointer;width:100%;">✓ סימון מנה</button>`
           : `<button disabled style="margin-top:8px;padding:6px 16px;border-radius:10px;border:none;background:#e0e0e0;color:#aaa;font-size:14px;cursor:not-allowed;width:100%;">✓ סימון מנה</button>`;
 
+        const doneBtn = `<button onclick="App.doneWithCourse('${rx.id}')" style="margin-top:6px;padding:6px 16px;border-radius:10px;border:1.5px solid #e5e7eb;background:#fff;color:#6b7280;font-size:13px;font-weight:600;cursor:pointer;width:100%;">סיימתי עם ${name}</button>`;
+
         return `<div style="padding:10px 0;border-top:1px solid var(--line);">
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <div style="font-weight:600;">💊 ${name}</div>
@@ -1373,6 +1372,7 @@ const App = (() => {
           <div style="font-size:13px;color:var(--ink-soft);margin-top:2px;">${summary}</div>
           <div style="font-size:13px;margin-top:4px;">${timerText}</div>
           ${markBtn}
+          ${doneBtn}
         </div>`;
       }).join('');
 
@@ -1692,7 +1692,9 @@ const App = (() => {
     /* תרופת PRN אחרונה */
     const lastMed = DB.lastMedFor(childId);
     let prnNextAt = null, canGivePRN = false, prnDrugName = null;
-    if (lastMed) {
+    // PRN נחשב פעיל רק אם lastMed אין לו prnDoneAt (כלומר לא לחצו "סיימתי")
+    const prnActive = lastMed && !lastMed.prnDoneAt;
+    if (prnActive) {
       const drugKey = Object.keys(MEDICATION_CATALOG).find(k => _matchesDrug(lastMed.medicine, k));
       const drug = drugKey ? MEDICATION_CATALOG[drugKey] : null;
       if (drug && drug.protocol.intervalHours) {
@@ -1727,8 +1729,9 @@ const App = (() => {
 
     /* tags */
     const tags = [];
-    if (hasFever)                    tags.push({ type: 'fever',     label: '🌡️ חום', value: lastTemp.value });
+    if (hasFever)                    tags.push({ type: 'fever',     label: '🌡️ חום', value: lastTemp ? lastTemp.value : null });
     if (courseState.hasActiveCourse) tags.push({ type: 'treatment', label: '💊 טיפול' });
+    if (prnActive && prnDrugName)    tags.push({ type: 'treatment', label: '💊 טיפול' });
 
     /* ימים בריא — מאז הפעם האחרונה שהייתה תרופה או חום ≥38 */
     let healthyDays = null;
@@ -1746,7 +1749,7 @@ const App = (() => {
       }
     }
 
-    return { hasFever, lastTemp, lastMed, canGivePRN, nextEvent, courseState, tags, healthyDays };
+    return { hasFever, lastTemp, lastMed, prnActive, canGivePRN, nextEvent, courseState, tags, healthyDays };
   }
   /* ── end childStatusViewModel ──────────────────────────────────────── */
 
@@ -1838,6 +1841,24 @@ const App = (() => {
      - rxId not found → null returned from DB → toast + bail
      - course already completed before this call → bail with message
      - doses would exceed totalDays*dosesPerDay → DB auto-completes; we show completion toast */
+  /* "סיימתי" — PRN: מסמן את המנה האחרונה כ-done, ללא מחיקה */
+  function doneWithPRN(childId) {
+    const lastMed = DB.lastMedFor(childId);
+    if (!lastMed) return;
+    DB.updateMedEntry(lastMed.id, { prnDoneAt: Date.now() });
+    toast('התרופה סומנה כסיימתי ✓');
+    _renderSelectedChildPanel();
+    renderDashboard();
+  }
+
+  /* "סיימתי" — Course: משנה סטטוס ל-completed */
+  function doneWithCourse(rxId) {
+    DB.updatePrescription(rxId, { status: 'completed', endAt: Date.now() });
+    toast('הטיפול הסתיים ✓');
+    _renderSelectedChildPanel();
+    renderDashboard();
+  }
+
   async function markCourseDose(rxId) {
     const dbState = DB.get();
     const rx = dbState.prescriptions.find((p) => p.id === rxId);
@@ -2406,7 +2427,7 @@ const App = (() => {
     installNow, skipLanding,
     openDoseSheet, pickDoseChild, pickDoseMed, pickDoseConc, calcDose,
     openCourseSheet, pickCourseChild, pickCourseDrug, saveCourse,
-    markCourseDose, deleteCourse,
+    markCourseDose, deleteCourse, doneWithPRN, doneWithCourse,
     heroClick, quickWeightUpdate,
     deleteMedEntry, deleteTempEntry, confirmReset,
     checkForUpdate,
