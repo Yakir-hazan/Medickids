@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.47 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.85';
+  const APP_VERSION = '1.0.0-beta.86';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -524,7 +524,37 @@ const App = (() => {
     const urgentTarget = overdueDose || readyNow;
     if (urgentTarget) {
       const { c, lastMed, nextDoseMs } = urgentTarget;
-      const avatarColors = ['avatar-pink','avatar-blue','avatar-green','avatar-pink','avatar-blue'];
+      // supplement daily reminders — active prescriptions for this child
+    let supplementRow = '';
+    {
+      const suppIds = ['vitamin_d_drops', 'iron_drops'];
+      const suppLabels = { vitamin_d_drops: { emoji: '☀️', name: 'ויטמין D' }, iron_drops: { emoji: '🩸', name: 'ברזל' } };
+      const activeSupps = DB.get().prescriptions.filter(
+        (p) => p.childId === c.id && suppIds.includes(p.productId) && p.status === 'active' && p.reminder && p.reminder.on
+      );
+      if (activeSupps.length) {
+        const rows = activeSupps.map((rx) => {
+          const lbl = suppLabels[rx.productId] || { emoji: '💊', name: rx.productId };
+          const lastGiven = DB.get().medEntries
+            .filter((e) => e.childId === c.id && e.medicine === lbl.name)
+            .sort((a, b) => b.time - a.time)[0] || null;
+          const lastStr = lastGiven
+            ? `ניתן ${elapsedString(lastGiven.time)} לפני`
+            : 'עדיין לא ניתן היום';
+          return `<div class="scp-row scp-row-normal" style="flex-wrap:wrap;gap:6px;">
+            <span class="scp-row-ic">${lbl.emoji}</span>
+            <span class="scp-row-lbl">${lbl.name} · ${lastStr}</span>
+            <button onclick="App.markSupplementGiven('${rx.id}')" style="margin-top:4px;width:100%;padding:7px;border-radius:10px;border:none;background:var(--mint,#10b981);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">✓ ניתן עכשיו</button>
+          </div>`;
+        }).join('');
+        supplementRow = `<div style="padding:4px 0;">
+          <div style="font-size:12px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">תוספים יומיים</div>
+          ${rows}
+        </div>`;
+      }
+    }
+
+    const avatarColors = ['avatar-pink','avatar-blue','avatar-green','avatar-pink','avatar-blue'];
       const avatarClass = avatarColors[c.color % avatarColors.length] || 'avatar-blue';
       const minsLate = Math.abs(Math.round((nextDoseMs || 0) / 60000));
       const subText = nextDoseMs <= 0
@@ -1486,7 +1516,8 @@ const App = (() => {
         ${feverRow}
         ${medRow}
         ${courseRow}
-        ${!feverRow && !medRow && !courseRow ? `<div class="scp-empty">אין נתונים אחרונים לילד/ה זה</div>` : ''}
+        ${supplementRow}
+        ${!feverRow && !medRow && !courseRow && !supplementRow ? `<div class="scp-empty">אין נתונים אחרונים לילד/ה זה</div>` : ''}
       </div>
       <div class="scp-actions">
         <button class="scp-btn scp-btn-primary" onclick="App.openMedSheet()">💊 נתתי תרופה</button>
@@ -1495,6 +1526,39 @@ const App = (() => {
       </div>`;
   }
   /* ── end שלב 3 ──────────────────────────────────────────────────────────── */
+
+  /* Called when parent taps "✓ ניתן עכשיו" on a supplement in the child detail panel.
+     1. Logs a medEntry (appears in history just like any medicine).
+     2. Schedules the next day's push at the same fixed time.
+     3. Refreshes the detail panel. */
+  async function markSupplementGiven(rxId) {
+    const rx = DB.get().prescriptions.find((p) => p.id === rxId);
+    if (!rx) return;
+
+    const suppLabels = { vitamin_d_drops: 'ויטמין D', iron_drops: 'ברזל' };
+    const medicineName = suppLabels[rx.productId] || rx.productId;
+
+    try {
+      // log as a regular medEntry so it appears in history and feed
+      DB.addMedEntry({
+        childId: rx.childId,
+        medicine: medicineName,
+        prescriptionId: rx.id,    // links back to the prescription
+        note: 'תוסף יומי',
+      });
+    } catch (e) {
+      toast('⚠️ השמירה נכשלה — בדקו מקום פנוי במכשיר ונסו שוב');
+      return;
+    }
+
+    // schedule next day's push
+    scheduleSupplementReminder(rx);
+
+    toast(`${medicineName} נרשם ✓`);
+    renderChildDetailPanel();
+    renderDashboard();
+    renderHistory();
+  }
 
   function openEditKid(id) {
     editingKidId = id;
@@ -2657,6 +2721,7 @@ const App = (() => {
     openDoseSheet, pickDoseChild, pickDoseMed, pickDoseConc, calcDose,
     openCourseSheet, pickCourseChild, pickCourseDrug, saveCourse,
     markCourseDose, deleteCourse, doneWithPRN, doneWithCourse,
+    markSupplementGiven,
     heroClick, quickWeightUpdate,
     deleteMedEntry, deleteTempEntry, confirmReset,
     checkForUpdate,
