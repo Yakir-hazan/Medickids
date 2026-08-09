@@ -598,7 +598,7 @@ const App = (() => {
         ${hasRows ? `<div class="cc-rows">${medRowHtml}${tempRowHtml}${nextDoseRowHtml}</div>` : ''}`;
 
       const isSelected = c.id === selectedChildId;
-      return `<div class="card${isLastOdd ? ' card-full' : ''}${isSelected ? ' card-selected' : ''}${vm.hasFever ? ' card-fever' : ''}" onclick="App.selectChild('${c.id}')">
+      return `<div class="card${isLastOdd ? ' card-full' : ''}${isSelected ? ' card-selected' : ''}" onclick="App.selectChild('${c.id}')">
         ${cardInner}
       </div>`;
     }).join('');
