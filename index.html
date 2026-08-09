@@ -17,6 +17,20 @@
     /* Ensure header sits flush at top */
     #screen-dash .scroll { padding-top: 0 !important; }
     #screen-dash .dash-header-new { margin-top: 0; }
+    /* toggle-wrap: iOS-style checkbox for supplement reminders */
+    .toggle-wrap { display:inline-flex; align-items:center; cursor:pointer; }
+    .toggle-wrap input[type=checkbox] { display:none; }
+    .toggle-knob {
+      width:44px; height:26px; border-radius:13px; background:var(--line,#e0e0e0);
+      position:relative; transition:background .2s; flex-shrink:0;
+    }
+    .toggle-knob::after {
+      content:''; position:absolute; top:3px; right:3px;
+      width:20px; height:20px; border-radius:50%; background:#fff;
+      box-shadow:0 1px 3px rgba(0,0,0,.25); transition:transform .2s;
+    }
+    .toggle-wrap input:checked + .toggle-knob { background:var(--mint,#10b981); }
+    .toggle-wrap input:checked + .toggle-knob::after { transform:translateX(-18px); }
   </style>
 
   <!-- OneSignal Web Push -->
@@ -502,6 +516,42 @@
       <div id="kid-birth-year-hint" style="display:none;font-size:12px;color:var(--ink-soft);margin-top:-8px;margin-bottom:8px;text-align:right;">
         לילד זה נשמרה שנת לידה בלבד. ניתן להשלים תאריך מלא לחישוב מדויק.
       </div>
+
+      <!-- תזכורות תוספים יומיים — מוצג רק לילדים מתחת לגיל הרלוונטי -->
+      <div id="kid-supplements-section" style="display:none;">
+        <div style="margin:16px 0 8px;font-size:13px;font-weight:700;color:var(--ink);border-top:1px solid var(--border);padding-top:14px;">תזכורות יומיות</div>
+
+        <!-- ויטמין D — עד גיל 12 חודש -->
+        <div id="kid-vitd-row" style="display:none;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <span style="font-size:14px;">☀️ ויטמין D</span>
+            <label class="toggle-wrap">
+              <input type="checkbox" id="kid-vitd-on">
+              <span class="toggle-knob"></span>
+            </label>
+          </div>
+          <div id="kid-vitd-time-row" style="display:none;margin-bottom:10px;">
+            <div class="field-label" style="margin-top:0;">שעת תזכורת</div>
+            <input class="field-input" id="kid-vitd-time" type="time" value="08:00">
+          </div>
+        </div>
+
+        <!-- ברזל — עד גיל 18 חודש -->
+        <div id="kid-iron-row" style="display:none;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <span style="font-size:14px;">🩸 ברזל</span>
+            <label class="toggle-wrap">
+              <input type="checkbox" id="kid-iron-on">
+              <span class="toggle-knob"></span>
+            </label>
+          </div>
+          <div id="kid-iron-time-row" style="display:none;margin-bottom:10px;">
+            <div class="field-label" style="margin-top:0;">שעת תזכורת</div>
+            <input class="field-input" id="kid-iron-time" type="time" value="08:00">
+          </div>
+        </div>
+      </div>
+
       <button class="sheet-cta" onclick="App.saveKid()">שמירה</button>
     </div>
   </div>
