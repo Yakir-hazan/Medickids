@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.47 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.83';
+  const APP_VERSION = '1.0.0-beta.84';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -105,6 +105,24 @@ const App = (() => {
     toast._t = setTimeout(() => el.classList.remove('show'), 1800);
   }
   function childById(id) { return DB.get().children.find((c) => c.id === id); }
+
+  /* Returns age in whole months from a YYYY-MM-DD birthDate string, or null if unknown. */
+  function calcAgeMonths(birthDate) {
+    if (!birthDate) return null;
+    const born = new Date(birthDate);
+    const now  = new Date();
+    return (now.getFullYear() - born.getFullYear()) * 12 + (now.getMonth() - born.getMonth());
+  }
+
+  /* Returns the next timestamp (ms) for a fixed HH:MM time.
+     If the time hasn't passed today → use today; otherwise → tomorrow. */
+  function _nextFixedTime(hhmm) {
+    const [h, m] = hhmm.split(':').map(Number);
+    const t = new Date();
+    t.setHours(h, m, 0, 0);
+    if (t.getTime() <= Date.now()) t.setDate(t.getDate() + 1);
+    return t.getTime();
+  }
 
   /* ---------- navigation ---------- */
   function goto(id) {
@@ -1434,7 +1452,57 @@ const App = (() => {
       document.getElementById('kid-birth').value  = '';
       if (hint) hint.style.display = 'none';
     }
+    _refreshSupplementsUI(id);
+    // re-evaluate age gates whenever the user changes the birth date
+    const birthEl = document.getElementById('kid-birth');
+    if (birthEl) birthEl.onchange = () => _refreshSupplementsUI(editingKidId);
     openSheet('sheet-editkid');
+  }
+
+  /* Show/hide the supplement toggles based on child's age and existing prescriptions. */
+  function _refreshSupplementsUI(childId) {
+    const section  = document.getElementById('kid-supplements-section');
+    const vitdRow  = document.getElementById('kid-vitd-row');
+    const ironRow  = document.getElementById('kid-iron-row');
+    if (!section) return; // sheet not in DOM yet (shouldn't happen, but guard)
+
+    const birthVal = document.getElementById('kid-birth').value; // may be empty for new kids
+    const ageMonths = calcAgeMonths(birthVal || null);
+
+    const showVitD = ageMonths === null || ageMonths < 12; // show if unknown age or under 12m
+    const showIron = ageMonths === null || ageMonths < 18; // show if unknown age or under 18m
+
+    vitdRow.style.display = showVitD ? '' : 'none';
+    ironRow.style.display = showIron ? '' : 'none';
+    section.style.display = (showVitD || showIron) ? '' : 'none';
+
+    // Load existing prescription state
+    const state = DB.get();
+    const rxVitD = childId ? state.prescriptions.find(
+      (p) => p.childId === childId && p.productId === 'vitamin_d_drops' && p.status === 'active'
+    ) : null;
+    const rxIron = childId ? state.prescriptions.find(
+      (p) => p.childId === childId && p.productId === 'iron_drops' && p.status === 'active'
+    ) : null;
+
+    const vitdOn   = document.getElementById('kid-vitd-on');
+    const vitdTime = document.getElementById('kid-vitd-time');
+    const ironOn   = document.getElementById('kid-iron-on');
+    const ironTime = document.getElementById('kid-iron-time');
+    const vitdTimeRow = document.getElementById('kid-vitd-time-row');
+    const ironTimeRow = document.getElementById('kid-iron-time-row');
+
+    vitdOn.checked  = !!(rxVitD && rxVitD.reminder && rxVitD.reminder.on);
+    vitdTime.value  = (rxVitD && rxVitD.reminder && rxVitD.reminder.time) || '08:00';
+    vitdTimeRow.style.display = vitdOn.checked ? '' : 'none';
+
+    ironOn.checked  = !!(rxIron && rxIron.reminder && rxIron.reminder.on);
+    ironTime.value  = (rxIron && rxIron.reminder && rxIron.reminder.time) || '08:00';
+    ironTimeRow.style.display = ironOn.checked ? '' : 'none';
+
+    // Toggle time-row visibility when checkbox changes
+    vitdOn.onchange = () => { vitdTimeRow.style.display = vitdOn.checked ? '' : 'none'; };
+    ironOn.onchange = () => { ironTimeRow.style.display = ironOn.checked ? '' : 'none'; };
   }
   function saveKid() {
     const name       = document.getElementById('kid-name').value.trim();
@@ -1456,10 +1524,59 @@ const App = (() => {
       toast('⚠️ השמירה נכשלה — בדקו מקום פנוי במכשיר ונסו שוב');
       return;
     }
+
+    // save supplement prescriptions if the section was visible
+    const section = document.getElementById('kid-supplements-section');
+    if (section && section.style.display !== 'none') {
+      const childId = editingKidId || DB.get().children[DB.get().children.length - 1]?.id;
+      if (childId) _saveSupplementPrescriptions(childId);
+    }
+
     closeSheet('sheet-editkid');
     toast('הפרטים נשמרו ✓');
     renderKids();
     renderDashboard();
+  }
+
+  /* Upsert active supplement prescriptions based on the editkid toggles. */
+  function _saveSupplementPrescriptions(childId) {
+    const supplements = [
+      { elOn: 'kid-vitd-on', elTime: 'kid-vitd-time', productId: 'vitamin_d_drops', label: 'ויטמין D', maxMonths: 12 },
+      { elOn: 'kid-iron-on', elTime: 'kid-iron-time', productId: 'iron_drops',      label: 'ברזל',     maxMonths: 18 },
+    ];
+
+    const state = DB.get();
+    supplements.forEach(({ elOn, elTime, productId, maxMonths }) => {
+      const onEl   = document.getElementById(elOn);
+      const timeEl = document.getElementById(elTime);
+      if (!onEl) return; // element not in DOM (hidden or missing)
+
+      const isOn = onEl.checked;
+      const time = (timeEl && timeEl.value) || '08:00';
+
+      const existingRx = state.prescriptions.find(
+        (p) => p.childId === childId && p.productId === productId && p.status === 'active'
+      );
+
+      if (isOn) {
+        if (existingRx) {
+          DB.updatePrescription(existingRx.id, { reminder: { on: true, time } });
+        } else {
+          DB.addPrescription({
+            childId,
+            productId,
+            protocolType: 'daily',
+            isCourse: false,
+            reminder: { on: true, time },
+          });
+        }
+      } else {
+        // user turned it off — cancel the prescription if it exists
+        if (existingRx) {
+          DB.updatePrescription(existingRx.id, { reminder: { on: false, time } });
+        }
+      }
+    });
   }
 
 
@@ -1471,6 +1588,7 @@ const App = (() => {
     paracetamol: { id: 'paracetamol', name: 'פרצטמול', aliases: [] },
     ibuprofen: { id: 'ibuprofen', name: 'איבופרופן', aliases: [] },
     vitaminD: { id: 'vitaminD', name: 'ויטמין D', aliases: ['ויטמין די'] },
+    iron:     { id: 'iron',     name: 'ברזל',    aliases: ['ברזל לתינוקות'] },
   };
 
   /* Treatment protocol types (layer 3) — each is a different logical "engine" for timing/warnings.
@@ -1570,6 +1688,15 @@ const App = (() => {
       activeIngredient: 'vitaminD',
       protocol: { version: 1, type: TREATMENT_TYPES.DAILY, dosesPerDay: 1 },
       matchNames: ['ויטמין D', 'ויטמין די', 'וויטמין D'],
+      concentrations: [
+        { label: 'ממתין לנתוני מינון רשמיים', pendingLeaflet: true },
+      ]
+    },
+    'ברזל': {
+      id: 'iron_drops',
+      activeIngredient: 'iron',
+      protocol: { version: 1, type: TREATMENT_TYPES.DAILY, dosesPerDay: 1 },
+      matchNames: ['ברזל', 'ברזל לתינוקות', 'פריפר', 'גלוביפר'],
       concentrations: [
         { label: 'ממתין לנתוני מינון רשמיים', pendingLeaflet: true },
       ]
