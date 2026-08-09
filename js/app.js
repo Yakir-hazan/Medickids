@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.47 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.81';
+  const APP_VERSION = '1.0.0-beta.82';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -1414,7 +1414,7 @@ const App = (() => {
   function openEditKid(id) {
     editingKidId = id;
     const title = document.getElementById('editkid-title');
-    const hint  = document.getElementById('kid-birth-year-hint');
+    const hint  = document.getElementById('kid-birth-year-hint'); // may be null on onboarding
     if (id) {
       const c = childById(id);
       title.textContent = 'עריכת פרטי ילד/ה';
@@ -1422,17 +1422,17 @@ const App = (() => {
       document.getElementById('kid-weight').value = c.weight;
       if (c.birthDate) {
         document.getElementById('kid-birth').value = c.birthDate;
-        hint.style.display = 'none';
+        if (hint) hint.style.display = 'none';
       } else {
         document.getElementById('kid-birth').value = '';
-        hint.style.display = c.birthYear ? 'block' : 'none';
+        if (hint) hint.style.display = c.birthYear ? 'block' : 'none';
       }
     } else {
       title.textContent = 'הוספת ילד/ה';
       document.getElementById('kid-name').value   = '';
       document.getElementById('kid-weight').value = '';
       document.getElementById('kid-birth').value  = '';
-      hint.style.display = 'none';
+      if (hint) hint.style.display = 'none';
     }
     openSheet('sheet-editkid');
   }
