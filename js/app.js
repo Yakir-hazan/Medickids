@@ -3021,6 +3021,7 @@ const App = (() => {
 
   return {
     goto, tab, openSheet, closeSheet,
+    _routeAfterAuth,
     openMedSheet, pickMedChild, pickMedMedicine, addCustomMedicine, saveMed, pickReminderMode, toggleDailyReminder,
     setHistFilter, setTempFilter, openTempSheet, pickTempChild, saveTemp,
     openEditKid, saveKid, toggleNotif, init, selectChild, closeChildDetail,
