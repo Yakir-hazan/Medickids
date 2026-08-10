@@ -1663,6 +1663,7 @@ const App = (() => {
         medicine: medicineName,
         prescriptionId: rx.id,    // links back to the prescription
         note: 'תוסף יומי',
+        isSupp: true,             // exclude from lastMedFor / PRN logic
       });
     } catch (e) {
       toast('⚠️ השמירה נכשלה — בדקו מקום פנוי במכשיר ונסו שוב');
