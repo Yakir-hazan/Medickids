@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.47 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.89';
+  const APP_VERSION = '1.0.0-beta.90';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -1506,6 +1506,37 @@ const App = (() => {
         <div style="font-size:12px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">טיפולים פעילים</div>
         ${courseRows}
       </div>`;
+    }
+
+    // supplement rows for detail panel
+    let supplementRow = '';
+    {
+      const suppIds = ['vitamin_d_drops', 'iron_drops'];
+      const suppLabels = { vitamin_d_drops: { emoji: '☀️', name: 'ויטמין D' }, iron_drops: { emoji: '🩸', name: 'ברזל' } };
+      const activeSupps = DB.get().prescriptions.filter(
+        (p) => p.childId === selectedChildId && suppIds.includes(p.productId) && p.status === 'active' && p.reminder && p.reminder.on
+      );
+      if (activeSupps.length) {
+        const rows = activeSupps.map((rx) => {
+          const lbl = suppLabels[rx.productId] || { emoji: '💊', name: rx.productId };
+          const lastGiven = DB.get().medEntries
+            .filter((e) => e.childId === selectedChildId && e.medicine === lbl.name)
+            .sort((a, b) => b.time - a.time)[0] || null;
+          const givenToday = lastGiven && new Date(lastGiven.time).toDateString() === new Date().toDateString();
+          return `<div class="scp-row scp-row-normal" style="justify-content:space-between;">
+            <span class="scp-row-ic">${lbl.emoji}</span>
+            <span class="scp-row-lbl" style="flex:1;">${lbl.name}</span>
+            ${givenToday
+              ? `<span class="scp-row-val scp-val-green">✓ ניתן היום</span>`
+              : `<button onclick="App.markSupplementGiven('${selectedChildId}','${rx.productId}')" style="padding:5px 12px;border-radius:10px;border:none;background:var(--purple,#7B6CF5);color:#fff;font-size:12px;font-weight:600;cursor:pointer;">ניתן עכשיו ✓</button>`
+            }
+          </div>`;
+        }).join('');
+        supplementRow = `<div style="padding:4px 0;">
+          <div style="font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:2px;">תוספים יומיים</div>
+          ${rows}
+        </div>`;
+      }
     }
 
     const avatarColors = ['avatar-pink','avatar-blue','avatar-green','avatar-pink','avatar-blue'];
