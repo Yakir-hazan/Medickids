@@ -33,6 +33,11 @@
     .toggle-wrap input:checked + .toggle-knob::after { transform:translateX(-18px); }
   </style>
 
+  <!-- Firebase (compat SDK — loaded before app scripts) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
   <!-- OneSignal Web Push -->
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
   <script>
@@ -51,6 +56,36 @@
 <div id="app">
 
   <div class="body-area">
+
+    <!-- AUTH — Login / Signup -->
+    <div class="screen" id="screen-auth">
+      <div class="scroll auth-wrap">
+        <div class="auth-logo">👶</div>
+        <h1 class="auth-title">Medickids</h1>
+
+        <!-- Tab switcher -->
+        <div class="auth-tabs">
+          <button class="auth-tab active" id="auth-tab-login"  onclick="App.authTab('login')">כניסה</button>
+          <button class="auth-tab"        id="auth-tab-signup" onclick="App.authTab('signup')">הרשמה</button>
+        </div>
+
+        <!-- Login form -->
+        <div id="auth-panel-login">
+          <input class="auth-input" id="auth-login-email"    type="email"    placeholder="אימייל"  autocomplete="email" inputmode="email">
+          <input class="auth-input" id="auth-login-password" type="password" placeholder="סיסמה"  autocomplete="current-password">
+          <button class="auth-btn primary" onclick="App.authLogin()">כניסה</button>
+        </div>
+
+        <!-- Signup form -->
+        <div id="auth-panel-signup" style="display:none;">
+          <input class="auth-input" id="auth-signup-email"    type="email"    placeholder="אימייל"  autocomplete="email" inputmode="email">
+          <input class="auth-input" id="auth-signup-password" type="password" placeholder="סיסמה (לפחות 6 תווים)"  autocomplete="new-password">
+          <button class="auth-btn primary" onclick="App.authSignup()">יצירת חשבון</button>
+        </div>
+
+        <div id="auth-error" class="auth-error" style="display:none;"></div>
+      </div>
+    </div>
 
     <!-- LANDING / ADD TO HOME SCREEN -->
     <div class="screen active" id="screen-landing">
@@ -313,6 +348,11 @@
         <div class="set-group">
           <button class="set-row" onclick="App.goto('screen-kids')">👨‍👩‍👧‍👦 ניהול ילדים<span class="chev">‹</span></button>
           <button class="set-row" onclick="App.stub()">🏡 הגדרות משפחה<span class="chev">‹</span></button>
+        </div>
+        <div class="set-group" id="set-group-account">
+          <div class="set-row" style="cursor:default;">👤 חשבון<span class="chev" id="set-account-email" style="font-size:.8em;color:var(--muted,#888);max-width:55%;overflow:hidden;text-overflow:ellipsis;">—</span></div>
+          <div class="set-row" style="cursor:default;font-size:.82em;color:var(--muted,#888);">מזהה משפחה<span class="chev" id="set-family-id" style="font-size:.85em;color:var(--muted,#aaa);">—</span></div>
+          <button class="set-row danger" onclick="App.authLogout()">🚪 התנתקות<span class="chev">‹</span></button>
         </div>
         <div class="set-group">
           <div class="set-row" style="cursor:default;">📦 גרסת אפליקציה<span class="chev" id="set-version-num">—</span></div>
@@ -692,6 +732,7 @@
 
 <script src="js/developer-console.js"></script>
 <script src="js/db.js"></script>
+<script src="js/auth.js"></script>
 <script src="js/app.js"></script>
 
 </body>

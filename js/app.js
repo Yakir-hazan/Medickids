@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.47 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.101';
+  const APP_VERSION = '1.0.0-beta.102';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -2654,6 +2654,94 @@ const App = (() => {
     }
   }
 
+  /* ---------- auth UI ---------- */
+
+  /* Switch between Login / Signup tabs in screen-auth */
+  function authTab(which) {
+    document.getElementById('auth-panel-login').style.display  = which === 'login'  ? '' : 'none';
+    document.getElementById('auth-panel-signup').style.display = which === 'signup' ? '' : 'none';
+    document.getElementById('auth-tab-login').classList.toggle('active',  which === 'login');
+    document.getElementById('auth-tab-signup').classList.toggle('active', which === 'signup');
+    _authClearError();
+  }
+
+  function _authShowError(msg) {
+    const el = document.getElementById('auth-error');
+    el.textContent = msg;
+    el.style.display = '';
+  }
+  function _authClearError() {
+    const el = document.getElementById('auth-error');
+    if (el) el.style.display = 'none';
+  }
+
+  /* Translate Firebase error codes to Hebrew */
+  function _authErrorMsg(code) {
+    const map = {
+      'auth/email-already-in-use':    'כתובת האימייל כבר רשומה במערכת',
+      'auth/invalid-email':           'כתובת אימייל לא תקינה',
+      'auth/weak-password':           'הסיסמה חייבת להכיל לפחות 6 תווים',
+      'auth/user-not-found':          'לא נמצא משתמש עם אימייל זה',
+      'auth/wrong-password':          'סיסמה שגויה',
+      'auth/too-many-requests':       'יותר מדי ניסיונות — נסה שוב עוד מספר דקות',
+      'auth/network-request-failed':  'בעיית חיבור — בדוק אינטרנט ונסה שוב',
+    };
+    return map[code] || 'שגיאה — נסה שוב';
+  }
+
+  async function authLogin() {
+    _authClearError();
+    const email    = document.getElementById('auth-login-email').value.trim();
+    const password = document.getElementById('auth-login-password').value;
+    if (!email || !password) { _authShowError('יש למלא אימייל וסיסמה'); return; }
+    try {
+      const { familyId } = await Auth.login(email, password);
+      _afterAuthSuccess(email, familyId);
+    } catch (e) {
+      _authShowError(_authErrorMsg(e.code));
+    }
+  }
+
+  async function authSignup() {
+    _authClearError();
+    const email    = document.getElementById('auth-signup-email').value.trim();
+    const password = document.getElementById('auth-signup-password').value;
+    if (!email || !password) { _authShowError('יש למלא אימייל וסיסמה'); return; }
+    try {
+      const { familyId } = await Auth.signup(email, password);
+      _afterAuthSuccess(email, familyId);
+    } catch (e) {
+      _authShowError(_authErrorMsg(e.code));
+    }
+  }
+
+  async function authLogout() {
+    const sure = confirm('להתנתק מהחשבון?');
+    if (!sure) return;
+    await Auth.logout();
+    // onAuthStateChanged will fire and route to screen-auth
+  }
+
+  /* Called after successful login or signup */
+  function _afterAuthSuccess(email, familyId) {
+    _renderAccountInfo(email, familyId);
+    // Continue normal app flow — same as before Auth
+    const isReturningUser = DB.get().children.length > 0;
+    if (isReturningUser) {
+      goto('screen-dash');
+    } else {
+      startOnboarding();
+    }
+  }
+
+  /* Update the account rows in Settings */
+  function _renderAccountInfo(email, familyId) {
+    const emailEl    = document.getElementById('set-account-email');
+    const familyEl   = document.getElementById('set-family-id');
+    if (emailEl)  emailEl.textContent  = email    || '—';
+    if (familyEl) familyEl.textContent = familyId || '—';
+  }
+
   /* ---------- settings ---------- */
   function renderSettings() {
     const on = DB.get().settings.notifications;
@@ -2661,6 +2749,13 @@ const App = (() => {
     document.getElementById('set-version-num').textContent = APP_VERSION;
     const aboutV = document.getElementById('about-version-num');
     if (aboutV) aboutV.textContent = APP_VERSION;
+    // refresh account info if user already signed in
+    const user = Auth.currentUser();
+    if (user) {
+      // familyId is not cached in memory — show email for now; familyId populated at login/signup
+      const emailEl = document.getElementById('set-account-email');
+      if (emailEl && emailEl.textContent === '—') emailEl.textContent = user.email || '—';
+    }
   }
   /* generic handler for features that are planned but not built yet — keeps buttons
      visibly "alive" instead of dead, per Step 1.3 (no silent no-op buttons in Settings) */
@@ -3055,6 +3150,28 @@ const App = (() => {
     renderSettings();
     setInterval(renderDashboard, 60000); // keep "elapsed" times fresh
     setTimeout(_healSupplementReminders, 2000); // heal supplement pushes after app settles
+
+    // ── Auth-first routing ────────────────────────────────────────────────
+    // onAuthStateChanged fires once on load (user|null), then on every change.
+    Auth.onAuthReady((user) => {
+      if (!user) {
+        // Not signed in → always show auth screen
+        goto('screen-auth');
+        return;
+      }
+      // Signed in — update Settings with email; familyId resolved later
+      _renderAccountInfo(user.email, null);
+      // Fetch familyId in background to fill the Settings row
+      if (window._firestore || (window.firebase && firebase.apps.length)) {
+        try {
+          firebase.firestore().doc(`users/${user.uid}`).get().then((snap) => {
+            if (snap.exists) _renderAccountInfo(user.email, snap.data().familyId);
+          }).catch(() => {});
+        } catch(e) {}
+      }
+      // Continue normal app flow
+      _routeAfterAuth();
+    });
     if ('serviceWorker' in navigator) {
       // [SW-DIAG] Registration context
       console.log('[SW-DIAG] Browser:', navigator.userAgent);
@@ -3100,7 +3217,11 @@ const App = (() => {
       });
     }
 
-    // ---------- flow routing ----------
+  }
+
+  /* Called after auth is confirmed (user is signed in).
+     Preserves the original routing logic exactly. */
+  function _routeAfterAuth() {
     // Step 1: non-standalone browser → show Landing (A2HS prompt), stop here.
     if (!isStandalone()) {
       goto('screen-landing');
@@ -3111,11 +3232,9 @@ const App = (() => {
     const isReturningUser = DB.get().children.length > 0;
 
     if (isReturningUser) {
-      // Returning user: short splash → Dashboard
       showSplash();
       setTimeout(() => goto('screen-dash'), SPLASH_DURATION_RETURNING);
     } else {
-      // New user: splash → Onboarding flow → Dashboard
       showSplash();
       setTimeout(() => startOnboarding(), SPLASH_DURATION_NEW);
     }
@@ -3137,6 +3256,7 @@ const App = (() => {
     deleteMedEntry, deleteTempEntry, confirmReset,
     checkForUpdate,
     stub,
+    authTab, authLogin, authSignup, authLogout,
   };
 })();
 
