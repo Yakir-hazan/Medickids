@@ -3155,7 +3155,8 @@ const App = (() => {
     // onAuthStateChanged fires once on load (user|null), then on every change.
     Auth.onAuthReady((user) => {
       if (!user) {
-        // Not signed in → always show auth screen
+        // Not signed in → cancel splash animation and show auth screen
+        if (splashAnimId) { cancelAnimationFrame(splashAnimId); splashAnimId = null; }
         goto('screen-auth');
         return;
       }
