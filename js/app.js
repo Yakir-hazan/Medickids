@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.47 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.97';
+  const APP_VERSION = '1.0.0-beta.98';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -1711,11 +1711,12 @@ const App = (() => {
     const vitdTimeRow = document.getElementById('kid-vitd-time-row');
     const ironTimeRow = document.getElementById('kid-iron-time-row');
 
-    vitdOn.checked  = !!(rxVitD && rxVitD.reminder && rxVitD.reminder.on);
+    // ברירת מחדל: checked=true לילד בטווח גיל שאין לו prescription עדיין (opt-out)
+    vitdOn.checked  = rxVitD ? !!(rxVitD.reminder && rxVitD.reminder.on) : true;
     vitdTime.value  = (rxVitD && rxVitD.reminder && rxVitD.reminder.time) || '08:00';
     vitdTimeRow.style.display = vitdOn.checked ? '' : 'none';
 
-    ironOn.checked  = !!(rxIron && rxIron.reminder && rxIron.reminder.on);
+    ironOn.checked  = rxIron ? !!(rxIron.reminder && rxIron.reminder.on) : true;
     ironTime.value  = (rxIron && rxIron.reminder && rxIron.reminder.time) || '08:00';
     ironTimeRow.style.display = ironOn.checked ? '' : 'none';
 
