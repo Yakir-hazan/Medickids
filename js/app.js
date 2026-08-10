@@ -390,6 +390,22 @@ const App = (() => {
     // ---------- header color — ירוק כשכולם בריאים ----------
     const dashHeader = document.querySelector('.dash-header-new');
     const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+    // צבע דינמי — ירוק=בריא / אדום=חום|טיפול
+    const THEME_CALM  = { main: '#059669', light: '#10b981', tint: 'rgba(5,150,105,0.10)',   dark: '#047857' };
+    const THEME_ALERT = { main: '#D64545', light: '#E06060', tint: 'rgba(214,69,69,0.10)',   dark: '#B03535' };
+    const theme = allCalm ? THEME_CALM : THEME_ALERT;
+
+    // עדכן CSS variables גלובלי — כל האלמנטים שמשתמשים ב-var(--purple)/var(--gold) יתעדכנו
+    const root = document.documentElement;
+    root.style.setProperty('--purple',      theme.main);
+    root.style.setProperty('--purple-2',    theme.light);
+    root.style.setProperty('--purple-tint', theme.tint);
+    root.style.setProperty('--gold',        theme.main);
+    root.style.setProperty('--gold-deep',   theme.dark);
+    root.style.setProperty('--tint',        theme.tint);
+    root.style.setProperty('--lav',         theme.light);
+    root.style.setProperty('--lav-soft',    theme.tint);
+
     if (allCalm) {
       dashHeader.style.background = 'linear-gradient(150deg, #059669 0%, #10b981 100%)';
       if (themeColorMeta) themeColorMeta.setAttribute('content', '#059669');
