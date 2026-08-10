@@ -606,6 +606,11 @@ const App = (() => {
       const isLastOdd = childCount % 2 !== 0 && idx === childCount - 1;
 
       // ── badges ──
+      const suppIds = ['vitamin_d_drops', 'iron_drops'];
+      const suppLabels = { vitamin_d_drops: { emoji: '☀️', name: 'ויטמין D' }, iron_drops: { emoji: '🩸', name: 'ברזל' } };
+      const activeSupps = DB.get().prescriptions.filter(
+        (p) => p.childId === c.id && suppIds.includes(p.productId) && p.status === 'active'
+      );
       let badgesHtml;
       if (vm.tags.length) {
         badgesHtml = vm.tags.map(t =>
@@ -615,6 +620,13 @@ const App = (() => {
         ).join('');
       } else {
         badgesHtml = `<div class="status-pill ok"><div class="status-dot-sm"></div><span class="status-pill-text">• הכל תקין</span></div>`;
+      }
+      // תג supplement — ☀️ / 🩸
+      if (activeSupps.length) {
+        badgesHtml += activeSupps.map(rx => {
+          const lbl = suppLabels[rx.productId] || { emoji: '💊', name: '' };
+          return `<div class="status-pill supplement"><div class="status-dot-sm"></div><span class="status-pill-text">${lbl.emoji} ${lbl.name}</span></div>`;
+        }).join('');
       }
 
       // ── שורת תרופה ──
@@ -636,6 +648,28 @@ const App = (() => {
           <span class="cc-lbl">חום · לפני ${elapsed}</span>
           <span class="cc-val cc-val-red">${vm.lastTemp.value}°</span>
         </div>`;
+      }
+
+      // ── שורת supplement ──
+      let suppRowHtml = '';
+      if (activeSupps.length) {
+        const suppRows = activeSupps.map(rx => {
+          const lbl = suppLabels[rx.productId] || { emoji: '💊', name: rx.productId };
+          const lastGiven = DB.get().medEntries
+            .filter(e => e.childId === c.id && e.medicine === lbl.name)
+            .sort((a, b) => b.time - a.time)[0] || null;
+          const today = new Date(); today.setHours(0,0,0,0);
+          const givenToday = lastGiven && lastGiven.time >= today.getTime();
+          const statusHtml = givenToday
+            ? `<span class="cc-val cc-val-green">✓ ניתן</span>`
+            : `<button onclick="App.markSupplementGiven('${rx.id}');event.stopPropagation()" class="cc-supp-btn">ניתן ✓</button>`;
+          return `<div class="cc-row">
+            <span class="cc-ic">${lbl.emoji}</span>
+            <span class="cc-lbl">${lbl.name}</span>
+            ${statusHtml}
+          </div>`;
+        }).join('');
+        suppRowHtml = suppRows;
       }
 
       // ── שורת מנה הבאה — min מכל הטיפולים ──
@@ -697,7 +731,7 @@ const App = (() => {
         </div>`;
       }
 
-      const hasRows = medRowHtml || tempRowHtml || nextDoseRowHtml;
+      const hasRows = medRowHtml || tempRowHtml || nextDoseRowHtml || suppRowHtml;
       const cardInner = `
         <div class="cc-top">
           <div class="avatar-lg ${avatarClass}" style="${avatarStyle}">${c.emoji}</div>
@@ -705,7 +739,7 @@ const App = (() => {
           ${ageText ? `<div class="child-age">${ageText}</div>` : ''}
           <div class="cc-badges">${badgesHtml}</div>
         </div>
-        ${hasRows ? `<div class="cc-rows">${medRowHtml}${tempRowHtml}${nextDoseRowHtml}</div>` : ''}
+        ${hasRows ? `<div class="cc-rows">${medRowHtml}${tempRowHtml}${nextDoseRowHtml}${suppRowHtml}</div>` : ''}
         ${healthyRowHtml}`;
 
       const isSelected = c.id === selectedChildId;
