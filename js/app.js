@@ -155,8 +155,6 @@ const App = (() => {
     }));
     if (id === 'screen-kids') renderKids();
   }
-  let _splashStart = Date.now();
-
   function showSplash() {
     goto('screen-splash');
     animateSplashThermo();
@@ -2543,9 +2541,6 @@ const App = (() => {
     document.getElementById('set-version-num').textContent = APP_VERSION;
     const aboutV = document.getElementById('about-version-num');
     if (aboutV) aboutV.textContent = APP_VERSION;
-    // הצג אימייל משתמש מחובר
-    const emailEl = document.getElementById('set-user-email');
-    if (emailEl) emailEl.textContent = Auth.currentUser()?.email || '—';
   }
   /* generic handler for features that are planned but not built yet — keeps buttons
      visibly "alive" instead of dead, per Step 1.3 (no silent no-op buttons in Settings) */
@@ -2933,7 +2928,7 @@ const App = (() => {
     goto('screen-onboarding');
   }
 
-  async function init() {
+  function init() {
     // Render all screens so they're ready before any transition
     renderLanding();
     renderDashboard();
@@ -2992,54 +2987,22 @@ const App = (() => {
       return;
     }
 
-    // Step 2: הצג ספלאש מיד — אל תחכה ל-Auth
-    goto('screen-splash');
-    animateSplashThermo();
-
-    // Step 3: init Firebase Auth ברקע — כשמוכן, נתב
-    try {
-      await Auth.init();
-    } catch (e) {
-      console.error('[Auth] init failed:', e);
-      // Firebase לא נטען — המשך בלי auth (graceful degradation)
-      _routeAfterAuth();
-      return;
-    }
-
-    Auth.onReady((user) => {
-      if (!user) {
-        // לא מחובר → מסך Auth אחרי ספלאש
-        const elapsed = Date.now() - _splashStart;
-        const delay = Math.max(0, SPLASH_DURATION_NEW - elapsed);
-        setTimeout(() => goto('screen-auth'), delay);
-        return;
-      }
-      // מחובר → דשבורד או onboarding אחרי ספלאש
-      const elapsed = Date.now() - _splashStart;
-      const isReturningUser = DB.get().children.length > 0;
-      const minDuration = isReturningUser ? SPLASH_DURATION_RETURNING : SPLASH_DURATION_NEW;
-      const delay = Math.max(0, minDuration - elapsed);
-      setTimeout(() => _routeAfterAuth(), delay);
-    });
-  }
-
-
-  function _routeAfterAuth() {
+    // Step 2: standalone (installed PWA) — decide by data, not by platform.
     const isReturningUser = DB.get().children.length > 0;
-    const u = Auth.currentUser();
-    toast(`Auth OK: ${u ? u.email : 'no user'} | kids: ${DB.get().children.length}`);
-    setTimeout(() => {
-      if (isReturningUser) {
-        goto('screen-dash');
-      } else {
-        startOnboarding();
-      }
-    }, 1800); // תן ל-toast להיראות לפני המעבר
+
+    if (isReturningUser) {
+      // Returning user: short splash → Dashboard
+      showSplash();
+      setTimeout(() => goto('screen-dash'), SPLASH_DURATION_RETURNING);
+    } else {
+      // New user: splash → Onboarding flow → Dashboard
+      showSplash();
+      setTimeout(() => startOnboarding(), SPLASH_DURATION_NEW);
+    }
   }
 
   return {
     goto, tab, openSheet, closeSheet,
-    _routeAfterAuth,
     openMedSheet, pickMedChild, pickMedMedicine, addCustomMedicine, saveMed, pickReminderMode, toggleDailyReminder,
     setHistFilter, setTempFilter, openTempSheet, pickTempChild, saveTemp,
     openEditKid, saveKid, toggleNotif, init, selectChild, closeChildDetail,
