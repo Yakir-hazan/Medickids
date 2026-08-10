@@ -3008,13 +3008,13 @@ const App = (() => {
 
     Auth.onReady((user) => {
       if (!user) {
-        // לא מחובר → מסך Auth (אחרי השהייה מינימלית כדי שהספלאש ייראה)
+        // לא מחובר → מסך Auth אחרי ספלאש
         const elapsed = Date.now() - _splashStart;
         const delay = Math.max(0, SPLASH_DURATION_NEW - elapsed);
         setTimeout(() => goto('screen-auth'), delay);
         return;
       }
-      // מחובר → המשך כרגיל
+      // מחובר → דשבורד או onboarding אחרי ספלאש
       const elapsed = Date.now() - _splashStart;
       const isReturningUser = DB.get().children.length > 0;
       const minDuration = isReturningUser ? SPLASH_DURATION_RETURNING : SPLASH_DURATION_NEW;
@@ -3026,11 +3026,15 @@ const App = (() => {
 
   function _routeAfterAuth() {
     const isReturningUser = DB.get().children.length > 0;
-    if (isReturningUser) {
-      goto('screen-dash');
-    } else {
-      startOnboarding();
-    }
+    const u = Auth.currentUser();
+    toast(`Auth OK: ${u ? u.email : 'no user'} | kids: ${DB.get().children.length}`);
+    setTimeout(() => {
+      if (isReturningUser) {
+        goto('screen-dash');
+      } else {
+        startOnboarding();
+      }
+    }, 1800); // תן ל-toast להיראות לפני המעבר
   }
 
   return {
