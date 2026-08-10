@@ -891,7 +891,8 @@ body { background: var(--bg); }
 /* ══════════════════════════════════════
    ONBOARDING SCREEN
 ══════════════════════════════════════ */
-#screen-onboarding{background:var(--bg);position:absolute;inset:0;}
+#screen-onboarding{background:var(--bg);}
+#screen-onboarding .ob-suppl-overlay{z-index:11;}
 .ob-wrap{height:100%;display:flex;flex-direction:column;overflow:hidden;}
 .ob-step{display:flex;flex-direction:column;height:100%;}
 
