@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.47 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.91';
+  const APP_VERSION = '1.0.0-beta.92';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -2782,7 +2782,11 @@ const App = (() => {
   }
 
   function obBack(fromStep) {
-    if (fromStep === 2) _obShowStep(1);
+    if (fromStep === 2) {
+      // if parent step was skipped (returning user), go back to origin screen
+      if (DB.get().children.length > 0) { goto(_obReturnTo); return; }
+      _obShowStep(1);
+    }
     if (fromStep === 3) _obShowStep(2);
   }
 
@@ -2887,6 +2891,14 @@ const App = (() => {
     // Show back button only when coming from settings (not first launch)
     const backBtn = document.getElementById('ob-step1-back');
     if (backBtn) backBtn.style.display = returnTo && returnTo !== 'screen-dash' ? 'block' : 'none';
+    // If parent already exists (returning user adding another child) — skip step 1
+    const existingChildren = DB.get().children;
+    const skipParentStep = existingChildren.length > 0;
+    if (skipParentStep) {
+      // inherit parent type from first child
+      const firstKid = existingChildren[0];
+      if (firstKid && firstKid.parentType) _obParent = firstKid.parentType;
+    }
     // Reset state
     _obParent = 'dad';
     _obAvatar = '🧒';
@@ -2913,7 +2925,7 @@ const App = (() => {
     if (n2) n2.disabled = true;
     const n3 = document.getElementById('ob-next-3');
     if (n3) n3.disabled = true;
-    _obShowStep(1);
+    _obShowStep(skipParentStep ? 2 : 1);
     goto('screen-onboarding');
   }
 
