@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.47 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.92';
+  const APP_VERSION = '1.0.0-beta.93';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -2796,8 +2796,8 @@ const App = (() => {
     const weightRaw = parseFloat(document.getElementById('ob-weight')?.value);
     const weight    = isNaN(weightRaw) ? 0 : weightRaw;
 
-    // Determine avatar/photo
-    const emoji = _obPhoto ? '🧒' : _obAvatar;
+    // Determine avatar — photo upload not stored (localStorage size limit)
+    const emoji = _obAvatar;
 
     // Build child object
     const childData = {
@@ -2806,7 +2806,6 @@ const App = (() => {
       birthDate: birthVal || null,
       birthYear: birthVal ? parseInt(birthVal.slice(0, 4), 10) : null,
       emoji,
-      photo: _obPhoto || null,
       parentType: _obParent,
     };
 
