@@ -15,7 +15,7 @@ const Auth = (() => {
   // ─── Firebase config ──────────────────────────────────────
   // ⚠️ CLAUDE: apiKey מגיע מ-Firebase Console → Project Settings → Your apps
   const FIREBASE_CONFIG = {
-    apiKey:            "AIzaSyBg2izecXmu0dHDCSpUAQvMBGr_REPLACE_ME",
+    apiKey:            "AIzaSyBg2izecXmu0dHDCSpUAOe2JztbhdTQ7gY",
     authDomain:        "medickids-4b5de.firebaseapp.com",
     projectId:         "medickids-4b5de",
     storageBucket:     "medickids-4b5de.firebasestorage.app",
