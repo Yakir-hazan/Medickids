@@ -11,7 +11,7 @@ const App = (() => {
 
   const AVATAR_GRADIENT = {
     a1: 'linear-gradient(135deg,#FFB6A3,#FF9F6B)',
-    a2: 'linear-gradient(135deg,#7C6FF0,#9B8EFF)',
+    a2: 'linear-gradient(135deg,#D64545,#E06060)',
   };
 
   let medChildSel = null;
@@ -404,8 +404,8 @@ const App = (() => {
       calmMsg.textContent = '🌟 הכל תקין במשפחה';
       calmMsg.style.display = '';
     } else {
-      dashHeader.style.background = 'linear-gradient(150deg, #7B6CF5 0%, #9D90F8 100%)';
-      if (themeColorMeta) themeColorMeta.setAttribute('content', '#7C6FF0');
+      dashHeader.style.background = 'linear-gradient(150deg, #D64545 0%, #E06060 100%)';
+      if (themeColorMeta) themeColorMeta.setAttribute('content', '#D64545');
       const calmMsg = document.getElementById('dash-calm-msg');
       if (calmMsg) calmMsg.style.display = 'none';
     }
@@ -1528,7 +1528,7 @@ const App = (() => {
             <span class="scp-row-lbl" style="flex:1;">${lbl.name}</span>
             ${givenToday
               ? `<span class="scp-row-val scp-val-green">✓ ניתן היום</span>`
-              : `<button onclick="App.markSupplementGiven('${selectedChildId}','${rx.productId}')" style="padding:5px 12px;border-radius:10px;border:none;background:var(--purple,#7B6CF5);color:#fff;font-size:12px;font-weight:600;cursor:pointer;">ניתן עכשיו ✓</button>`
+              : `<button onclick="App.markSupplementGiven('${selectedChildId}','${rx.productId}')" style="padding:5px 12px;border-radius:10px;border:none;background:var(--purple);color:#fff;font-size:12px;font-weight:600;cursor:pointer;">ניתן עכשיו ✓</button>`
             }
           </div>`;
         }).join('');
