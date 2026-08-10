@@ -52,10 +52,22 @@ const Auth = (() => {
       } else {
         _familyId = null;
       }
+
       if (!_ready) {
+        // קריאה ראשונה — App.init מחכה לזה
         _ready = true;
         _readyCbs.forEach((cb) => cb(user));
         _readyCbs = [];
+      } else {
+        // קריאה שנייה ואילך — login/signup/logout התרחש בזמן ריצה
+        _setLoading(false);
+        if (user) {
+          // התחבר/נרשם — נתב לאפליקציה
+          if (typeof App !== 'undefined') App._routeAfterAuth();
+        } else {
+          // התנתק — חזור למסך auth
+          if (typeof App !== 'undefined') App.goto('screen-auth');
+        }
       }
     });
   }
@@ -159,6 +171,16 @@ const Auth = (() => {
     } catch (err) {
       _showError(_firebaseError(err));
       _setLoading(false);
+    }
+  }
+
+  // נקרא מ-onAuthStateChanged כשהמשתמש מחובר — מעבר לאפליקציה
+  function _onLoginSuccess() {
+    _setLoading(false);
+    if (typeof App !== 'undefined' && App._routeAfterAuth) {
+      App._routeAfterAuth();
+    } else {
+      window.location.reload();
     }
   }
 
