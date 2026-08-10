@@ -353,6 +353,7 @@
         <div class="ob-step" id="ob-step-1">
           <div class="ob-hero">
             <div class="ob-app-name">💊 MEDICKIDS</div>
+            <div class="ob-back-btn" id="ob-step1-back" style="display:none;" onclick="App.goto(App.obGetReturnTo())">→ חזור</div>
             <div class="ob-hero-circle">👨‍👩‍👧</div>
             <h1 class="ob-hero-title">ברוכים הבאים!</h1>
             <p class="ob-hero-sub">יומן חכם לתרופות וחום של הילדים שלכם</p>
@@ -454,7 +455,7 @@
       </div>
       <div class="scroll" style="padding-top:6px;">
         <div id="kids-list"></div>
-        <button class="add-kid" onclick="App.openEditKid(null)">+ הוספת ילד/ה</button>
+        <button class="add-kid" onclick="App.startOnboarding('screen-kids')">+ הוספת ילד/ה</button>
       </div>
     </div>
 

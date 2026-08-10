@@ -900,6 +900,7 @@ body { background: var(--bg); }
 .ob-hero{
   background:linear-gradient(165deg,#EDE8FF 0%,#E0F5EF 100%);
   padding:36px 24px 24px;text-align:center;flex-shrink:0;
+  position:relative;
 }
 .ob-app-name{font-size:11px;font-weight:700;color:var(--purple);letter-spacing:.5px;margin-bottom:16px;}
 .ob-hero-circle{
@@ -1062,3 +1063,8 @@ body { background: var(--bg); }
   font-size:13px;color:var(--ink-soft);font-family:'Rubik',sans-serif;cursor:pointer;padding:4px;
 }
 /* ── end onboarding ── */
+.ob-back-btn{
+  position:absolute;top:calc(env(safe-area-inset-top,0px) + 14px);right:18px;
+  font-size:13px;font-weight:700;color:var(--purple);cursor:pointer;
+  background:rgba(255,255,255,.7);border-radius:20px;padding:5px 12px;
+}

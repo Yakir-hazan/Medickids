@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.47 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.90';
+  const APP_VERSION = '1.0.0-beta.91';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -2873,13 +2873,20 @@ const App = (() => {
     _obComplete();
   }
 
+  let _obReturnTo = 'screen-dash'; // where to go after onboarding completes
+
   function _obComplete() {
     renderDashboard();
-    toast('ברוכים הבאים! 🎉');
-    goto('screen-dash');
+    renderKids();
+    toast('נשמר בהצלחה ✓');
+    goto(_obReturnTo);
   }
 
-  function startOnboarding() {
+  function startOnboarding(returnTo) {
+    _obReturnTo = returnTo || 'screen-dash';
+    // Show back button only when coming from settings (not first launch)
+    const backBtn = document.getElementById('ob-step1-back');
+    if (backBtn) backBtn.style.display = returnTo && returnTo !== 'screen-dash' ? 'block' : 'none';
     // Reset state
     _obParent = 'dad';
     _obAvatar = '🧒';
@@ -2990,7 +2997,7 @@ const App = (() => {
     openEditKid, saveKid, toggleNotif, init, selectChild, closeChildDetail,
     installNow, skipLanding,
     obPickParent, obPickAv, obHandlePhoto, obValidate2, obBirthChange, obValidate3, obNext, obBack,
-    obActivateSupplements, obSkipSupplements, startOnboarding,
+    obActivateSupplements, obSkipSupplements, startOnboarding, obGetReturnTo: () => _obReturnTo,
     openDoseSheet, pickDoseChild, pickDoseMed, pickDoseConc, calcDose,
     openCourseSheet, pickCourseChild, pickCourseDrug, saveCourse,
     markCourseDose, deleteCourse, doneWithPRN, doneWithCourse,
