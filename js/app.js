@@ -155,6 +155,8 @@ const App = (() => {
     }));
     if (id === 'screen-kids') renderKids();
   }
+  let _splashStart = Date.now();
+
   function showSplash() {
     goto('screen-splash');
     animateSplashThermo();
@@ -2990,32 +2992,44 @@ const App = (() => {
       return;
     }
 
-    // Step 2: init Firebase Auth — המתן לתשובה לפני כל ניתוב
-    // Auth.init טוען את Firebase SDK באופן אסינכרוני ומאזין ל-onAuthStateChanged.
-    // onReady נקרא ברגע שהמצב הראשוני ידוע (מחובר / לא מחובר).
-    await Auth.init();
+    // Step 2: הצג ספלאש מיד — אל תחכה ל-Auth
+    goto('screen-splash');
+    animateSplashThermo();
+
+    // Step 3: init Firebase Auth ברקע — כשמוכן, נתב
+    try {
+      await Auth.init();
+    } catch (e) {
+      console.error('[Auth] init failed:', e);
+      // Firebase לא נטען — המשך בלי auth (graceful degradation)
+      _routeAfterAuth();
+      return;
+    }
 
     Auth.onReady((user) => {
       if (!user) {
-        // לא מחובר → מסך Auth
-        goto('screen-auth');
+        // לא מחובר → מסך Auth (אחרי השהייה מינימלית כדי שהספלאש ייראה)
+        const elapsed = Date.now() - _splashStart;
+        const delay = Math.max(0, SPLASH_DURATION_NEW - elapsed);
+        setTimeout(() => goto('screen-auth'), delay);
         return;
       }
-      // מחובר → המשך כרגיל (שלב A: localStorage כמקור הנתונים)
-      _routeAfterAuth();
+      // מחובר → המשך כרגיל
+      const elapsed = Date.now() - _splashStart;
+      const isReturningUser = DB.get().children.length > 0;
+      const minDuration = isReturningUser ? SPLASH_DURATION_RETURNING : SPLASH_DURATION_NEW;
+      const delay = Math.max(0, minDuration - elapsed);
+      setTimeout(() => _routeAfterAuth(), delay);
     });
   }
 
-  function _routeAfterAuth() {
-    // Step 3: standalone + מחובר — decide by data, not by platform.
-    const isReturningUser = DB.get().children.length > 0;
 
+  function _routeAfterAuth() {
+    const isReturningUser = DB.get().children.length > 0;
     if (isReturningUser) {
-      showSplash();
-      setTimeout(() => goto('screen-dash'), SPLASH_DURATION_RETURNING);
+      goto('screen-dash');
     } else {
-      showSplash();
-      setTimeout(() => startOnboarding(), SPLASH_DURATION_NEW);
+      startOnboarding();
     }
   }
 
