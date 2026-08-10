@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.47 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.86';
+  const APP_VERSION = '1.0.0-beta.87';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -25,6 +25,11 @@ const App = (() => {
   let editingKidId = null; // null = add mode
   let selectedChildId = null; // שלב 3 — selected child panel
   let deferredInstallPrompt = null;
+
+  /* ── onboarding state ── */
+  let _obParent  = 'dad';   // 'dad' | 'mom'
+  let _obAvatar  = '🧒';
+  let _obPhoto   = null;    // base64 data URL or null
 
   /* ---------- add-to-home-screen detection ---------- */
   function isStandalone() {
@@ -2639,6 +2644,239 @@ const App = (() => {
       });
   }
 
+  /* ══════════════════════════════════════════════════════════
+     ONBOARDING — new-user flow (screen-onboarding)
+     Steps: 1=parent  2=avatar+name  3=birth+weight  →popup
+  ══════════════════════════════════════════════════════════ */
+  function _obShowStep(n) {
+    [1, 2, 3].forEach((i) => {
+      const el = document.getElementById('ob-step-' + i);
+      if (el) el.style.display = i === n ? 'flex' : 'none';
+    });
+  }
+
+  function obPickParent(type) {
+    _obParent = type;
+    document.getElementById('ob-dad').classList.toggle('ob-sel', type === 'dad');
+    document.getElementById('ob-mom').classList.toggle('ob-sel', type === 'mom');
+  }
+
+  function obPickAv(el) {
+    document.querySelectorAll('.ob-av').forEach((a) => a.classList.remove('ob-av-sel'));
+    el.classList.add('ob-av-sel');
+    _obAvatar = el.dataset.av;
+    _obPhoto  = null; // avatar overrides photo
+    const txt = document.getElementById('ob-photo-txt');
+    if (txt) txt.textContent = 'העלו תמונת פרופיל';
+    // remove any preview img
+    const prev = document.getElementById('ob-photo-preview-img');
+    if (prev) prev.remove();
+  }
+
+  function obHandlePhoto(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      _obPhoto = e.target.result;
+      // show preview
+      let prev = document.getElementById('ob-photo-preview-img');
+      if (!prev) {
+        prev = document.createElement('img');
+        prev.id = 'ob-photo-preview-img';
+        prev.className = 'ob-photo-preview';
+        document.querySelector('.ob-photo-btn').appendChild(prev);
+      }
+      prev.src = _obPhoto;
+      const txt = document.getElementById('ob-photo-txt');
+      if (txt) txt.textContent = 'תמונה נבחרה ✓';
+      // deselect avatar chips
+      document.querySelectorAll('.ob-av').forEach((a) => a.classList.remove('ob-av-sel'));
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function obValidate2() {
+    const name = (document.getElementById('ob-kid-name')?.value || '').trim();
+    const btn  = document.getElementById('ob-next-2');
+    if (btn) btn.disabled = !name;
+  }
+
+  function obBirthChange() {
+    const val  = document.getElementById('ob-birth')?.value;
+    const chip = document.getElementById('ob-age-chip');
+    const txt  = document.getElementById('ob-age-txt');
+    if (val && chip && txt) {
+      const months = calcAgeMonths(val);
+      if (months !== null && months >= 0) {
+        const yrs = Math.floor(months / 12);
+        const rem = months % 12;
+        let label = '';
+        if (yrs === 0)       label = `${rem} חודשים`;
+        else if (rem === 0)  label = `${yrs} ${yrs === 1 ? 'שנה' : 'שנים'}`;
+        else                 label = `${yrs} ${yrs === 1 ? 'שנה' : 'שנים'} ו-${rem} חודשים`;
+        txt.textContent = `גיל מחושב: ${label}`;
+        chip.style.display = 'flex';
+      } else {
+        chip.style.display = 'none';
+      }
+    } else if (chip) {
+      chip.style.display = 'none';
+    }
+    obValidate3();
+  }
+
+  function obValidate3() {
+    const w   = parseFloat(document.getElementById('ob-weight')?.value);
+    const btn = document.getElementById('ob-next-3');
+    if (btn) btn.disabled = isNaN(w) || w <= 0;
+  }
+
+  function obNext(fromStep) {
+    if (fromStep === 1) {
+      _obShowStep(2);
+      return;
+    }
+    if (fromStep === 2) {
+      const name = (document.getElementById('ob-kid-name')?.value || '').trim();
+      if (!name) { toast('נא להזין שם'); return; }
+      _obShowStep(3);
+      return;
+    }
+    if (fromStep === 3) {
+      _obFinish();
+    }
+  }
+
+  function obBack(fromStep) {
+    if (fromStep === 2) _obShowStep(1);
+    if (fromStep === 3) _obShowStep(2);
+  }
+
+  function _obFinish() {
+    const name      = (document.getElementById('ob-kid-name')?.value || '').trim();
+    const birthVal  = document.getElementById('ob-birth')?.value || null;
+    const weightRaw = parseFloat(document.getElementById('ob-weight')?.value);
+    const weight    = isNaN(weightRaw) ? 0 : weightRaw;
+
+    // Determine avatar/photo
+    const emoji = _obPhoto ? '🧒' : _obAvatar;
+
+    // Build child object
+    const childData = {
+      name,
+      weight,
+      birthDate: birthVal || null,
+      birthYear: birthVal ? parseInt(birthVal.slice(0, 4), 10) : null,
+      emoji,
+      photo: _obPhoto || null,
+      parentType: _obParent,
+    };
+
+    try {
+      DB.addChild(childData);
+    } catch (e) {
+      toast('⚠️ שגיאה בשמירה — בדקו מקום פנוי');
+      return;
+    }
+
+    // Check supplement eligibility
+    const ageMonths = calcAgeMonths(birthVal);
+    const needVitD  = ageMonths === null || ageMonths < 12;
+    const needIron  = ageMonths === null || (ageMonths >= 4 && ageMonths < 18);
+
+    if (needVitD || needIron) {
+      _obShowSupplPopup(name, ageMonths, needVitD, needIron);
+    } else {
+      _obComplete();
+    }
+  }
+
+  function _obShowSupplPopup(name, ageMonths, needVitD, needIron) {
+    const overlay = document.getElementById('ob-suppl-overlay');
+    const title   = document.getElementById('ob-suppl-title');
+    const body    = document.getElementById('ob-suppl-body');
+    const cards   = document.getElementById('ob-suppl-cards');
+    if (!overlay) return;
+
+    title.textContent = `תוספים יומיים ל${name}`;
+
+    const ageLabel = ageMonths !== null
+      ? `גיל ${ageMonths < 12 ? ageMonths + ' חודשים' : Math.floor(ageMonths / 12) + ' שנים ו-' + (ageMonths % 12) + ' חודשים'}`
+      : 'הגיל שהוזן';
+
+    body.textContent = `לפי המלצת משרד הבריאות, ילדים בגיל זה (${ageLabel}) זקוקים לתוספים יומיים. רוצים שנזכיר לכם כל יום?`;
+
+    let cardsHTML = '';
+    if (needVitD) {
+      cardsHTML += `<div class="ob-suppl-card">
+        <div class="ob-suppl-card-ic">☀️</div>
+        <div class="ob-suppl-card-name">ויטמין D</div>
+        <div class="ob-suppl-card-age">מלידה עד גיל 12 חודש</div>
+      </div>`;
+    }
+    if (needIron) {
+      cardsHTML += `<div class="ob-suppl-card">
+        <div class="ob-suppl-card-ic">🩸</div>
+        <div class="ob-suppl-card-name">ברזל</div>
+        <div class="ob-suppl-card-age">מגיל 4 עד 18 חודש</div>
+      </div>`;
+    }
+    cards.innerHTML = cardsHTML;
+    overlay.style.display = 'flex';
+  }
+
+  function obActivateSupplements() {
+    const state    = DB.get();
+    const child    = state.children[state.children.length - 1];
+    if (!child) return;
+    _saveSupplementPrescriptions(child.id);
+    document.getElementById('ob-suppl-overlay').style.display = 'none';
+    _obComplete();
+  }
+
+  function obSkipSupplements() {
+    document.getElementById('ob-suppl-overlay').style.display = 'none';
+    _obComplete();
+  }
+
+  function _obComplete() {
+    renderDashboard();
+    toast('ברוכים הבאים! 🎉');
+    goto('screen-dash');
+  }
+
+  function startOnboarding() {
+    // Reset state
+    _obParent = 'dad';
+    _obAvatar = '🧒';
+    _obPhoto  = null;
+    // Reset UI
+    const dad = document.getElementById('ob-dad');
+    const mom = document.getElementById('ob-mom');
+    if (dad) { dad.classList.add('ob-sel'); }
+    if (mom) { mom.classList.remove('ob-sel'); }
+    document.querySelectorAll('.ob-av').forEach((a) => a.classList.remove('ob-av-sel'));
+    const firstAv = document.querySelector('.ob-av');
+    if (firstAv) firstAv.classList.add('ob-av-sel');
+    const nameEl = document.getElementById('ob-kid-name');
+    if (nameEl) nameEl.value = '';
+    const birthEl = document.getElementById('ob-birth');
+    if (birthEl) birthEl.value = '';
+    const weightEl = document.getElementById('ob-weight');
+    if (weightEl) weightEl.value = '';
+    const chip = document.getElementById('ob-age-chip');
+    if (chip) chip.style.display = 'none';
+    const overlay = document.getElementById('ob-suppl-overlay');
+    if (overlay) overlay.style.display = 'none';
+    const n2 = document.getElementById('ob-next-2');
+    if (n2) n2.disabled = true;
+    const n3 = document.getElementById('ob-next-3');
+    if (n3) n3.disabled = true;
+    _obShowStep(1);
+    goto('screen-onboarding');
+  }
+
   function init() {
     // Render all screens so they're ready before any transition
     renderLanding();
@@ -2706,9 +2944,9 @@ const App = (() => {
       showSplash();
       setTimeout(() => goto('screen-dash'), SPLASH_DURATION_RETURNING);
     } else {
-      // New user: splash → Onboarding (add first child) → Dashboard
+      // New user: splash → Onboarding flow → Dashboard
       showSplash();
-      setTimeout(() => goto('screen-kids'), SPLASH_DURATION_NEW);
+      setTimeout(() => startOnboarding(), SPLASH_DURATION_NEW);
     }
   }
 
@@ -2718,6 +2956,8 @@ const App = (() => {
     setHistFilter, setTempFilter, openTempSheet, pickTempChild, saveTemp,
     openEditKid, saveKid, toggleNotif, init, selectChild, closeChildDetail,
     installNow, skipLanding,
+    obPickParent, obPickAv, obHandlePhoto, obValidate2, obBirthChange, obValidate3, obNext, obBack,
+    obActivateSupplements, obSkipSupplements, startOnboarding,
     openDoseSheet, pickDoseChild, pickDoseMed, pickDoseConc, calcDose,
     openCourseSheet, pickCourseChild, pickCourseDrug, saveCourse,
     markCourseDose, deleteCourse, doneWithPRN, doneWithCourse,

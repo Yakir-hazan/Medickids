@@ -345,6 +345,107 @@
       </div>
     </div>
 
+    <!-- ONBOARDING — new user flow -->
+    <div class="screen" id="screen-onboarding">
+      <div class="ob-wrap">
+
+        <!-- Step 1: Parent selection -->
+        <div class="ob-step" id="ob-step-1">
+          <div class="ob-hero">
+            <div class="ob-app-name">💊 MEDICKIDS</div>
+            <div class="ob-hero-circle">👨‍👩‍👧</div>
+            <h1 class="ob-hero-title">ברוכים הבאים!</h1>
+            <p class="ob-hero-sub">יומן חכם לתרופות וחום של הילדים שלכם</p>
+          </div>
+          <div class="ob-sheet">
+            <p class="ob-sheet-q">קודם כל — אתה מי?</p>
+            <div class="ob-parent-cards">
+              <div class="ob-parent-card" id="ob-dad" onclick="App.obPickParent('dad')">
+                <div class="ob-parent-ic">👨</div>
+                <div class="ob-parent-lbl">אבא</div>
+              </div>
+              <div class="ob-parent-card" id="ob-mom" onclick="App.obPickParent('mom')">
+                <div class="ob-parent-ic">👩</div>
+                <div class="ob-parent-lbl">אמא</div>
+              </div>
+            </div>
+            <button class="ob-cta" onclick="App.obNext(1)">המשך ←</button>
+          </div>
+        </div>
+
+        <!-- Step 2: Avatar + name -->
+        <div class="ob-step" id="ob-step-2" style="display:none;">
+          <div class="ob-bar">
+            <div class="ob-prog"><div class="ob-dot ob-on"></div><div class="ob-dot"></div><div class="ob-dot"></div></div>
+            <div class="ob-bar-step">שלב 1 מתוך 3</div>
+            <div class="ob-bar-title">👶 מי הילד/ה שלך?</div>
+          </div>
+          <div class="ob-body">
+            <div class="ob-lbl">בחר/י אווטאר</div>
+            <div class="ob-av-grid" id="ob-av-grid">
+              <div class="ob-av ob-av-sel" data-av="🧒" onclick="App.obPickAv(this)">🧒</div>
+              <div class="ob-av" data-av="👧" onclick="App.obPickAv(this)">👧</div>
+              <div class="ob-av" data-av="👦" onclick="App.obPickAv(this)">👦</div>
+              <div class="ob-av" data-av="👼" onclick="App.obPickAv(this)">👼</div>
+              <div class="ob-av" data-av="🐣" onclick="App.obPickAv(this)">🐣</div>
+              <div class="ob-av" data-av="⭐" onclick="App.obPickAv(this)">⭐</div>
+              <div class="ob-av" data-av="🌟" onclick="App.obPickAv(this)">🌟</div>
+              <div class="ob-av" data-av="🎀" onclick="App.obPickAv(this)">🎀</div>
+            </div>
+            <label class="ob-photo-btn" for="ob-photo-input">
+              <span class="ob-photo-ic">📷</span>
+              <span class="ob-photo-txt" id="ob-photo-txt">העלו תמונת פרופיל</span>
+            </label>
+            <input type="file" id="ob-photo-input" accept="image/*" style="display:none" onchange="App.obHandlePhoto(this)">
+            <div class="ob-lbl" style="margin-top:14px;">שם הילד/ה</div>
+            <input class="ob-input" id="ob-kid-name" type="text" placeholder="לדוגמה: נועה" oninput="App.obValidate2()">
+          </div>
+          <div class="ob-nav">
+            <button class="ob-back" onclick="App.obBack(2)">→ חזור</button>
+            <button class="ob-next" id="ob-next-2" onclick="App.obNext(2)" disabled>המשך ←</button>
+          </div>
+        </div>
+
+        <!-- Step 3: Birth date + weight -->
+        <div class="ob-step" id="ob-step-3" style="display:none;">
+          <div class="ob-bar">
+            <div class="ob-prog"><div class="ob-dot ob-on"></div><div class="ob-dot ob-on"></div><div class="ob-dot"></div></div>
+            <div class="ob-bar-step">שלב 2 מתוך 3</div>
+            <div class="ob-bar-title">⚖️ גיל ומשקל</div>
+          </div>
+          <div class="ob-body">
+            <div class="ob-lbl">תאריך לידה</div>
+            <input class="ob-input" id="ob-birth" type="date" onchange="App.obBirthChange()" oninput="App.obBirthChange()">
+            <div class="ob-age-chip" id="ob-age-chip" style="display:none;">
+              <span class="ob-age-ic">🧮</span>
+              <span id="ob-age-txt"></span>
+            </div>
+            <div class="ob-lbl" style="margin-top:14px;">משקל עדכני (ק"ג)</div>
+            <input class="ob-input" id="ob-weight" type="number" step="0.1" min="1" max="80" placeholder="לדוגמה: 8.5" oninput="App.obValidate3()">
+            <div class="ob-weight-hint">נדרש לחישוב מינון תרופות מדויק</div>
+          </div>
+          <div class="ob-nav">
+            <button class="ob-back" onclick="App.obBack(3)">→ חזור</button>
+            <button class="ob-next" id="ob-next-3" onclick="App.obNext(3)" disabled>המשך ←</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Supplement popup overlay (shown after step 3 if age ≤ 18m) -->
+      <div class="ob-suppl-overlay" id="ob-suppl-overlay" style="display:none;">
+        <div class="ob-suppl-popup">
+          <div class="ob-suppl-handle"></div>
+          <div class="ob-suppl-badge">✅ המלצת משרד הבריאות</div>
+          <div class="ob-suppl-title" id="ob-suppl-title">תוספים יומיים</div>
+          <div class="ob-suppl-body" id="ob-suppl-body"></div>
+          <div class="ob-suppl-cards" id="ob-suppl-cards"></div>
+          <button class="ob-btn-activate" onclick="App.obActivateSupplements()">✓ הפעל תזכורות יומיות</button>
+          <button class="ob-btn-skip" onclick="App.obSkipSupplements()">לא תודה, אמשיך ידנית</button>
+        </div>
+      </div>
+    </div>
+
     <!-- CHILDREN MANAGEMENT -->
     <div class="screen" id="screen-kids">
       <div class="scr-head">
