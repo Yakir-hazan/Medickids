@@ -197,7 +197,7 @@ const DB = (() => {
       return state.prescriptions.filter((p) => p.childId === childId && p.status === 'active');
     },
     lastMedFor(childId) {
-      return state.medEntries.filter((e) => e.childId === childId).sort((a, b) => b.time - a.time)[0] || null;
+      return state.medEntries.filter((e) => e.childId === childId && !e.isSupp).sort((a, b) => b.time - a.time)[0] || null;
     },
     lastTempFor(childId) {
       return state.tempEntries.filter((e) => e.childId === childId).sort((a, b) => b.time - a.time)[0] || null;
