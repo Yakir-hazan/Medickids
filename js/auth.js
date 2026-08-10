@@ -18,12 +18,13 @@
 
 // ── Firebase config ──────────────────────────────────────────────────────────
 const FIREBASE_CONFIG = {
-  apiKey:            "AIzaSyDummyKeyReplaceMe",          // ← replace with real key
-  authDomain:        "medickids-app.firebaseapp.com",    // ← replace
-  projectId:         "medickids-app",                    // ← replace
-  storageBucket:     "medickids-app.appspot.com",        // ← replace
-  messagingSenderId: "000000000000",                     // ← replace
-  appId:             "1:000000000000:web:000000000000",  // ← replace
+  apiKey:            "AIzaSyDhQ8tKjnqOTA3rSvIQz6dxTX1BLqYweo4",
+  authDomain:        "medickids-339fc.firebaseapp.com",
+  projectId:         "medickids-339fc",
+  storageBucket:     "medickids-339fc.firebasestorage.app",
+  messagingSenderId: "772200799748",
+  appId:             "1:772200799748:web:e8f2d65cc11ff341861f51",
+  measurementId:     "G-6J33822W2Q",
 };
 
 // ── Bootstrap Firebase (module-compatible via compat SDK loaded in index.html) ─
