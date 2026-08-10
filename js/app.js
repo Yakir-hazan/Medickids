@@ -2541,6 +2541,9 @@ const App = (() => {
     document.getElementById('set-version-num').textContent = APP_VERSION;
     const aboutV = document.getElementById('about-version-num');
     if (aboutV) aboutV.textContent = APP_VERSION;
+    // הצג אימייל משתמש מחובר
+    const emailEl = document.getElementById('set-user-email');
+    if (emailEl) emailEl.textContent = Auth.currentUser()?.email || '—';
   }
   /* generic handler for features that are planned but not built yet — keeps buttons
      visibly "alive" instead of dead, per Step 1.3 (no silent no-op buttons in Settings) */
@@ -2928,7 +2931,7 @@ const App = (() => {
     goto('screen-onboarding');
   }
 
-  function init() {
+  async function init() {
     // Render all screens so they're ready before any transition
     renderLanding();
     renderDashboard();
@@ -2987,15 +2990,30 @@ const App = (() => {
       return;
     }
 
-    // Step 2: standalone (installed PWA) — decide by data, not by platform.
+    // Step 2: init Firebase Auth — המתן לתשובה לפני כל ניתוב
+    // Auth.init טוען את Firebase SDK באופן אסינכרוני ומאזין ל-onAuthStateChanged.
+    // onReady נקרא ברגע שהמצב הראשוני ידוע (מחובר / לא מחובר).
+    await Auth.init();
+
+    Auth.onReady((user) => {
+      if (!user) {
+        // לא מחובר → מסך Auth
+        goto('screen-auth');
+        return;
+      }
+      // מחובר → המשך כרגיל (שלב A: localStorage כמקור הנתונים)
+      _routeAfterAuth();
+    });
+  }
+
+  function _routeAfterAuth() {
+    // Step 3: standalone + מחובר — decide by data, not by platform.
     const isReturningUser = DB.get().children.length > 0;
 
     if (isReturningUser) {
-      // Returning user: short splash → Dashboard
       showSplash();
       setTimeout(() => goto('screen-dash'), SPLASH_DURATION_RETURNING);
     } else {
-      // New user: splash → Onboarding flow → Dashboard
       showSplash();
       setTimeout(() => startOnboarding(), SPLASH_DURATION_NEW);
     }
