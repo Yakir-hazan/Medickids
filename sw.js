@@ -5,7 +5,7 @@ importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js');
    (increment the -vNN suffix here whenever APP_VERSION changes there, e.g. 'v17' here when
    APP_VERSION becomes '1.0.0-beta.2'). Without this bump, users' devices keep serving old
    cached files and "בדוק אם יש עדכון" in Settings will report "already up to date" even when it isn't. */
-const CACHE_NAME = 'madhom-v138';
+const CACHE_NAME = 'madhom-v139';
 const APP_SHELL = [
   './',
   './index.html',
@@ -70,22 +70,36 @@ self.addEventListener('message', (event) => {
   }
 });
 
-// Cache-first for app shell, network-first fallback for everything else
+// Network-first for JS/CSS (always fresh), cache-first for images/icons
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
-  console.log('[SW-DIAG] fetch:', event.request.url);
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request)
+  const url = event.request.url;
+  const isAppFile = url.includes('/js/') || url.includes('/css/') || url.endsWith('index.html') || url.endsWith('/');
+
+  if (isAppFile) {
+    // Network-first: always try network, fall back to cache
+    event.respondWith(
+      fetch(event.request)
         .then((res) => {
           const resClone = res.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, resClone));
           return res;
         })
-        .catch(() => cached);
-    })
-  );
+        .catch(() => caches.match(event.request))
+    );
+  } else {
+    // Cache-first for icons/images
+    event.respondWith(
+      caches.match(event.request).then((cached) => {
+        if (cached) return cached;
+        return fetch(event.request).then((res) => {
+          const resClone = res.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, resClone));
+          return res;
+        });
+      })
+    );
+  }
 });
 
 
