@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.47 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.96';
+  const APP_VERSION = '1.0.0-beta.97';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -551,7 +551,7 @@ const App = (() => {
       const suppIds = ['vitamin_d_drops', 'iron_drops'];
       const suppLabels = { vitamin_d_drops: { emoji: '☀️', name: 'ויטמין D' }, iron_drops: { emoji: '🩸', name: 'ברזל' } };
       const activeSupps = DB.get().prescriptions.filter(
-        (p) => p.childId === c.id && suppIds.includes(p.productId) && p.status === 'active' && p.reminder && p.reminder.on
+        (p) => p.childId === c.id && suppIds.includes(p.productId) && p.status === 'active'
       );
       if (activeSupps.length) {
         const rows = activeSupps.map((rx) => {
@@ -1564,7 +1564,7 @@ const App = (() => {
       const suppIds = ['vitamin_d_drops', 'iron_drops'];
       const suppLabels = { vitamin_d_drops: { emoji: '☀️', name: 'ויטמין D' }, iron_drops: { emoji: '🩸', name: 'ברזל' } };
       const activeSupps = DB.get().prescriptions.filter(
-        (p) => p.childId === selectedChildId && suppIds.includes(p.productId) && p.status === 'active' && p.reminder && p.reminder.on
+        (p) => p.childId === selectedChildId && suppIds.includes(p.productId) && p.status === 'active'
       );
       if (activeSupps.length) {
         const rows = activeSupps.map((rx) => {
@@ -1578,7 +1578,7 @@ const App = (() => {
             <span class="scp-row-lbl" style="flex:1;">${lbl.name}</span>
             ${givenToday
               ? `<span class="scp-row-val scp-val-green">✓ ניתן היום</span>`
-              : `<button onclick="App.markSupplementGiven('${selectedChildId}','${rx.productId}')" style="padding:5px 12px;border-radius:10px;border:none;background:var(--purple);color:#fff;font-size:12px;font-weight:600;cursor:pointer;">ניתן עכשיו ✓</button>`
+              : `<button onclick="App.markSupplementGiven('${selectedChildId}','${rx.productId}')" style="padding:5px 12px;border-radius:10px;border:none;background:var(--mint,#10b981);color:#fff;font-size:12px;font-weight:600;cursor:pointer;">ניתן עכשיו ✓</button>`
             }
           </div>`;
         }).join('');
@@ -2720,7 +2720,7 @@ const App = (() => {
     const now = Date.now();
     const supplementIds = ['vitamin_d_drops', 'iron_drops'];
     DB.get().prescriptions
-      .filter((p) => supplementIds.includes(p.productId) && p.status === 'active' && p.reminder && p.reminder.on)
+      .filter((p) => supplementIds.includes(p.productId) && p.status === 'active')
       .forEach((rx) => {
         const alreadyScheduled = rx.supplementReminderAt && rx.supplementReminderAt > now;
         if (!alreadyScheduled) scheduleSupplementReminder(rx);
@@ -3071,6 +3071,7 @@ const App = (() => {
 })();
 
 document.addEventListener('DOMContentLoaded', App.init);
+
 
 
 
