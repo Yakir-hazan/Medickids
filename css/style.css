@@ -326,7 +326,7 @@ body{
 }
 .dose-result-title {
   font-size: 12px;
-  color: #7C6FF0;
+  color: #D64545;
   font-weight: 600;
   letter-spacing: .5px;
   margin-bottom: 8px;
@@ -814,7 +814,7 @@ body { background: var(--bg); }
 .cc-ic  { font-size: 14px; flex-shrink: 0; }
 .cc-lbl { font-size: 12px; color: var(--ink); opacity: 0.6; flex: 1; font-weight: 500; }
 .cc-val { font-size: 13px; font-weight: 700; }
-.cc-val-blue   { color: var(--purple, #6c63ff); }
+.cc-val-blue   { color: var(--purple); }
 .cc-val-red    { color: var(--red, #e05252); }
 .cc-val-green  { color: var(--green, #2A7D52); }
 .cc-val-normal { color: var(--ink); }
@@ -881,7 +881,7 @@ body { background: var(--bg); }
 .scp2-ic  { font-size: 18px; flex-shrink: 0; }
 .scp2-lbl { font-size: 13px; color: var(--ink-soft); flex: 1; }
 .scp2-val { font-size: 16px; font-weight: 700; }
-.scp2-val-blue   { color: var(--purple, #6c63ff); }
+.scp2-val-blue   { color: var(--purple); }
 .scp2-val-red    { color: var(--red, #e05252); }
 .scp2-val-green  { color: var(--green, #2A7D52); }
 .scp2-val-normal { color: var(--ink); }
