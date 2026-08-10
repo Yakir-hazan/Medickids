@@ -1023,7 +1023,7 @@ body { background: var(--bg); }
   background:rgba(15,14,26,.55);
   backdrop-filter:blur(3px);
   display:flex;align-items:flex-end;
-  z-index:200;
+  z-index:11;
   animation:obFadeIn .22s ease;
 }
 @keyframes obFadeIn{from{opacity:0}to{opacity:1}}
