@@ -1068,3 +1068,98 @@ body { background: var(--bg); }
   font-size:13px;font-weight:700;color:var(--purple);cursor:pointer;
   background:rgba(255,255,255,.7);border-radius:20px;padding:5px 12px;
 }
+
+/* ═══════════════════════════════════════
+   AUTH SCREEN — screen-auth
+   שלב A: login / signup
+═══════════════════════════════════════ */
+
+.auth-tabs {
+  display: flex;
+  background: var(--line);
+  border-radius: 12px;
+  padding: 3px;
+  margin-bottom: 20px;
+  gap: 3px;
+}
+.auth-tab {
+  flex: 1;
+  padding: 9px 0;
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: background 150ms, color 150ms;
+  font-family: 'Heebo', sans-serif;
+}
+.auth-tab.active {
+  background: var(--card);
+  color: var(--purple);
+  box-shadow: 0 1px 6px rgba(0,0,0,0.10);
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.auth-input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  font-size: 15px;
+  font-family: 'Heebo', sans-serif;
+  background: var(--card);
+  color: var(--ink);
+  box-sizing: border-box;
+  direction: ltr;
+  text-align: left;
+  transition: border-color 150ms;
+  -webkit-appearance: none;
+}
+.auth-input:focus {
+  outline: none;
+  border-color: var(--purple);
+}
+.auth-input::placeholder {
+  color: var(--ink-muted);
+  direction: rtl;
+  text-align: right;
+}
+
+.auth-btn-primary {
+  width: 100%;
+  padding: 15px;
+  background: var(--purple);
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: 'Heebo', sans-serif;
+  cursor: pointer;
+  margin-top: 4px;
+  transition: background 150ms, transform 80ms;
+  -webkit-appearance: none;
+}
+.auth-btn-primary:active { transform: scale(0.98); }
+.auth-btn-primary:disabled {
+  background: var(--ink-muted);
+  cursor: default;
+}
+
+.auth-error {
+  background: var(--red-tint);
+  border: 1px solid var(--red);
+  color: var(--red-deep);
+  border-radius: 12px;
+  padding: 11px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 14px;
+  text-align: center;
+}
