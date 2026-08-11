@@ -1082,9 +1082,10 @@ const App = (() => {
        (b) after the parent marks "given" (step 4/5) to schedule the NEXT day's reminder.
      Does nothing if: notifications off, rx inactive, or child has aged out. */
   async function scheduleSupplementReminder(rx) {
-    if (!DB.get().settings.notifications) return;
-    if (!rx || rx.status !== 'active') return;
-    if (!rx.reminder || !rx.reminder.on) return;
+    console.log('[Supp] scheduleSupplementReminder →', rx.productId, '| notifications:', DB.get().settings.notifications, '| status:', rx?.status, '| reminder:', rx?.reminder);
+    if (!DB.get().settings.notifications) { console.log('[Supp] ❌ notifications off'); return; }
+    if (!rx || rx.status !== 'active') { console.log('[Supp] ❌ rx not active'); return; }
+    if (!rx.reminder || !rx.reminder.on) { console.log('[Supp] ❌ reminder.on is false/missing'); return; }
 
     // age gate — cancel and return if child has aged out
     const child = childById(rx.childId);
@@ -1103,7 +1104,8 @@ const App = (() => {
     }
 
     const readyAt = _nextFixedTime(rx.reminder.time || '08:00');
-    if (readyAt <= Date.now()) return; // safety — should never happen given _nextFixedTime logic
+    console.log('[Supp] readyAt:', new Date(readyAt).toLocaleTimeString('he-IL'), '| now:', new Date().toLocaleTimeString('he-IL'), '| diff(min):', Math.round((readyAt - Date.now()) / 60000));
+    if (readyAt <= Date.now()) { console.log('[Supp] ❌ readyAt in the past — skipping'); return; }
 
     // cancel previous pending push before scheduling a new one
     await _cancelSupplementReminder(rx);
@@ -1114,6 +1116,7 @@ const App = (() => {
     const emoji     = rx.productId === 'vitamin_d_drops' ? '☀️' : '🩸';
 
     try {
+      console.log('[Supp] 📤 calling /api/notify for', rx.productId, '| scheduledTime:', new Date(readyAt).toISOString());
       const res = await fetch('/api/notify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1126,13 +1129,17 @@ const App = (() => {
         }),
       });
       const data = await res.json().catch(() => null);
+      console.log('[Supp] /api/notify response:', res.status, data);
       if (data && data.notificationId) {
         DB.updatePrescription(rx.id, {
           supplementNotificationId: data.notificationId,
           supplementReminderAt: readyAt,
         });
+        console.log('[Supp] ✅ scheduled notificationId:', data.notificationId);
+      } else {
+        console.log('[Supp] ⚠️ no notificationId in response');
       }
-    } catch (e) { /* best-effort — never block UI */ }
+    } catch (e) { console.log('[Supp] ❌ fetch error:', e.message); }
   }
 
   async function scheduleDoseReminder(entry, customReadyAt) {
@@ -2881,15 +2888,18 @@ const App = (() => {
   /* On app open: ensure every active supplement prescription either has a future push scheduled,
      or gets one. Also auto-completes prescriptions where the child has aged out. */
   function _healSupplementReminders() {
-    if (!DB.get().settings.notifications) return;
+    const notifOn = DB.get().settings.notifications;
+    console.log('[Supp] _healSupplementReminders — notifications:', notifOn);
+    if (!notifOn) return;
     const now = Date.now();
     const supplementIds = ['vitamin_d_drops', 'iron_drops'];
-    DB.get().prescriptions
-      .filter((p) => supplementIds.includes(p.productId) && p.status === 'active')
-      .forEach((rx) => {
-        const alreadyScheduled = rx.supplementReminderAt && rx.supplementReminderAt > now;
-        if (!alreadyScheduled) scheduleSupplementReminder(rx);
-      });
+    const rxList = DB.get().prescriptions.filter((p) => supplementIds.includes(p.productId) && p.status === 'active');
+    console.log('[Supp] active supplement prescriptions:', rxList.length, rxList.map(r => ({ id: r.id, product: r.productId, reminder: r.reminder, reminderAt: r.supplementReminderAt })));
+    rxList.forEach((rx) => {
+      const alreadyScheduled = rx.supplementReminderAt && rx.supplementReminderAt > now;
+      console.log('[Supp] rx', rx.productId, '— alreadyScheduled:', alreadyScheduled, '| reminderAt:', rx.supplementReminderAt ? new Date(rx.supplementReminderAt).toLocaleTimeString('he-IL') : 'none');
+      if (!alreadyScheduled) scheduleSupplementReminder(rx);
+    });
   }
 
   /* ══════════════════════════════════════════════════════════
