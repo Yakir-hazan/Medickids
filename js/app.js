@@ -3153,24 +3153,30 @@ const App = (() => {
 
     // ── Auth-first routing ────────────────────────────────────────────────
     // onAuthStateChanged fires once on load (user|null), then on every change.
+    // Guard prevents double-routing (Firebase fires twice: cached + server-verified).
+    let _authRouted = false;
     Auth.onAuthReady((user) => {
+      console.log('[Auth] onAuthStateChanged →', user ? `uid=${user.uid}` : 'null', '| routed=', _authRouted);
       if (!user) {
-        // Not signed in → cancel splash animation and show auth screen
+        _authRouted = false; // reset so re-login works
         if (splashAnimId) { cancelAnimationFrame(splashAnimId); splashAnimId = null; }
         goto('screen-auth');
         return;
       }
       // Signed in — update Settings with email; familyId resolved later
       _renderAccountInfo(user.email, null);
-      // Fetch familyId in background to fill the Settings row
-      if (window._firestore || (window.firebase && firebase.apps.length)) {
+      if (window.firebase && firebase.apps.length) {
         try {
           firebase.firestore().doc(`users/${user.uid}`).get().then((snap) => {
             if (snap.exists) _renderAccountInfo(user.email, snap.data().familyId);
           }).catch(() => {});
         } catch(e) {}
       }
-      // Continue normal app flow
+      if (_authRouted) {
+        console.log('[Auth] skip duplicate _routeAfterAuth');
+        return;
+      }
+      _authRouted = true;
       _routeAfterAuth();
     });
     if ('serviceWorker' in navigator) {
