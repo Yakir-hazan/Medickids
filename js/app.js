@@ -326,37 +326,20 @@ const App = (() => {
     if (migrated) { try { localStorage.setItem('madhom_v1', JSON.stringify(db)); } catch(e) {} }
 
     const state = DB.get();
+    const SUPP_IDS = ['vitamin_d_drops', 'iron_drops'];
     const SUPPLEMENTS = [
       { productId: 'vitamin_d_drops', maxMonths: 12 },
       { productId: 'iron_drops',      maxMonths: 18 },
     ];
-    state.children.forEach((c) => {
-      const ageMonths = calcAgeMonths(c.birthDate);
-      SUPPLEMENTS.forEach(({ productId, maxMonths }) => {
-        const inRange = ageMonths === null || ageMonths < maxMonths;
-        if (!inRange) return;
-        const exists = state.prescriptions.find(
-          (p) => p.childId === c.id && p.productId === productId && p.status === 'active'
-        );
-        if (!exists) {
-          DB.addPrescription({
-            childId: c.id,
-            productId,
-            protocolType: 'daily',
-            isCourse: false,
-            reminder: { on: false, time: '08:00' }, // reminder off by default — user opts in via edit
-          });
-        }
-      });
-    });
-  }
 
-  function _ensureSupplementPrescriptions() {
-    const state = DB.get();
-    const SUPPLEMENTS = [
-      { productId: 'vitamin_d_drops', maxMonths: 12 },
-      { productId: 'iron_drops',      maxMonths: 18 },
-    ];
+    // מיגרציה: prescriptions קיימות עם reminder.on=false → הפוך ל-true
+    state.prescriptions
+      .filter(p => SUPP_IDS.includes(p.productId) && p.status === 'active' && p.reminder && !p.reminder.on)
+      .forEach(p => {
+        console.log('[Supp] migration: enabling reminder.on for', p.productId);
+        DB.updatePrescription(p.id, { reminder: { on: true, time: p.reminder.time || '08:00' } });
+      });
+
     state.children.forEach((c) => {
       const ageMonths = calcAgeMonths(c.birthDate);
       SUPPLEMENTS.forEach(({ productId, maxMonths }) => {
@@ -371,7 +354,7 @@ const App = (() => {
             productId,
             protocolType: 'daily',
             isCourse: false,
-            reminder: { on: false, time: '08:00' },
+            reminder: { on: true, time: '08:00' }, // on by default
           });
         }
       });
