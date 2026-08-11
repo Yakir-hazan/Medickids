@@ -89,6 +89,7 @@
   // public API — this is what future features should call instead of console.log
   window.DevCenter = {
     log: (category, label, detail) => logEvent(CATEGORY[category] || CATEGORY.INFO, 'app-feature', label, detail),
+    getLogs: () => events,
   };
 
   /* ---------- Phase A: global hooks, installed immediately (before db.js/app.js load) ---------- */
@@ -628,11 +629,31 @@
       return `${icon} ${time} ${e.label}${detail}`;
     }).join('\n');
     const text = `=== Medickids Dev Log — ${new Date().toLocaleString('he-IL')} ===\n${lines}`;
+    // iOS PWA: navigator.clipboard requires user gesture + secure context
+    // fallback: textarea select + execCommand
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text)
-        .then(() => { DevCenter.log('📋 לוגים הועתקו ✅', 'ok'); alert('הלוגים הועתקו ✅'); })
-        .catch(() => { alert('העתקה נכשלה — נסה מ-Export'); });
+        .then(() => { alert('הלוגים הועתקו ✅'); })
+        .catch(() => _fallbackCopy(text));
+    } else {
+      _fallbackCopy(text);
     }
+  }
+
+  function _fallbackCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try {
+      const ok = document.execCommand('copy');
+      alert(ok ? 'הלוגים הועתקו ✅' : 'העתקה נכשלה — העתק ידנית');
+    } catch(e) {
+      alert('העתקה נכשלה — העתק ידנית');
+    }
+    document.body.removeChild(ta);
   }
 
   /* ---------- utils ---------- */
