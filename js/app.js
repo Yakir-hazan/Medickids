@@ -54,7 +54,7 @@ const App = (() => {
   });
 
   function renderLanding() {
-    if (isStandalone()) { showSplash(); return; }
+    if (isStandalone()) { return; } // Auth routing handles navigation — no splash here
     document.getElementById('landing-ios').style.display = isIOS() ? 'block' : 'none';
     document.getElementById('landing-android').style.display = (isAndroid() || (!isIOS() && deferredInstallPrompt)) ? 'block' : 'none';
     document.getElementById('landing-desktop').style.display = (!isIOS() && !isAndroid() && !deferredInstallPrompt) ? 'block' : 'none';
