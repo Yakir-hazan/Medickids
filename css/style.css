@@ -1080,14 +1080,26 @@ body { background: var(--bg); }
 .cc-supp-btn {
   font-size: 11px;
   font-weight: 700;
-  padding: 3px 10px;
+  padding: 4px 12px;
   border-radius: 20px;
-  border: none;
-  background: var(--mint, #10b981);
-  color: #fff;
+  border: 1.5px solid var(--mint, #10b981);
+  background: transparent;
+  color: var(--mint, #10b981);
   cursor: pointer;
   font-family: inherit;
   white-space: nowrap;
+  transition: background 0.18s, color 0.18s, transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.cc-supp-btn:active {
+  transform: scale(0.94);
+}
+.cc-supp-btn--done {
+  border-color: var(--mint, #10b981);
+  background: var(--mint, #10b981);
+  color: #fff;
+  pointer-events: none;
 }
 
 /* ── screen-auth ─────────────────────────────────────────────────────── */

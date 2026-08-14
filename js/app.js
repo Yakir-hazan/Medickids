@@ -4,7 +4,7 @@ const App = (() => {
      CACHE_NAME in sw.js at the same time (they don't need matching text, just both incremented
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
-     Beta scheme: 1.0.0-beta.47 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
+     Beta scheme: 1.0.0-beta.49 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
   const APP_VERSION = '1.0.0-beta.102';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
@@ -714,7 +714,7 @@ const App = (() => {
           const givenToday = lastGiven && lastGiven.time >= today.getTime();
           const statusHtml = givenToday
             ? `<span class="cc-val cc-val-green">✓ ניתן</span>`
-            : `<button onclick="App.markSupplementGiven('${rx.id}');event.stopPropagation()" class="cc-supp-btn">ניתן ✓</button>`;
+            : `<button onclick="App.markSupplementGiven('${rx.id}',this);event.stopPropagation()" class="cc-supp-btn">ניתן ✓</button>`;
           return `<div class="cc-row">
             <span class="cc-ic">${lbl.emoji}</span>
             <span class="cc-lbl">${lbl.name}</span>
@@ -1678,7 +1678,12 @@ const App = (() => {
      1. Logs a medEntry (appears in history just like any medicine).
      2. Schedules the next day's push at the same fixed time.
      3. Refreshes the detail panel. */
-  async function markSupplementGiven(rxId) {
+  async function markSupplementGiven(rxId, btnEl) {
+    // optimistic UI — מיידי, לפני async
+    if (btnEl && btnEl.classList) {
+      btnEl.textContent = '✓ ניתן';
+      btnEl.classList.add('cc-supp-btn--done');
+    }
     const rx = DB.get().prescriptions.find((p) => p.id === rxId);
     if (!rx) return;
 
