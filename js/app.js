@@ -364,15 +364,11 @@ const App = (() => {
   function renderDashboard() {
     _ensureSupplementPrescriptions();
     // migration: הוסף createdAt לילדים ישנים שאין להם
-    const _db = DB.get();
-    let _migrated = false;
-    _db.children.forEach(c => {
+    DB.get().children.forEach(c => {
       if (!c.createdAt) {
-        c.createdAt = c.birthDate ? new Date(c.birthDate).getTime() : Date.now();
-        _migrated = true;
+        DB.updateChild(c.id, { createdAt: c.birthDate ? new Date(c.birthDate).getTime() : Date.now() });
       }
     });
-    if (_migrated) { try { localStorage.setItem('madhom_v1', JSON.stringify(_db)); } catch(e) {} }
     const state = DB.get();
     const now = Date.now();
 
