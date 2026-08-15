@@ -722,8 +722,8 @@ const App = (() => {
           const today = new Date(); today.setHours(0,0,0,0);
           const givenToday = lastGiven && lastGiven.time >= today.getTime();
           const statusHtml = givenToday
-            ? `<span class="cc-val cc-val-green">✓ ניתן</span>`
-            : `<button onclick="App.markSupplementGiven('${rx.id}',this);event.stopPropagation()" class="cc-supp-btn">ניתן ✓</button>`;
+            ? `<button class="cc-supp-btn cc-supp-btn--done">✓ ניתן</button>`
+            : `<button onclick="App.markSupplementGiven('${rx.id}',this);event.stopPropagation()" class="cc-supp-btn">תן ✓</button>`;
           return `<div class="cc-row">
             <span class="cc-ic">${lbl.emoji}</span>
             <span class="cc-lbl">${lbl.name}</span>

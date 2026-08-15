@@ -1083,12 +1083,12 @@ body { background: var(--bg); }
   padding: 4px 12px;
   border-radius: 20px;
   border: 1.5px solid var(--mint, #10b981);
-  background: transparent;
-  color: var(--mint, #10b981);
+  background: var(--mint, #10b981);
+  color: #fff;
   cursor: pointer;
   font-family: inherit;
   white-space: nowrap;
-  transition: background 0.18s, color 0.18s, transform 0.1s;
+  transition: background 0.18s, color 0.18s, border-color 0.18s, transform 0.1s;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
 }
@@ -1096,9 +1096,9 @@ body { background: var(--bg); }
   transform: scale(0.94);
 }
 .cc-supp-btn--done {
-  border-color: var(--mint, #10b981);
-  background: var(--mint, #10b981);
-  color: #fff;
+  border-color: #ccc;
+  background: transparent;
+  color: #aaa;
   pointer-events: none;
 }
 
