@@ -475,13 +475,13 @@ body{
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-.navbar-v2 .navitem.active .nav-svg { stroke: #D64545; }
+.navbar-v2 .navitem.active .nav-svg { stroke: var(--mint, #10b981); }
 .navbar-v2 .navitem .nav-lbl {
   font-size: 10px;
   font-weight: 600;
   color: #C0C4D4;
 }
-.navbar-v2 .navitem.active .nav-lbl { color: #D64545; }
+.navbar-v2 .navitem.active .nav-lbl { color: var(--mint, #10b981); }
 
 
 /* ═══════════════════════════════════════════
