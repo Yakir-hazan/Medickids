@@ -2167,7 +2167,7 @@ const App = (() => {
     /* ימים בריא — מאז הפעם האחרונה שהייתה תרופה או חום ≥38 */
     let healthyDays = null;
     const state = DB.get();
-    const allMeds  = state.medEntries.filter(e => e.childId === childId);
+    const allMeds  = state.medEntries.filter(e => e.childId === childId && !e.isSupp);
     const allTemps = state.tempEntries.filter(e => e.childId === childId && e.value >= 38);
     const lastSickEvent = [...allMeds, ...allTemps]
       .map(e => e.time)
