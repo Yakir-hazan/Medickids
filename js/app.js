@@ -2176,7 +2176,10 @@ const App = (() => {
       if (lastSickEvent) {
         healthyDays = Math.floor((now - lastSickEvent) / (24 * 3600 * 1000));
       } else {
-        healthyDays = null; // אף פעם לא חלה — לא מציגים מספר
+        // אף פעם לא חלה — מציגים ימים מאז לידה
+        const child = DB.get().children.find(c => c.id === childId);
+        const since = child && child.birthDate ? new Date(child.birthDate).getTime() : null;
+        healthyDays = since ? Math.floor((now - since) / (24 * 3600 * 1000)) : 0;
       }
     }
 
