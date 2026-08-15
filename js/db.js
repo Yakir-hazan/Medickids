@@ -123,7 +123,7 @@ const DB = (() => {
       save(state);
     },
     addChild(child) {
-      state.children.push({ id: uid(), color: state.children.length % 2 ? 'a2' : 'a1', weightUpdatedAt: Date.now(), ...child });
+      state.children.push({ id: uid(), color: state.children.length % 2 ? 'a2' : 'a1', weightUpdatedAt: Date.now(), createdAt: Date.now(), ...child });
       save(state);
     },
     setSetting(key, value) {

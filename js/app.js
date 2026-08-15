@@ -363,6 +363,16 @@ const App = (() => {
 
   function renderDashboard() {
     _ensureSupplementPrescriptions();
+    // migration: הוסף createdAt לילדים ישנים שאין להם
+    const _db = DB.get();
+    let _migrated = false;
+    _db.children.forEach(c => {
+      if (!c.createdAt) {
+        c.createdAt = c.birthDate ? new Date(c.birthDate).getTime() : Date.now();
+        _migrated = true;
+      }
+    });
+    if (_migrated) { try { localStorage.setItem('madhom_v1', JSON.stringify(_db)); } catch(e) {} }
     const state = DB.get();
     const now = Date.now();
 
@@ -2176,9 +2186,9 @@ const App = (() => {
       if (lastSickEvent) {
         healthyDays = Math.floor((now - lastSickEvent) / (24 * 3600 * 1000));
       } else {
-        // אף פעם לא חלה — מציגים ימים מאז לידה
+        // אף פעם לא חלה — מציגים ימים מאז יצירת הפרופיל
         const child = DB.get().children.find(c => c.id === childId);
-        const since = child && child.birthDate ? new Date(child.birthDate).getTime() : null;
+        const since = child && (child.createdAt || (child.birthDate ? new Date(child.birthDate).getTime() : null));
         healthyDays = since ? Math.floor((now - since) / (24 * 3600 * 1000)) : 0;
       }
     }
