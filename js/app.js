@@ -363,10 +363,13 @@ const App = (() => {
 
   function renderDashboard() {
     _ensureSupplementPrescriptions();
-    // migration: הוסף createdAt לילדים ישנים שאין להם
+    // migration: הוסף createdAt לילדים — אם יש להם createdAt שנראה כמו birthDate, אפס להיום
+    const _nowMs = Date.now();
     DB.get().children.forEach(c => {
-      if (!c.createdAt) {
-        DB.updateChild(c.id, { createdAt: c.birthDate ? new Date(c.birthDate).getTime() : Date.now() });
+      // אם אין createdAt, או אם createdAt זהה לתאריך לידה (migration ישן) — קבע להיום
+      const birthTs = c.birthDate ? new Date(c.birthDate).getTime() : 0;
+      if (!c.createdAt || c.createdAt === birthTs) {
+        DB.updateChild(c.id, { createdAt: _nowMs });
       }
     });
     const state = DB.get();
