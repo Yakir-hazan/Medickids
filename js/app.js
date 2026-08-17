@@ -314,16 +314,11 @@ const App = (() => {
      Runs once on every renderDashboard — idempotent (won't duplicate). */
   function _ensureSupplementPrescriptions() {
     // מיגרציה: מסמן entries ישנים של supplements שנשמרו ללא isSupp:true
+    // משתמש ב-DB.updateMedEntry כדי שה-state ב-memory יתעדכן גם הוא (לא רק localStorage)
     const SUPP_NAMES = ['ויטמין D', 'ברזל'];
-    const db = DB.get();
-    let migrated = false;
-    db.medEntries.forEach(e => {
-      if (SUPP_NAMES.includes(e.medicine) && !e.isSupp) {
-        e.isSupp = true;
-        migrated = true;
-      }
-    });
-    if (migrated) { try { localStorage.setItem('madhom_v1', JSON.stringify(db)); } catch(e) {} }
+    DB.get().medEntries
+      .filter(e => SUPP_NAMES.includes(e.medicine) && !e.isSupp)
+      .forEach(e => DB.updateMedEntry(e.id, { isSupp: true }));
 
     const state = DB.get();
     const SUPP_IDS = ['vitamin_d_drops', 'iron_drops'];
@@ -348,7 +343,11 @@ const App = (() => {
         const exists = state.prescriptions.find(
           (p) => p.childId === c.id && p.productId === productId && p.status === 'active'
         );
-        if (!exists) {
+        // אם המשתמש סימן completed ידנית — לא ליצור מחדש
+        const wasCompleted = state.prescriptions.find(
+          (p) => p.childId === c.id && p.productId === productId && p.status === 'completed'
+        );
+        if (!exists && !wasCompleted) {
           DB.addPrescription({
             childId: c.id,
             productId,
@@ -618,7 +617,7 @@ const App = (() => {
         const rows = activeSupps.map((rx) => {
           const lbl = suppLabels[rx.productId] || { emoji: '💊', name: rx.productId };
           const lastGiven = DB.get().medEntries
-            .filter((e) => e.childId === c.id && e.medicine === lbl.name)
+            .filter((e) => e.isSupp && e.prescriptionId === rx.id)
             .sort((a, b) => b.time - a.time)[0] || null;
           const lastStr = lastGiven
             ? `ניתן ${elapsedString(lastGiven.time)} לפני`
@@ -717,7 +716,7 @@ const App = (() => {
         const suppRows = activeSupps.map(rx => {
           const lbl = suppLabels[rx.productId] || { emoji: '💊', name: rx.productId };
           const lastGiven = DB.get().medEntries
-            .filter(e => e.childId === c.id && e.medicine === lbl.name)
+            .filter(e => e.isSupp && e.prescriptionId === rx.id)
             .sort((a, b) => b.time - a.time)[0] || null;
           const today = new Date(); today.setHours(0,0,0,0);
           const givenToday = lastGiven && lastGiven.time >= today.getTime();
@@ -1638,7 +1637,7 @@ const App = (() => {
         const rows = activeSupps.map((rx) => {
           const lbl = suppLabels[rx.productId] || { emoji: '💊', name: rx.productId };
           const lastGiven = DB.get().medEntries
-            .filter((e) => e.childId === selectedChildId && e.medicine === lbl.name)
+            .filter((e) => e.isSupp && e.prescriptionId === rx.id)
             .sort((a, b) => b.time - a.time)[0] || null;
           const givenToday = lastGiven && new Date(lastGiven.time).toDateString() === new Date().toDateString();
           return `<div class="scp-row scp-row-normal" style="justify-content:space-between;">
