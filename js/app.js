@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.49 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.102';
+  const APP_VERSION = '1.0.0-beta.103';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -331,7 +331,6 @@ const App = (() => {
     state.prescriptions
       .filter(p => SUPP_IDS.includes(p.productId) && p.status === 'active' && p.reminder && !p.reminder.on)
       .forEach(p => {
-        console.log('[Supp] migration: enabling reminder.on for', p.productId);
         DB.updatePrescription(p.id, { reminder: { on: true, time: p.reminder.time || '08:00' } });
       });
 
@@ -770,8 +769,8 @@ const App = (() => {
       const avatarClass = avatarColors[c.color % avatarColors.length] || 'avatar-blue';
       const isCalm = !vm.hasFever && !vm.courseState.hasActiveCourse;
 
-      const ageText = c.birthdate ? (() => {
-        const diff = Date.now() - new Date(c.birthdate).getTime();
+      const ageText = c.birthDate ? (() => {
+        const diff = Date.now() - new Date(c.birthDate).getTime();
         const years = Math.floor(diff / (365.25 * 24 * 3600 * 1000));
         return years > 0 ? `${years} שנים` : 'פחות משנה';
       })() : '';
@@ -1073,10 +1072,9 @@ const App = (() => {
        (b) after the parent marks "given" (step 4/5) to schedule the NEXT day's reminder.
      Does nothing if: notifications off, rx inactive, or child has aged out. */
   async function scheduleSupplementReminder(rx) {
-    console.log('[Supp] scheduleSupplementReminder →', rx.productId, '| notifications:', DB.get().settings.notifications, '| status:', rx?.status, '| reminder:', rx?.reminder);
-    if (!DB.get().settings.notifications) { console.log('[Supp] ❌ notifications off'); return; }
-    if (!rx || rx.status !== 'active') { console.log('[Supp] ❌ rx not active'); return; }
-    if (!rx.reminder || !rx.reminder.on) { console.log('[Supp] ❌ reminder.on is false/missing'); return; }
+    if (!DB.get().settings.notifications) { return; }
+    if (!rx || rx.status !== 'active') { return; }
+    if (!rx.reminder || !rx.reminder.on) { return; }
 
     // age gate — cancel and return if child has aged out
     const child = childById(rx.childId);
@@ -1095,8 +1093,7 @@ const App = (() => {
     }
 
     const readyAt = _nextFixedTime(rx.reminder.time || '08:00');
-    console.log('[Supp] readyAt:', new Date(readyAt).toLocaleTimeString('he-IL'), '| now:', new Date().toLocaleTimeString('he-IL'), '| diff(min):', Math.round((readyAt - Date.now()) / 60000));
-    if (readyAt <= Date.now()) { console.log('[Supp] ❌ readyAt in the past — skipping'); return; }
+    if (readyAt <= Date.now()) { return; }
 
     // cancel previous pending push before scheduling a new one
     await _cancelSupplementReminder(rx);
@@ -1107,7 +1104,6 @@ const App = (() => {
     const emoji     = rx.productId === 'vitamin_d_drops' ? '☀️' : '🩸';
 
     try {
-      console.log('[Supp] 📤 calling /api/notify for', rx.productId, '| scheduledTime:', new Date(readyAt).toISOString());
       const res = await fetch('/api/notify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1120,17 +1116,13 @@ const App = (() => {
         }),
       });
       const data = await res.json().catch(() => null);
-      console.log('[Supp] /api/notify response:', res.status, data);
       if (data && data.notificationId) {
         DB.updatePrescription(rx.id, {
           supplementNotificationId: data.notificationId,
           supplementReminderAt: readyAt,
         });
-        console.log('[Supp] ✅ scheduled notificationId:', data.notificationId);
-      } else {
-        console.log('[Supp] ⚠️ no notificationId in response');
       }
-    } catch (e) { console.log('[Supp] ❌ fetch error:', e.message); }
+    } catch (e) { /* best-effort */ }
   }
 
   async function scheduleDoseReminder(entry, customReadyAt) {
@@ -2899,15 +2891,12 @@ const App = (() => {
      or gets one. Also auto-completes prescriptions where the child has aged out. */
   function _healSupplementReminders() {
     const notifOn = DB.get().settings.notifications;
-    console.log('[Supp] _healSupplementReminders — notifications:', notifOn);
     if (!notifOn) return;
     const now = Date.now();
     const supplementIds = ['vitamin_d_drops', 'iron_drops'];
     const rxList = DB.get().prescriptions.filter((p) => supplementIds.includes(p.productId) && p.status === 'active');
-    console.log('[Supp] active supplement prescriptions:', rxList.length, rxList.map(r => ({ id: r.id, product: r.productId, reminder: r.reminder, reminderAt: r.supplementReminderAt })));
     rxList.forEach((rx) => {
       const alreadyScheduled = rx.supplementReminderAt && rx.supplementReminderAt > now;
-      console.log('[Supp] rx', rx.productId, '— alreadyScheduled:', alreadyScheduled, '| reminderAt:', rx.supplementReminderAt ? new Date(rx.supplementReminderAt).toLocaleTimeString('he-IL') : 'none');
       if (!alreadyScheduled) scheduleSupplementReminder(rx);
     });
   }
@@ -3176,7 +3165,6 @@ const App = (() => {
     // Guard prevents double-routing (Firebase fires twice: cached + server-verified).
     let _authRouted = false;
     Auth.onAuthReady((user) => {
-      console.log('[Auth] onAuthStateChanged →', user ? `uid=${user.uid}` : 'null', '| routed=', _authRouted);
       if (!user) {
         _authRouted = false; // reset so re-login works
         if (splashAnimId) { cancelAnimationFrame(splashAnimId); splashAnimId = null; }
@@ -3193,7 +3181,6 @@ const App = (() => {
         } catch(e) {}
       }
       if (_authRouted) {
-        console.log('[Auth] skip duplicate _routeAfterAuth');
         return;
       }
       _authRouted = true;
