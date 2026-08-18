@@ -2161,8 +2161,7 @@ const App = (() => {
     /* tags */
     const tags = [];
     if (hasFever)                    tags.push({ type: 'fever',     label: '🌡️ חום', value: lastTemp ? lastTemp.value : null });
-    if (courseState.hasActiveCourse) tags.push({ type: 'treatment', label: '💊 טיפול' });
-    if (prnActive && prnDrugName)    tags.push({ type: 'treatment', label: '💊 טיפול' });
+    if (courseState.hasActiveCourse || (prnActive && prnDrugName)) tags.push({ type: 'treatment', label: '💊 טיפול' });
 
     /* ימים בריא — מאז הפעם האחרונה שהייתה תרופה או חום ≥38
        לוגיקת חום: המדידה האחרונה קובעת. אם המדידה האחרונה < 38, הילד בריא,
