@@ -2172,12 +2172,21 @@ const App = (() => {
     if (courseState.hasActiveCourse) tags.push({ type: 'treatment', label: '💊 טיפול' });
     if (prnActive && prnDrugName)    tags.push({ type: 'treatment', label: '💊 טיפול' });
 
-    /* ימים בריא — מאז הפעם האחרונה שהייתה תרופה או חום ≥38 */
+    /* ימים בריא — מאז הפעם האחרונה שהייתה תרופה או חום ≥38
+       לוגיקת חום: המדידה האחרונה קובעת. אם המדידה האחרונה < 38, הילד בריא,
+       ולכן מדידות ישנות ≥38 לא נחשבות כאירוע מחלה פעיל. */
     let healthyDays = null;
     const state = DB.get();
     const allMeds  = state.medEntries.filter(e => e.childId === childId && !e.isSupp);
-    const allTemps = state.tempEntries.filter(e => e.childId === childId && e.value >= 38);
-    const lastSickEvent = [...allMeds, ...allTemps]
+    // מדידות חום: רק אם המדידה האחרונה של הילד היא ≥38 — אז לוקחים את כל ≥38.
+    // אם המדידה האחרונה < 38 — החום ירד, לא מחשיבים מדידות ישנות.
+    const allTempsForChild = state.tempEntries
+      .filter(e => e.childId === childId)
+      .sort((a, b) => b.time - a.time);
+    const feverTemps = (allTempsForChild.length > 0 && allTempsForChild[0].value >= 38)
+      ? allTempsForChild.filter(e => e.value >= 38)
+      : [];
+    const lastSickEvent = [...allMeds, ...feverTemps]
       .map(e => e.time)
       .sort((a, b) => b - a)[0] || null;
     if (!hasFever && !courseState.hasActiveCourse) {
@@ -2294,7 +2303,9 @@ const App = (() => {
   }
 
   /* "סיימתי" — Course: משנה סטטוס ל-completed */
-  function doneWithCourse(rxId) {
+  async function doneWithCourse(rxId) {
+    const rx = DB.get().prescriptions.find(p => p.id === rxId);
+    if (rx) await _cancelCourseReminder(rx); // בטל reminder לפני עדכון status
     DB.updatePrescription(rxId, { status: 'completed', endAt: Date.now() });
     toast('הטיפול הסתיים ✓');
     _renderSelectedChildPanel();
