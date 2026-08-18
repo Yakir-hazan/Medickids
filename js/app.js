@@ -125,7 +125,7 @@ const App = (() => {
     const [h, m] = hhmm.split(':').map(Number);
     const t = new Date();
     t.setHours(h, m, 0, 0);
-    if (t.getTime() <= Date.now()) t.setDate(t.getDate() + 1);
+    if (t.getTime() < Date.now()) t.setDate(t.getDate() + 1);
     return t.getTime();
   }
 
@@ -3275,6 +3275,7 @@ const App = (() => {
 })();
 
 document.addEventListener('DOMContentLoaded', App.init);
+
 
 
 
