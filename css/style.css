@@ -784,20 +784,32 @@ body { background: var(--bg); }
 .scp-btn-secondary { background: var(--red-tint); color: var(--red-dark); }
 .scp-btn-ghost     { background: var(--bg); color: var(--ink-soft); border: 1px solid rgba(0,0,0,0.1); }
 .cc-top {
-  text-align: center;
-  padding-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding-bottom: 8px;
+  text-align: right;
+}
+.cc-top .avatar-lg {
+  width: 36px; height: 36px;
+  font-size: 18px;
+  flex-shrink: 0;
+  margin: 0; /* override inline margin:0 auto */
+}
+.cc-top-info {
+  flex: 1;
+  min-width: 0;
 }
 .cc-badges {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
-  justify-content: center;
-  margin-top: 6px;
+  gap: 3px;
+  margin-top: 4px;
 }
 .cc-badges .status-pill { margin-bottom: 0; }
 .cc-rows {
   border-top: 1px solid rgba(0,0,0,0.06);
-  padding-top: 8px;
+  padding-top: 4px;
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -805,15 +817,15 @@ body { background: var(--bg); }
 .cc-row {
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 7px 2px;
+  gap: 6px;
+  padding: 5px 2px;
   border-bottom: 1px solid rgba(0,0,0,0.04);
   direction: rtl;
 }
 .cc-row:last-child { border-bottom: none; }
-.cc-ic  { font-size: 14px; flex-shrink: 0; }
-.cc-lbl { font-size: 12px; color: var(--ink); opacity: 0.6; flex: 1; font-weight: 500; }
-.cc-val { font-size: 13px; font-weight: 700; }
+.cc-ic  { font-size: 12px; flex-shrink: 0; width: 16px; text-align: center; }
+.cc-lbl { font-size: 10px; color: var(--ink); opacity: 0.6; flex: 1; font-weight: 500; }
+.cc-val { font-size: 11px; font-weight: 700; }
 .cc-val-blue   { color: var(--purple); }
 .cc-val-red    { color: var(--red, #e05252); }
 .cc-val-green  { color: var(--green, #2A7D52); }
@@ -1078,9 +1090,9 @@ body { background: var(--bg); }
   background: #f59e0b;
 }
 .cc-supp-btn {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
-  padding: 4px 12px;
+  padding: 3px 9px;
   border-radius: 20px;
   border: 1.5px solid var(--mint, #10b981);
   background: var(--mint, #10b981);
