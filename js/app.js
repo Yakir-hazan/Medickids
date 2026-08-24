@@ -777,8 +777,8 @@ const App = (() => {
 
       // avatar ring — ירוק במצב calm
       const avatarStyle = isCalm
-        ? 'margin:0 auto 8px;outline:3px solid #22c55e;outline-offset:2px;'
-        : 'margin:0 auto 8px;';
+        ? 'outline:3px solid #22c55e;outline-offset:2px;'
+        : '';
 
       // ימים בריא — רק במצב calm
       let healthyRowHtml = '';
@@ -794,9 +794,11 @@ const App = (() => {
       const cardInner = `
         <div class="cc-top">
           <div class="avatar-lg ${avatarClass}" style="${avatarStyle}">${c.emoji}</div>
-          <div class="child-name">${c.name}</div>
-          ${ageText ? `<div class="child-age">${ageText}</div>` : ''}
-          <div class="cc-badges">${badgesHtml}</div>
+          <div class="cc-top-info">
+            <div class="child-name">${c.name}</div>
+            ${ageText ? `<div class="child-age">${ageText}</div>` : ''}
+            <div class="cc-badges">${badgesHtml}</div>
+          </div>
         </div>
         ${hasRows ? `<div class="cc-rows">${medRowHtml}${tempRowHtml}${nextDoseRowHtml}${suppRowHtml}</div>` : ''}
         ${healthyRowHtml}`;
