@@ -2728,14 +2728,33 @@ const App = (() => {
   async function authLogout() {
     const sure = confirm('להתנתק מהחשבון?');
     if (!sure) return;
+    // Stage B — B2: wipe in-memory state before Firebase signOut
+    // so the next onAuthStateChanged(null) fires on a clean slate.
+    DB.clearAuth();
     await Auth.logout();
-    // onAuthStateChanged will fire and route to screen-auth
+    // onAuthStateChanged fires with null → goto('screen-auth')
   }
 
   /* Called after successful login or signup */
   function _afterAuthSuccess(email, familyId) {
     _renderAccountInfo(email, familyId);
-    // Continue normal app flow — same as before Auth
+
+    // Stage B — B1/B3: bind local state to this user
+    const incomingUid = Auth.currentUid();
+    const localOwner  = DB.ownerUid();
+
+    if (localOwner && localOwner !== incomingUid) {
+      // Different user — wipe in-memory state so this user sees nothing of the previous one.
+      // Disk data is left intact; Stage C will handle merge/upload decisions.
+      DB.clearAuth();
+    }
+
+    // Persist the identity binding (uid + familyId) for offline / fast reload
+    if (incomingUid) {
+      DB.setAuth({ uid: incomingUid, familyId: familyId || null });
+    }
+
+    // Continue normal app flow
     const isReturningUser = DB.get().children.length > 0;
     if (isReturningUser) {
       goto('screen-dash');
@@ -3296,6 +3315,7 @@ const App = (() => {
 })();
 
 document.addEventListener('DOMContentLoaded', App.init);
+
 
 
 
