@@ -18,6 +18,12 @@ const DB = (() => {
       // (via OneSignal external_id / login) instead of broadcasting to all subscribers.
       // generated once and carried forward by the load() merge below on every existing install.
       deviceId: uid() + uid(),
+      // Stage B — Identity Bridge
+      // auth.uid  = Firebase uid of the account that owns this local state.
+      // auth.familyId = Firestore familyId, cached locally so it survives offline / fast reload.
+      // Both are set after successful login/signup and cleared on logout.
+      // Firestore is still the authority — this is a cache only.
+      auth: { uid: null, familyId: null },
     };
   }
 
@@ -39,6 +45,10 @@ const DB = (() => {
       // merge: any top-level field added to seed() since this user last saved (e.g. `prescriptions`)
       // gets its default value, without touching the user's existing data
       const merged = { ...seed(), ...JSON.parse(raw) };
+      // Stage B: ensure auth sub-object always exists (migration for existing installs)
+      if (!merged.auth || typeof merged.auth !== 'object') {
+        merged.auth = { uid: null, familyId: null };
+      }
       // Migration: ensure every existing prescription has COURSE fields (defaults for non-course rx)
       merged.prescriptions = merged.prescriptions.map(migrateRx);
       return merged;
@@ -83,8 +93,50 @@ const DB = (() => {
   return {
     uid,
     get: () => state,
-    reset: () => { state = seed(); save(state); return state; },
+    reset: () => {
+      // Reset = intentional wipe of local data by the user.
+      // Preserves auth binding so the same user stays logged in after reset.
+      const preserved = { uid: state.auth?.uid || null, familyId: state.auth?.familyId || null };
+      state = seed();
+      state.auth = preserved;
+      save(state);
+      return state;
+    },
     persist: () => save(state),
+
+    // ── Stage B: Identity helpers ─────────────────────────────────────────────
+
+    /* Returns the uid that owns the current local state, or null if anonymous. */
+    ownerUid: () => state.auth?.uid || null,
+
+    /* Returns the cached familyId, or null. */
+    ownerFamilyId: () => state.auth?.familyId || null,
+
+    /* Bind local state to a Firebase user after login/signup.
+       Persists immediately so it survives refresh/reopen. */
+    setAuth({ uid, familyId }) {
+      state.auth = { uid, familyId };
+      save(state);
+    },
+
+    /* Called on logout — zero out the auth binding and reset in-memory state
+       so the next user sees a clean slate.
+       Does NOT wipe localStorage data: data stays on disk in case this user
+       logs back in later and a future Stage C sync wants to upload it.
+       In-memory state is replaced with a seed so the UI shows nothing. */
+    clearAuth() {
+      // Blank the in-memory state — UI renders empty immediately
+      state = seed();
+      // auth stays null in the new seed — no uid binding
+      // We do NOT call save() here intentionally:
+      // the old data remains in localStorage under the old uid binding.
+      // A future login will check ownerUid() against the incoming uid and
+      // decide whether to reuse or discard it (Stage C concern).
+      // For now: correct behaviour is "new user sees nothing" which is
+      // guaranteed by the in-memory wipe above without touching disk.
+    },
+
+    // ── End Stage B ───────────────────────────────────────────────────────────
 
     addMedEntry(entry) {
       const full = { id: uid(), time: Date.now(), ...entry };
@@ -225,6 +277,3 @@ const DB = (() => {
     },
   };
 })();
-
-
-
