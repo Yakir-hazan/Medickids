@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.49 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.105';
+  const APP_VERSION = '1.0.0-beta.106';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -3172,19 +3172,39 @@ const App = (() => {
         goto('screen-auth');
         return;
       }
-      // Signed in — update Settings with email; familyId resolved later
-      _renderAccountInfo(user.email, null);
+
+      if (_authRouted) return;
+      _authRouted = true;
+
+      // Stage B — B4: fix the familyId race.
+      // Route with whatever identity we have cached (instant, works offline).
+      // Firestore fetch is async and updates UI+binding after routing — does NOT re-route.
+      const cachedFamilyId = DB.ownerFamilyId();
+      _renderAccountInfo(user.email, cachedFamilyId);
+
+      // Async Firestore fetch — updates UI and persists authoritative familyId.
       if (window.firebase && firebase.apps.length) {
         try {
           firebase.firestore().doc(`users/${user.uid}`).get().then((snap) => {
-            if (snap.exists) _renderAccountInfo(user.email, snap.data().familyId);
+            if (snap.exists) {
+              const freshFamilyId = snap.data().familyId;
+              _renderAccountInfo(user.email, freshFamilyId);
+              if (freshFamilyId && freshFamilyId !== cachedFamilyId) {
+                DB.setAuth({ uid: user.uid, familyId: freshFamilyId });
+              }
+            }
           }).catch(() => {});
         } catch(e) {}
       }
-      if (_authRouted) {
-        return;
+
+      // Stage B — B1: guard against showing data of a different uid (refresh/reopen path).
+      const localOwner = DB.ownerUid();
+      if (localOwner && localOwner !== user.uid) {
+        DB.clearAuth();
+      } else if (!localOwner) {
+        DB.setAuth({ uid: user.uid, familyId: cachedFamilyId || null });
       }
-      _authRouted = true;
+
       _routeAfterAuth();
     });
     if ('serviceWorker' in navigator) {
@@ -3276,6 +3296,7 @@ const App = (() => {
 })();
 
 document.addEventListener('DOMContentLoaded', App.init);
+
 
 
 
