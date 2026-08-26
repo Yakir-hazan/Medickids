@@ -126,5 +126,12 @@ const Auth = (() => {
     return _auth ? _auth.currentUser : null;
   }
 
-  return { signup, login, logout, onAuthReady, currentUser };
+  /* Returns the uid of the currently signed-in user, or null.
+     Used by app.js (Stage B) to bind local state to the correct account. */
+  function currentUid() {
+    return _auth?.currentUser?.uid || null;
+  }
+
+  return { signup, login, logout, onAuthReady, currentUser, currentUid };
 })();
+
