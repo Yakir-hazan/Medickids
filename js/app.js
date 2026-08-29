@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.49 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.107';
+  const APP_VERSION = '1.0.0-beta.108';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -569,6 +569,7 @@ const App = (() => {
     // ---------- family summary — humanized chips ----------
     const famSummary = document.getElementById('dash-fam-summary');
     const medTodayCount = state.medEntries.filter((e) => {
+      if (e.deletedAt) return false;
       const d = new Date(e.time); const n = new Date();
       return d.getFullYear() === n.getFullYear() && d.getMonth() === n.getMonth() && d.getDate() === n.getDate();
     }).length;
@@ -887,7 +888,7 @@ const App = (() => {
   function openMedSheet(entryId) {
     const state = DB.get();
     editMedEntryId = entryId || null;
-    const entry = entryId ? state.medEntries.find((e) => e.id === entryId) : null;
+    const entry = entryId ? (state.medEntries.find((e) => e.id === entryId && !e.deletedAt) || null) : null;
     medChildSel = entry ? entry.childId : (state.children[0]?.id || null);
     medMedicineSel = entry ? entry.medicine : (DB.medicineNames()[0] || null);
     document.getElementById('med-child-chips').innerHTML = state.children.map((c) =>
@@ -1387,7 +1388,7 @@ const App = (() => {
   function openTempSheet(entryId) {
     const state = DB.get();
     editTempEntryId = entryId || null;
-    const entry = entryId ? state.tempEntries.find((e) => e.id === entryId) : null;
+    const entry = entryId ? (state.tempEntries.find((e) => e.id === entryId && !e.deletedAt) || null) : null;
     if (entry) tempChildSel = entry.childId;
     else if (!tempChildSel && state.children.length) tempChildSel = state.children[0].id;
     document.getElementById('temp-child-chips').innerHTML = state.children.map((c) =>
@@ -2170,11 +2171,11 @@ const App = (() => {
        ולכן מדידות ישנות ≥38 לא נחשבות כאירוע מחלה פעיל. */
     let healthyDays = null;
     const state = DB.get();
-    const allMeds  = state.medEntries.filter(e => e.childId === childId && !e.isSupp);
+    const allMeds  = state.medEntries.filter(e => !e.deletedAt && e.childId === childId && !e.isSupp);
     // מדידות חום: רק אם המדידה האחרונה של הילד היא ≥38 — אז לוקחים את כל ≥38.
     // אם המדידה האחרונה < 38 — החום ירד, לא מחשיבים מדידות ישנות.
     const allTempsForChild = state.tempEntries
-      .filter(e => e.childId === childId)
+      .filter(e => !e.deletedAt && e.childId === childId)
       .sort((a, b) => b.time - a.time);
     const feverTemps = (allTempsForChild.length > 0 && allTempsForChild[0].value >= 38)
       ? allTempsForChild.filter(e => e.value >= 38)
