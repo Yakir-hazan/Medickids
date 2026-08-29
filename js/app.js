@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.49 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.106';
+  const APP_VERSION = '1.0.0-beta.107';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -889,10 +889,10 @@ const App = (() => {
     editMedEntryId = entryId || null;
     const entry = entryId ? state.medEntries.find((e) => e.id === entryId) : null;
     medChildSel = entry ? entry.childId : (state.children[0]?.id || null);
-    medMedicineSel = entry ? entry.medicine : (state.medicines[0] || null);
+    medMedicineSel = entry ? entry.medicine : (DB.medicineNames()[0] || null);
     document.getElementById('med-child-chips').innerHTML = state.children.map((c) =>
       `<button type="button" class="chip ${c.id === medChildSel ? 'sel' : ''}" data-id="${c.id}" onclick="App.pickMedChild('${c.id}')">${c.emoji} ${c.name}</button>`).join('');
-    document.getElementById('med-medicine-chips').innerHTML = state.medicines.map((m) =>
+    document.getElementById('med-medicine-chips').innerHTML = DB.medicineNames().map((m) =>
       `<button type="button" class="chip ${m === medMedicineSel ? 'sel' : ''}" onclick="App.pickMedMedicine('${m}')">${m}</button>`).join('') +
       `<button type="button" class="chip" onclick="App.addCustomMedicine()">+ אחרת</button>`;
     document.getElementById('med-time').value = entry ? formatClock(entry.time) : nowHHMM();
@@ -959,7 +959,7 @@ const App = (() => {
     const name = prompt('שם התרופה:');
     if (!name) return;
     const state = DB.get();
-    if (!state.medicines.includes(name)) { state.medicines.push(name); DB.persist(); }
+    DB.addMedicine(name);
     medMedicineSel = name;
     openMedSheet();
     pickMedMedicine(name);
