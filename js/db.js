@@ -9,7 +9,12 @@ const DB = (() => {
     return {
       family: '',
       children: [],
-      medicines: ['אקמול ילדים', 'נורופן', 'נובימול', 'ויטמין D'],
+      medicines: [
+        { id: uid(), name: 'אקמול ילדים', createdAt: Date.now(), updatedAt: Date.now() },
+        { id: uid(), name: 'נורופן',       createdAt: Date.now(), updatedAt: Date.now() },
+        { id: uid(), name: 'נובימול',      createdAt: Date.now(), updatedAt: Date.now() },
+        { id: uid(), name: 'ויטמין D',     createdAt: Date.now(), updatedAt: Date.now() },
+      ],
       medEntries: [],
       tempEntries: [],
       prescriptions: [], // active/past treatments (e.g. "daily vitamin D reminder", future: antibiotic courses)
@@ -49,8 +54,17 @@ const DB = (() => {
       if (!merged.auth || typeof merged.auth !== 'object') {
         merged.auth = { uid: null, familyId: null };
       }
-      // Migration: ensure every existing prescription has COURSE fields (defaults for non-course rx)
+      // C1: migrate medicines from string[] to object[] with stable IDs
+      merged.medicines = migrateMedicines(merged.medicines);
+      // C1: migrate prescriptions — COURSE fields + doseLog IDs + updatedAt
       merged.prescriptions = merged.prescriptions.map(migrateRx);
+      // C1: migrate children — ensure createdAt/updatedAt
+      merged.children = merged.children.map(migrateChild);
+      // C1: migrate medEntries / tempEntries — ensure updatedAt
+      merged.medEntries   = merged.medEntries.map(migrateTsEntry);
+      merged.tempEntries  = merged.tempEntries.map(migrateTsEntry);
+      // C1: migrate settings — ensure updatedAt
+      if (!merged.settings.updatedAt) merged.settings.updatedAt = Date.now();
       return merged;
     } catch (e) {
       // JSON is corrupted — back up the raw string BEFORE we overwrite it with a fresh seed,
@@ -68,16 +82,68 @@ const DB = (() => {
     }
   }
 
+  /* C1: migrate medicines array — strings → {id, name, createdAt, updatedAt} objects.
+     Safe to run repeatedly: objects already in the new format pass through unchanged.
+     Deduplicates by name (case-insensitive). */
+  function migrateMedicines(arr) {
+    const seen = new Set();
+    return (arr || []).map((m) => {
+      if (typeof m === 'string') {
+        // legacy string entry
+        const name = m.trim();
+        const key  = name.toLowerCase();
+        if (seen.has(key)) return null; // duplicate — drop
+        seen.add(key);
+        return { id: uid(), name, createdAt: Date.now(), updatedAt: Date.now() };
+      }
+      // already an object — ensure shape + dedup
+      const key = (m.name || '').toLowerCase();
+      if (seen.has(key)) return null;
+      seen.add(key);
+      return {
+        id:        m.id        || uid(),
+        name:      m.name      || '',
+        createdAt: m.createdAt || Date.now(),
+        updatedAt: m.updatedAt || Date.now(),
+      };
+    }).filter(Boolean);
+  }
+
+  /* C1: migrate a child record — ensure createdAt + updatedAt. */
+  function migrateChild(c) {
+    return {
+      ...c,
+      createdAt: c.createdAt || Date.now(),
+      updatedAt: c.updatedAt || c.createdAt || Date.now(),
+    };
+  }
+
+  /* C1: migrate a medEntry or tempEntry — ensure updatedAt. */
+  function migrateTsEntry(e) {
+    return {
+      ...e,
+      createdAt: e.createdAt || e.time || Date.now(),
+      updatedAt: e.updatedAt || e.time || Date.now(),
+    };
+  }
+
   /* Ensure a prescription record has all COURSE fields.
      Safe to run on old records — leaves non-course prescriptions intact (isCourse stays false). */
   function migrateRx(rx) {
-    return {
-      isCourse:     false,   // true = antibiotic-style multi-day course
-      totalDays:    null,    // number of days (e.g. 10)
-      dosesPerDay:  null,    // doses per day (e.g. 2)
-      doseLog:      [],      // [{at: timestamp, dose: number, childId}]
+    const base = {
+      isCourse:     false,
+      totalDays:    null,
+      dosesPerDay:  null,
+      doseLog:      [],
+      createdAt:    rx.startAt || Date.now(),
+      updatedAt:    rx.updatedAt || rx.startAt || Date.now(),
       ...rx,
     };
+    // C1: ensure every doseLog entry has a stable ID
+    base.doseLog = (base.doseLog || []).map((d) =>
+      d.id ? d : { id: uid(), ...d }
+    );
+    return base;
   }
 
   function save(state) {
@@ -139,31 +205,35 @@ const DB = (() => {
     // ── End Stage B ───────────────────────────────────────────────────────────
 
     addMedEntry(entry) {
-      const full = { id: uid(), time: Date.now(), ...entry };
+      const _t = Date.now(); const full = { id: uid(), time: _t, createdAt: _t, updatedAt: _t, ...entry };
       state.medEntries.unshift(full);
       save(state);
       return full;
     },
     updateMedEntry(id, patch) {
       const e = state.medEntries.find((x) => x.id === id);
-      if (e) Object.assign(e, patch);
+      if (e) { Object.assign(e, patch); e.updatedAt = Date.now(); }
       save(state);
     },
     deleteMedEntry(id) {
-      state.medEntries = state.medEntries.filter((x) => x.id !== id);
+      // C1: soft-delete (tombstone) so Stage C2 can sync the deletion to the cloud.
+      // UI must filter out entries with deletedAt set.
+      const e = state.medEntries.find((x) => x.id === id);
+      if (e) { e.deletedAt = Date.now(); e.updatedAt = Date.now(); }
       save(state);
     },
     addTempEntry(entry) {
-      state.tempEntries.unshift({ id: uid(), time: Date.now(), ...entry });
+      const _tt = Date.now(); state.tempEntries.unshift({ id: uid(), time: _tt, createdAt: _tt, updatedAt: _tt, ...entry });
       save(state);
     },
     updateTempEntry(id, patch) {
       const e = state.tempEntries.find((x) => x.id === id);
-      if (e) Object.assign(e, patch);
+      if (e) { Object.assign(e, patch); e.updatedAt = Date.now(); }
       save(state);
     },
     deleteTempEntry(id) {
-      state.tempEntries = state.tempEntries.filter((x) => x.id !== id);
+      const e = state.tempEntries.find((x) => x.id === id);
+      if (e) { e.deletedAt = Date.now(); e.updatedAt = Date.now(); }
       save(state);
     },
     updateChild(id, patch) {
@@ -171,16 +241,50 @@ const DB = (() => {
       if (c) {
         if (patch.weight !== undefined && patch.weight !== c.weight) patch.weightUpdatedAt = Date.now();
         Object.assign(c, patch);
+        c.updatedAt = Date.now();
       }
       save(state);
     },
     addChild(child) {
-      state.children.push({ id: uid(), color: state.children.length % 2 ? 'a2' : 'a1', weightUpdatedAt: Date.now(), createdAt: Date.now(), ...child });
+      const _now = Date.now();
+      state.children.push({ id: uid(), color: state.children.length % 2 ? 'a2' : 'a1', weightUpdatedAt: _now, createdAt: _now, updatedAt: _now, ...child });
       save(state);
     },
     setSetting(key, value) {
       state.settings[key] = value;
+      state.settings.updatedAt = Date.now();
       save(state);
+    },
+
+    // ── C1: medicines CRUD ──────────────────────────────────────────────────
+    // Previously medicines was a plain string[]; now it's {id,name,createdAt,updatedAt}[].
+    // These methods are the canonical way to add/update/remove medicines.
+    // app.js direct mutations (state.medicines.push / includes) are replaced below.
+
+    /* Add a medicine by name. No-op if a medicine with the same name (case-insensitive) exists.
+       Returns the existing or new medicine object. */
+    addMedicine(name) {
+      const trimmed = name.trim();
+      const existing = state.medicines.find((m) => m.name.toLowerCase() === trimmed.toLowerCase());
+      if (existing) return existing;
+      const _t = Date.now();
+      const m = { id: uid(), name: trimmed, createdAt: _t, updatedAt: _t };
+      state.medicines.push(m);
+      save(state);
+      return m;
+    },
+
+    /* Soft-delete a medicine by id (tombstone). */
+    deleteMedicine(id) {
+      const m = state.medicines.find((x) => x.id === id);
+      if (m) { m.deletedAt = Date.now(); m.updatedAt = Date.now(); }
+      save(state);
+    },
+
+    /* Returns visible (non-deleted) medicine names as a string[] — backward-compatible
+       with all existing app.js code that reads state.medicines as strings. */
+    medicineNames() {
+      return state.medicines.filter((m) => !m.deletedAt).map((m) => m.name);
     },
 
     /* --- prescriptions: an active/past treatment for a specific child ---
@@ -197,10 +301,13 @@ const DB = (() => {
          doseLog      — [{at: timestamp, dose: number}] one entry per dose given
     */
     addPrescription(rx) {
+      const _rxt = Date.now();
       const full = migrateRx({
         id: uid(),
-        status: 'active', // 'active' | 'completed' | 'cancelled'
-        startAt: Date.now(),
+        status: 'active',
+        startAt: _rxt,
+        createdAt: _rxt,
+        updatedAt: _rxt,
         endAt: null,
         reminder: { on: true },
         ...rx,
@@ -211,12 +318,13 @@ const DB = (() => {
     },
     updatePrescription(id, patch) {
       const p = state.prescriptions.find((x) => x.id === id);
-      if (p) Object.assign(p, patch);
+      if (p) { Object.assign(p, patch); p.updatedAt = Date.now(); }
       save(state);
       return p || null;
     },
     deletePrescription(id) {
-      state.prescriptions = state.prescriptions.filter((x) => x.id !== id);
+      const p = state.prescriptions.find((x) => x.id === id);
+      if (p) { p.deletedAt = Date.now(); p.updatedAt = Date.now(); }
       save(state);
     },
 
@@ -225,7 +333,8 @@ const DB = (() => {
     logCourseDose(rxId, doseAmount) {
       const p = state.prescriptions.find((x) => x.id === rxId);
       if (!p || !p.isCourse) return null;
-      p.doseLog.push({ at: Date.now(), dose: doseAmount });
+      p.doseLog.push({ id: uid(), at: Date.now(), dose: doseAmount });
+      p.updatedAt = Date.now();
       // auto-complete: if total doses reached, mark as completed
       const totalDoses = (p.totalDays || 0) * (p.dosesPerDay || 1);
       if (totalDoses > 0 && p.doseLog.length >= totalDoses) {
@@ -246,10 +355,10 @@ const DB = (() => {
     },
 
     activePrescriptionsFor(childId) {
-      return state.prescriptions.filter((p) => p.childId === childId && p.status === 'active');
+      return state.prescriptions.filter((p) => !p.deletedAt && p.childId === childId && p.status === 'active');
     },
     lastMedFor(childId) {
-      return state.medEntries.filter((e) => e.childId === childId && !e.isSupp).sort((a, b) => b.time - a.time)[0] || null;
+      return state.medEntries.filter((e) => !e.deletedAt && e.childId === childId && !e.isSupp).sort((a, b) => b.time - a.time)[0] || null;
     },
     lastTempFor(childId) {
       return state.tempEntries.filter((e) => e.childId === childId).sort((a, b) => b.time - a.time)[0] || null;
@@ -262,7 +371,7 @@ const DB = (() => {
       const meds = state.medEntries.map((e) => ({ ...e, kind: 'med' }));
       const temps = state.tempEntries.map((e) => ({ ...e, kind: 'temp' }));
       return meds.concat(temps)
-        .filter((e) => !childId || e.childId === childId)
+        .filter((e) => !e.deletedAt && (!childId || e.childId === childId))
         .sort((a, b) => b.time - a.time);
     },
     /* night-window entries (22:00-06:00) in the last N hours, per child */
@@ -277,3 +386,4 @@ const DB = (() => {
     },
   };
 })();
+
