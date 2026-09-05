@@ -1,7 +1,16 @@
 /* Simple localStorage-backed data layer.
    Swap-in point for IndexedDB later without touching app.js's public API. */
 const DB = (() => {
-  const KEY = 'madhom_v1';
+  // BUGFIX (account-switch data loss): storage used to be one shared key for every
+  // identity on the device, so logging in as a second user overwrote the first
+  // user's local data on their next save. Now each uid gets its own key.
+  // KEY_PREFIX with no suffix is the LEGACY pre-fix key — kept around only as a
+  // one-time migration source for existing installs, never written to on purpose.
+  const KEY_PREFIX = 'madhom_v1';
+
+  function _keyFor(ownerUid) {
+    return ownerUid ? `${KEY_PREFIX}_${ownerUid}` : KEY_PREFIX;
+  }
 
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 
@@ -32,19 +41,17 @@ const DB = (() => {
     };
   }
 
-  function load() {
+  /* Read + parse + migrate whatever is under a specific storage key.
+     Returns null if the key is empty or unreadable/corrupted (caller decides what to do —
+     this function never writes anything, so it's safe to call speculatively). */
+  function _loadKey(key) {
     let raw;
     try {
-      raw = localStorage.getItem(KEY);
+      raw = localStorage.getItem(key);
     } catch (e) {
-      raw = null; // localStorage itself inaccessible (very rare) — fall through to a fresh in-memory seed
+      return null; // localStorage itself inaccessible (very rare)
     }
-
-    if (!raw) {
-      const s = seed();
-      try { save(s); } catch (e) { /* nothing persisted yet; state still works in-memory for this session */ }
-      return s;
-    }
+    if (!raw) return null;
 
     try {
       // merge: any top-level field added to seed() since this user last saved (e.g. `prescriptions`)
@@ -67,19 +74,25 @@ const DB = (() => {
       if (!merged.settings.updatedAt) merged.settings.updatedAt = Date.now();
       return merged;
     } catch (e) {
-      // JSON is corrupted — back up the raw string BEFORE we overwrite it with a fresh seed,
-      // so a corrupted save can still be recovered manually later (data isn't just gone silently)
-      try { localStorage.setItem(KEY + '_corrupted_' + Date.now(), raw); } catch (e2) { /* best-effort backup only */ }
-      const s = seed();
-      try {
-        save(s);
-      } catch (e3) {
-        // even a brand-new empty seed can't be saved (e.g. storage quota already full) — nothing
-        // the user does from here on will persist, so this has to be loud, not a silent no-op
-        alert('שגיאה קריטית: לא ניתן לשמור נתונים במכשיר זה. יש לפנות מקום אחסון ולרענן את הדף.');
-      }
-      return s;
+      // JSON is corrupted — back up the raw string so it can still be recovered manually later
+      // (data isn't just gone silently). Caller seeds fresh for this key.
+      try { localStorage.setItem(key + '_corrupted_' + Date.now(), raw); } catch (e2) { /* best-effort backup only */ }
+      return null;
     }
+  }
+
+  /* Initial synchronous load at module-eval time, BEFORE any uid is known.
+     Reads the legacy shared key exactly as before this fix — purely so the UI has
+     something to render before Firebase auth resolves. Superseded immediately once
+     setAuth()/clearAuth() run (see app.js auth routing, unchanged by this fix). */
+  function load() {
+    const existing = _loadKey(KEY_PREFIX);
+    if (existing) return existing;
+    const s = seed();
+    try { localStorage.setItem(KEY_PREFIX, JSON.stringify(s)); } catch (e) {
+      alert('שגיאה קריטית: לא ניתן לשמור נתונים במכשיר זה. יש לפנות מקום אחסון ולרענן את הדף.');
+    }
+    return s;
   }
 
   /* C1: migrate medicines array — strings → {id, name, createdAt, updatedAt} objects.
@@ -151,7 +164,9 @@ const DB = (() => {
     // exceeded, Safari Private Browsing), the error propagates up to whoever called the DB write
     // method (addMedEntry, updateChild, etc.), which app.js catches to show a real failure toast
     // instead of silently claiming success. See app.js saveMed/saveTemp/saveKid/etc.
-    localStorage.setItem(KEY, JSON.stringify(state));
+    // BUGFIX: key is derived from the state's OWN auth binding, never a shared constant —
+    // this is what makes it impossible for one user's save() to land in another user's slot.
+    localStorage.setItem(_keyFor(state.auth?.uid || null), JSON.stringify(state));
   }
 
   let state = load();
@@ -179,27 +194,47 @@ const DB = (() => {
     ownerFamilyId: () => state.auth?.familyId || null,
 
     /* Bind local state to a Firebase user after login/signup.
-       Persists immediately so it survives refresh/reopen. */
-    setAuth({ uid, familyId }) {
-      state.auth = { uid, familyId };
-      save(state);
+       BUGFIX (account-switch data loss): this used to just mutate state.auth in place and
+       save() to the one shared key — so a second user's setAuth() overwrote the first
+       user's data on disk. Now it resolves this uid's OWN storage key:
+         1. that uid's own key already exists → load it (their real, current data).
+         2. it doesn't exist yet, but the legacy pre-fix shared key's own auth.uid
+            PROVABLY matches this exact uid → treat it as a one-time recovery of their
+            data (never someone else's — the match check is what makes this safe).
+         3. otherwise → brand-new blank state for this uid.
+       Always writes to the new per-uid key FIRST; only removes the legacy key
+       afterward, and only when it was confirmed to be this same user's data. */
+    setAuth({ uid: newUid, familyId }) {
+      let target = _loadKey(_keyFor(newUid));
+
+      if (!target) {
+        const legacy = _loadKey(KEY_PREFIX);
+        target = (legacy && legacy.auth && legacy.auth.uid === newUid) ? legacy : seed();
+      }
+
+      target.auth = { uid: newUid, familyId: familyId || null };
+      state = target;
+      save(state); // writes to the per-uid key — the legacy key is untouched by this line
+
+      const legacyNow = _loadKey(KEY_PREFIX);
+      if (legacyNow && legacyNow.auth && legacyNow.auth.uid === newUid) {
+        try { localStorage.removeItem(KEY_PREFIX); } catch (e) { /* best-effort cleanup only */ }
+      }
     },
 
     /* Called on logout — zero out the auth binding and reset in-memory state
        so the next user sees a clean slate.
-       Does NOT wipe localStorage data: data stays on disk in case this user
-       logs back in later and a future Stage C sync wants to upload it.
-       In-memory state is replaced with a seed so the UI shows nothing. */
+       Does NOT wipe localStorage data: this user's real data already lives safely
+       under THEIR OWN key (madhom_v1_<uid> — every save() during their session wrote
+       there, per the save() fix above), completely separate from any other uid's key.
+       So there is nothing here that skipping save() needs to "protect" — blanking
+       the in-memory state is enough; no other user's key is ever touched by this. */
     clearAuth() {
       // Blank the in-memory state — UI renders empty immediately
       state = seed();
-      // auth stays null in the new seed — no uid binding
-      // We do NOT call save() here intentionally:
-      // the old data remains in localStorage under the old uid binding.
-      // A future login will check ownerUid() against the incoming uid and
-      // decide whether to reuse or discard it (Stage C concern).
-      // For now: correct behaviour is "new user sees nothing" which is
-      // guaranteed by the in-memory wipe above without touching disk.
+      // auth stays null in the new seed — no uid binding.
+      // We do NOT call save() here: there is nothing to persist for "no user",
+      // and doing so would needlessly write to the legacy/anonymous key.
     },
 
     // ── End Stage B ───────────────────────────────────────────────────────────
