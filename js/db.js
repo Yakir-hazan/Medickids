@@ -345,7 +345,7 @@ const DB = (() => {
         target = (legacy && legacy.auth && legacy.auth.uid === newUid) ? legacy : seed();
       }
 
-      target.auth = { uid: newUid, familyId: familyId || null };
+      target.auth = { uid: newUid, familyId: familyId !== undefined ? (familyId || null) : (target.auth?.familyId || null) }; // BUGFIX: if no familyId passed, preserve whatever the per-uid key already had — never inherit a familyId from another user's state
       state = target;
       save(state); // writes to the per-uid key — the legacy key is untouched by this line
 
@@ -603,4 +603,5 @@ const DB = (() => {
     },
   };
 })();
+
 
