@@ -30,6 +30,8 @@ const FIREBASE_CONFIG = {
 // ── Bootstrap Firebase (module-compatible via compat SDK loaded in index.html) ─
 let _auth      = null;
 let _firestore = null;
+let _persistenceReady = null; // Promise, settles once enablePersistence() has been attempted
+let _persistenceEnabled = false;
 
 function _initFirebase() {
   if (_auth) return; // already initialised
@@ -42,6 +44,18 @@ function _initFirebase() {
   }
   _auth      = firebase.auth();
   _firestore = firebase.firestore();
+
+  // Real Family Sync: must be called before ANY other Firestore read/write in this
+  // session, or it has no effect. Failure is expected and handled, not fatal — e.g.
+  // multiple tabs open ('failed-precondition') or an unsupported browser/private-mode
+  // context ('unimplemented', notably some Safari configurations). Either way the app
+  // continues working online, just without the offline cache.
+  _persistenceReady = _firestore.enablePersistence().then(() => {
+    _persistenceEnabled = true;
+  }).catch((err) => {
+    _persistenceEnabled = false;
+    console.warn('[Auth] Firestore persistence not enabled:', err.code || err.message);
+  });
 }
 
 // ── Internal helpers ──────────────────────────────────────────────────────────
@@ -114,11 +128,22 @@ const Auth = (() => {
   }
 
   /* Subscribe to auth state changes.
-     cb(user) — user is Firebase user object or null. */
+     cb(user) — user is Firebase user object or null.
+     Deliberately waits for the enablePersistence() attempt (success or failure) to
+     settle before attaching the listener, so any Firestore call made from inside cb
+     (e.g. app.js's init()) is guaranteed to run after persistence was resolved one
+     way or the other — never racing it. */
   function onAuthReady(cb) {
     _initFirebase();
     if (!_auth) { cb(null); return; }
-    _auth.onAuthStateChanged(cb);
+    const attach = () => _auth.onAuthStateChanged(cb);
+    if (_persistenceReady) _persistenceReady.finally(attach);
+    else attach();
+  }
+
+  /* Whether Firestore offline persistence is active. null = not yet determined. */
+  function isPersistenceEnabled() {
+    return _persistenceEnabled;
   }
 
   /* Returns the currently signed-in Firebase user, or null. */
@@ -132,6 +157,6 @@ const Auth = (() => {
     return _auth?.currentUser?.uid || null;
   }
 
-  return { signup, login, logout, onAuthReady, currentUser, currentUid };
+  return { signup, login, logout, onAuthReady, currentUser, currentUid, isPersistenceEnabled };
 })();
 
