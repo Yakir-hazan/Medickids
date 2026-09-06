@@ -3227,6 +3227,10 @@ const App = (() => {
       const localOwner = DB.ownerUid();
       if (localOwner && localOwner !== user.uid) {
         DB.clearAuth();
+        // BUGFIX: after clearing a different user's state, load THIS user's per-uid key.
+        // familyId intentionally omitted — setAuth() will preserve whatever familyId is
+        // already stored under this uid's own key, never inheriting one from the previous user.
+        DB.setAuth({ uid: user.uid });
       } else if (!localOwner) {
         DB.setAuth({ uid: user.uid, familyId: cachedFamilyId || null });
       }
@@ -3329,6 +3333,7 @@ const App = (() => {
 })();
 
 document.addEventListener('DOMContentLoaded', App.init);
+
 
 
 
