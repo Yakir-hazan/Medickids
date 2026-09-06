@@ -2694,6 +2694,7 @@ const App = (() => {
       'auth/weak-password':           'הסיסמה חייבת להכיל לפחות 6 תווים',
       'auth/user-not-found':          'לא נמצא משתמש עם אימייל זה',
       'auth/wrong-password':          'סיסמה שגויה',
+      'auth/invalid-credential':      'אימייל או סיסמה שגויים',
       'auth/too-many-requests':       'יותר מדי ניסיונות — נסה שוב עוד מספר דקות',
       'auth/network-request-failed':  'בעיית חיבור — בדוק אינטרנט ונסה שוב',
     };
