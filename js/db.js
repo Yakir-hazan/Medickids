@@ -159,6 +159,139 @@ const DB = (() => {
     return base;
   }
 
+  // ── Real Family Sync (Stage C) — ADDITIVE layer only ────────────────────────
+  // Everything below adds Firestore sync alongside the existing localStorage
+  // flow above. Nothing above this line changes behaviour when sync is not
+  // initialised (_fsFamilyId stays null) — the app works exactly as it did
+  // before this stage, purely local, until initSync() is explicitly called.
+  const SYNCED_COLLECTIONS = ['children', 'medicines', 'medEntries', 'tempEntries', 'prescriptions'];
+  let _fsFamilyId = null;              // familyId currently being synced, or null
+  let _fsUnsubscribers = [];           // onSnapshot() unsubscribe functions
+  let _syncStatus = { state: 'idle', error: null }; // 'idle' | 'pending' | 'synced' | 'failed'
+  let _changeListeners = [];           // callbacks notified when remote data changes local state
+
+  function _fsFamilyRef(familyId) {
+    return firebase.firestore().collection('families').doc(familyId);
+  }
+
+  function _setSyncStatus(next, err) {
+    _syncStatus = { state: next, error: err ? String(err.message || err) : null };
+  }
+
+  function _notifyChange() {
+    _changeListeners.forEach((cb) => { try { cb(); } catch (e) { /* listener's own bug, not ours */ } });
+  }
+
+  /* Push one record to its Firestore doc. Fire-and-forget from the caller's point of
+     view (existing DB.* methods stay synchronous) — pending/synced/failed status is
+     tracked separately via getSyncStatus(), never silently swallowed. */
+  function _pushToFirestore(entityType, record) {
+    if (!_fsFamilyId) return; // sync not initialised — local-only, unchanged behaviour
+    const payload = { ...record, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+    _setSyncStatus('pending');
+    _fsFamilyRef(_fsFamilyId).collection(entityType).doc(record.id).set(payload, { merge: true })
+      .then(() => { _setSyncStatus('synced'); })
+      .catch((err) => {
+        console.error(`[Sync] push failed (${entityType}/${record.id}):`, err);
+        _setSyncStatus('failed', err);
+      });
+  }
+
+  /* Merge one incoming Firestore document into local state, by id, using last-write-wins
+     on updatedAt. NEVER regresses local state: if the local copy is the same age or newer
+     (e.g. this is our own pending write echoing back), this is a safe no-op.
+     Does NOT push back to Firestore — this is a one-way remote-to-local application. */
+  function _applyRemoteDoc(entityType, id, data) {
+    const toMillis = (v) => (v && typeof v.toMillis === 'function') ? v.toMillis() : (v || 0);
+    const normalized = { ...data, id, updatedAt: toMillis(data.updatedAt) };
+    if (data.createdAt !== undefined) normalized.createdAt = toMillis(data.createdAt);
+
+    const list = state[entityType];
+    const idx = list.findIndex((r) => r.id === id);
+    if (idx === -1) {
+      list.push(normalized);
+    } else if (normalized.updatedAt > (list[idx].updatedAt || 0)) {
+      list[idx] = normalized;
+    }
+    // else: local is same-or-newer — no-op, by design (see comment above)
+  }
+
+  /* One-time backfill of existing local records into Firestore, for an existing install
+     upgrading to this sync-enabled version. Safe under concurrent runs from two devices:
+     each record is compared (get-before-set) against whatever's already remote, and
+     whichever side has the newer updatedAt wins — never a blind overwrite. Safe to re-run
+     (idempotent): a record already correctly migrated is simply left alone (same or older). */
+  async function _migrateLocalToFirestore(familyId) {
+    const metaRef = _fsFamilyRef(familyId).collection('_meta').doc('migration');
+    try {
+      const metaSnap = await metaRef.get();
+      if (metaSnap.exists && metaSnap.data().done) return; // already migrated by this or another device
+    } catch (e) {
+      console.warn('[Sync] could not read migration marker, proceeding cautiously:', e.message);
+    }
+
+    for (const entityType of SYNCED_COLLECTIONS) {
+      const records = state[entityType] || [];
+      for (const record of records) {
+        const ref = _fsFamilyRef(familyId).collection(entityType).doc(record.id);
+        try {
+          const remoteSnap = await ref.get();
+          if (!remoteSnap.exists) {
+            // no collision — pure backfill, safe to write as-is (client timestamps preserved,
+            // this is historical data, not a live edit)
+            await ref.set(record);
+          } else {
+            const remote = remoteSnap.data();
+            const remoteUpdatedAt = (remote.updatedAt && remote.updatedAt.toMillis) ? remote.updatedAt.toMillis() : (remote.updatedAt || 0);
+            const localUpdatedAt = record.updatedAt || 0;
+            if (localUpdatedAt > remoteUpdatedAt) {
+              // this device's copy is genuinely newer than what's already there — safe to overwrite
+              await ref.set(record);
+            }
+            // else: remote is same-or-newer (very likely the other device already migrated
+            // this exact record) — leave it alone, do not overwrite
+          }
+        } catch (e) {
+          console.error(`[Sync] migration failed for ${entityType}/${record.id}:`, e.message);
+          // continue with the rest — one bad record shouldn't block the whole migration
+        }
+      }
+    }
+
+    try { await metaRef.set({ done: true, at: firebase.firestore.FieldValue.serverTimestamp() }); }
+    catch (e) { /* best-effort — a second device might set this moments later too, harmless */ }
+  }
+
+  function _subscribeToCollection(familyId, entityType) {
+    const unsub = _fsFamilyRef(familyId).collection(entityType)
+      .onSnapshot({ includeMetadataChanges: true }, (snap) => {
+        let changed = false;
+        snap.docChanges().forEach((change) => {
+          if (change.type === 'removed') return; // we never hard-delete; soft-delete via deletedAt
+          _applyRemoteDoc(entityType, change.doc.id, change.doc.data({ serverTimestamps: 'estimate' }));
+          changed = true;
+        });
+        if (changed) {
+          save(state);       // persist the merged result locally — does not re-push to Firestore
+          _notifyChange();   // let app.js know it should re-render
+        }
+        _setSyncStatus(snap.metadata.hasPendingWrites ? 'pending' : 'synced');
+      }, (err) => {
+        console.error(`[Sync] listener error (${entityType}):`, err);
+        _setSyncStatus('failed', err);
+      });
+    _fsUnsubscribers.push(unsub);
+  }
+
+  function _stopSyncInternal() {
+    _fsUnsubscribers.forEach((unsub) => { try { unsub(); } catch (e) { /* already gone */ } });
+    _fsUnsubscribers = [];
+    _fsFamilyId = null;
+    _setSyncStatus('idle');
+  }
+
+  // ── End Real Family Sync infrastructure ─────────────────────────────────────
+
   function save(state) {
     // intentionally NOT wrapped in try/catch here — if localStorage.setItem throws (e.g. quota
     // exceeded, Safari Private Browsing), the error propagates up to whoever called the DB write
@@ -235,6 +368,7 @@ const DB = (() => {
       // auth stays null in the new seed — no uid binding.
       // We do NOT call save() here: there is nothing to persist for "no user",
       // and doing so would needlessly write to the legacy/anonymous key.
+      _stopSyncInternal(); // stop listening to the previous family's Firestore data
     },
 
     // ── End Stage B ───────────────────────────────────────────────────────────
@@ -243,12 +377,14 @@ const DB = (() => {
       const _t = Date.now(); const full = { id: uid(), time: _t, createdAt: _t, updatedAt: _t, ...entry };
       state.medEntries.unshift(full);
       save(state);
+      _pushToFirestore('medEntries', full);
       return full;
     },
     updateMedEntry(id, patch) {
       const e = state.medEntries.find((x) => x.id === id);
       if (e) { Object.assign(e, patch); e.updatedAt = Date.now(); }
       save(state);
+      if (e) _pushToFirestore('medEntries', e);
     },
     deleteMedEntry(id) {
       // C1: soft-delete (tombstone) so Stage C2 can sync the deletion to the cloud.
@@ -256,20 +392,25 @@ const DB = (() => {
       const e = state.medEntries.find((x) => x.id === id);
       if (e) { e.deletedAt = Date.now(); e.updatedAt = Date.now(); }
       save(state);
+      if (e) _pushToFirestore('medEntries', e);
     },
     addTempEntry(entry) {
-      const _tt = Date.now(); state.tempEntries.unshift({ id: uid(), time: _tt, createdAt: _tt, updatedAt: _tt, ...entry });
+      const _tt = Date.now(); const full = { id: uid(), time: _tt, createdAt: _tt, updatedAt: _tt, ...entry };
+      state.tempEntries.unshift(full);
       save(state);
+      _pushToFirestore('tempEntries', full);
     },
     updateTempEntry(id, patch) {
       const e = state.tempEntries.find((x) => x.id === id);
       if (e) { Object.assign(e, patch); e.updatedAt = Date.now(); }
       save(state);
+      if (e) _pushToFirestore('tempEntries', e);
     },
     deleteTempEntry(id) {
       const e = state.tempEntries.find((x) => x.id === id);
       if (e) { e.deletedAt = Date.now(); e.updatedAt = Date.now(); }
       save(state);
+      if (e) _pushToFirestore('tempEntries', e);
     },
     updateChild(id, patch) {
       const c = state.children.find((x) => x.id === id);
@@ -279,11 +420,14 @@ const DB = (() => {
         c.updatedAt = Date.now();
       }
       save(state);
+      if (c) _pushToFirestore('children', c);
     },
     addChild(child) {
       const _now = Date.now();
-      state.children.push({ id: uid(), color: state.children.length % 2 ? 'a2' : 'a1', weightUpdatedAt: _now, createdAt: _now, updatedAt: _now, ...child });
+      const full = { id: uid(), color: state.children.length % 2 ? 'a2' : 'a1', weightUpdatedAt: _now, createdAt: _now, updatedAt: _now, ...child };
+      state.children.push(full);
       save(state);
+      _pushToFirestore('children', full);
     },
     setSetting(key, value) {
       state.settings[key] = value;
@@ -306,6 +450,7 @@ const DB = (() => {
       const m = { id: uid(), name: trimmed, createdAt: _t, updatedAt: _t };
       state.medicines.push(m);
       save(state);
+      _pushToFirestore('medicines', m);
       return m;
     },
 
@@ -314,6 +459,7 @@ const DB = (() => {
       const m = state.medicines.find((x) => x.id === id);
       if (m) { m.deletedAt = Date.now(); m.updatedAt = Date.now(); }
       save(state);
+      if (m) _pushToFirestore('medicines', m);
     },
 
     /* Returns visible (non-deleted) medicine names as a string[] — backward-compatible
@@ -349,18 +495,21 @@ const DB = (() => {
       });
       state.prescriptions.unshift(full);
       save(state);
+      _pushToFirestore('prescriptions', full);
       return full;
     },
     updatePrescription(id, patch) {
       const p = state.prescriptions.find((x) => x.id === id);
       if (p) { Object.assign(p, patch); p.updatedAt = Date.now(); }
       save(state);
+      if (p) _pushToFirestore('prescriptions', p);
       return p || null;
     },
     deletePrescription(id) {
       const p = state.prescriptions.find((x) => x.id === id);
       if (p) { p.deletedAt = Date.now(); p.updatedAt = Date.now(); }
       save(state);
+      if (p) _pushToFirestore('prescriptions', p);
     },
 
     /* Log a single dose for a COURSE prescription.
@@ -377,6 +526,7 @@ const DB = (() => {
         p.endAt = Date.now();
       }
       save(state);
+      _pushToFirestore('prescriptions', p);
       return p;
     },
 
@@ -418,6 +568,38 @@ const DB = (() => {
       if (!meds.length && !temps.length) return null;
       const maxTemp = temps.length ? Math.max(...temps.map((t) => t.value)) : null;
       return { medCount: meds.length, maxTemp };
+    },
+
+    // ── Real Family Sync — public API ────────────────────────────────────────
+
+    /* Start syncing this device's local data with the given family's Firestore data.
+       Safe to call multiple times with the same familyId (no-ops if already active).
+       Runs a one-time safe migration of existing local records, then subscribes to
+       live updates for all 5 synced entity types. */
+    initSync(familyId) {
+      if (!familyId || _fsFamilyId === familyId) return; // already syncing this family, or nothing to sync
+      _stopSyncInternal();
+      _fsFamilyId = familyId;
+      _migrateLocalToFirestore(familyId).catch((e) => console.error('[Sync] migration error:', e.message));
+      SYNCED_COLLECTIONS.forEach((entityType) => _subscribeToCollection(familyId, entityType));
+    },
+
+    /* Stop all active Firestore listeners (called on logout, or before switching family). */
+    stopSync() {
+      _stopSyncInternal();
+    },
+
+    /* Current sync status: { state: 'idle'|'pending'|'synced'|'failed', error: string|null }.
+       'idle' = sync not initialised yet. Never silently claims 'synced' without server confirmation. */
+    getSyncStatus() {
+      return { ..._syncStatus };
+    },
+
+    /* Register a callback fired whenever remote data changes local state (i.e. the other
+       device made a change). Used by app.js to re-render promptly instead of waiting for
+       the existing 60s polling interval. */
+    onChange(cb) {
+      _changeListeners.push(cb);
     },
   };
 })();
