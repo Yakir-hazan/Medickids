@@ -3181,6 +3181,10 @@ const App = (() => {
     setInterval(renderDashboard, 60000); // keep "elapsed" times fresh
     setTimeout(_healSupplementReminders, 2000); // heal supplement pushes after app settles
 
+    // Real Family Sync: re-render promptly when the other device's changes arrive,
+    // instead of waiting for the 60s interval above.
+    DB.onChange(renderDashboard);
+
     // ── Auth-first routing ────────────────────────────────────────────────
     // onAuthStateChanged fires once on load (user|null), then on every change.
     // Guard prevents double-routing (Firebase fires twice: cached + server-verified).
@@ -3188,6 +3192,7 @@ const App = (() => {
     Auth.onAuthReady((user) => {
       if (!user) {
         _authRouted = false; // reset so re-login works
+        DB.stopSync(); // Real Family Sync — no signed-in uid to authorize listeners for
         if (splashAnimId) { cancelAnimationFrame(splashAnimId); splashAnimId = null; }
         goto('screen-auth');
         return;
@@ -3211,6 +3216,7 @@ const App = (() => {
               _renderAccountInfo(user.email, freshFamilyId);
               if (freshFamilyId && freshFamilyId !== cachedFamilyId) {
                 DB.setAuth({ uid: user.uid, familyId: freshFamilyId });
+                DB.initSync(freshFamilyId);
               }
             }
           }).catch(() => {});
@@ -3223,6 +3229,13 @@ const App = (() => {
         DB.clearAuth();
       } else if (!localOwner) {
         DB.setAuth({ uid: user.uid, familyId: cachedFamilyId || null });
+      }
+
+      // Real Family Sync: start once we know the local state genuinely belongs to this
+      // signed-in uid (covers a fresh setAuth() above, or an already-matching continuing
+      // session where neither branch above fired).
+      if (DB.ownerUid() === user.uid && DB.ownerFamilyId()) {
+        DB.initSync(DB.ownerFamilyId());
       }
 
       _routeAfterAuth();
