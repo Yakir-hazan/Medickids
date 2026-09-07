@@ -109,7 +109,11 @@ const Auth = (() => {
     _initFirebase();
     const cred = await _auth.createUserWithEmailAndPassword(email, password);
     const familyId = await _bootstrapUserDocs(cred.user.uid, email);
-    return { user: cred.user, familyId };
+    // Send verification email — failure is non-fatal (rate-limit / offline).
+    try { await cred.user.sendEmailVerification(); } catch (e) {
+      console.warn('[Auth] sendEmailVerification failed:', e.code || e.message);
+    }
+    return { user: cred.user, familyId, emailVerified: false };
   }
 
   /* Login — Firebase only; no Firestore writes.
@@ -119,6 +123,31 @@ const Auth = (() => {
     const cred = await _auth.signInWithEmailAndPassword(email, password);
     const familyId = await _fetchFamilyId(cred.user.uid);
     return { user: cred.user, familyId };
+  }
+
+  /* Resend verification email to the currently signed-in (unverified) user.
+     Throws on rate-limit so caller can show a friendly message. */
+  async function resendVerification() {
+    _initFirebase();
+    const user = _auth.currentUser;
+    if (!user) throw new Error('no-user');
+    await user.sendEmailVerification();
+  }
+
+  /* Reload the current user from Firebase to get the latest emailVerified flag. */
+  async function reloadUser() {
+    _initFirebase();
+    const user = _auth.currentUser;
+    if (!user) return null;
+    await user.reload();
+    return _auth.currentUser;
+  }
+
+  /* Send a password-reset email.
+     Throws a Firebase error on failure — caller maps the code to Hebrew. */
+  async function forgotPassword(email) {
+    _initFirebase();
+    await _auth.sendPasswordResetEmail(email);
   }
 
   /* Logout */
@@ -157,6 +186,6 @@ const Auth = (() => {
     return _auth?.currentUser?.uid || null;
   }
 
-  return { signup, login, logout, onAuthReady, currentUser, currentUid, isPersistenceEnabled };
+  return { signup, login, logout, onAuthReady, currentUser, currentUid, isPersistenceEnabled, resendVerification, reloadUser, forgotPassword };
 })();
 
