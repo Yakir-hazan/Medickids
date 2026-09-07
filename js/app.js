@@ -2673,7 +2673,54 @@ const App = (() => {
     document.getElementById('auth-panel-signup').style.display = which === 'signup' ? '' : 'none';
     document.getElementById('auth-tab-login').classList.toggle('active',  which === 'login');
     document.getElementById('auth-tab-signup').classList.toggle('active', which === 'signup');
+    _authHideAllSpecialPanels();
     _authClearError();
+  }
+
+  /* Hide verify / forgot panels and restore tab UI */
+  function _authHideAllSpecialPanels() {
+    ['auth-panel-verify','auth-panel-forgot'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    });
+    const tabs = document.querySelector('.auth-tabs');
+    if (tabs) tabs.style.display = '';
+  }
+
+  /* Show the email-verification waiting panel */
+  function _authShowVerifyPanel(email) {
+    _authHideAllSpecialPanels();
+    document.getElementById('auth-panel-login').style.display  = 'none';
+    document.getElementById('auth-panel-signup').style.display = 'none';
+    const tabs = document.querySelector('.auth-tabs');
+    if (tabs) tabs.style.display = 'none';
+    const emailEl = document.getElementById('auth-verify-email');
+    if (emailEl) emailEl.textContent = email || '';
+    document.getElementById('auth-panel-verify').style.display = '';
+    _authClearError();
+  }
+
+  /* Show the forgot-password panel */
+  function authShowForgot() {
+    _authHideAllSpecialPanels();
+    document.getElementById('auth-panel-login').style.display  = 'none';
+    document.getElementById('auth-panel-signup').style.display = 'none';
+    const tabs = document.querySelector('.auth-tabs');
+    if (tabs) tabs.style.display = 'none';
+    document.getElementById('auth-panel-forgot').style.display = '';
+    // Pre-fill email from login field if available
+    const loginEmail = document.getElementById('auth-login-email')?.value?.trim();
+    if (loginEmail) {
+      const forgotEmail = document.getElementById('auth-forgot-email');
+      if (forgotEmail) forgotEmail.value = loginEmail;
+    }
+    _authClearError();
+  }
+
+  /* Return to login tab from any special panel */
+  function authBackToLogin() {
+    _authHideAllSpecialPanels();
+    authTab('login');
   }
 
   function _authShowError(msg) {
@@ -2683,6 +2730,19 @@ const App = (() => {
   }
   function _authClearError() {
     const el = document.getElementById('auth-error');
+    if (el) el.style.display = 'none';
+    _authClearSuccess();
+  }
+
+  function _authShowSuccess(msg) {
+    const el = document.getElementById('auth-success');
+    if (!el) return;
+    el.textContent = msg;
+    el.style.display = '';
+  }
+
+  function _authClearSuccess() {
+    const el = document.getElementById('auth-success');
     if (el) el.style.display = 'none';
   }
 
@@ -2707,7 +2767,12 @@ const App = (() => {
     const password = document.getElementById('auth-login-password').value;
     if (!email || !password) { _authShowError('יש למלא אימייל וסיסמה'); return; }
     try {
-      const { familyId } = await Auth.login(email, password);
+      const { user, familyId } = await Auth.login(email, password);
+      if (!user.emailVerified) {
+        // Block unverified users — show verify panel, do NOT touch DB or Family Sync
+        _authShowVerifyPanel(email);
+        return;
+      }
       _afterAuthSuccess(email, familyId);
     } catch (e) {
       _authShowError(_authErrorMsg(e.code));
@@ -2720,10 +2785,69 @@ const App = (() => {
     const password = document.getElementById('auth-signup-password').value;
     if (!email || !password) { _authShowError('יש למלא אימייל וסיסמה'); return; }
     try {
-      const { familyId } = await Auth.signup(email, password);
-      _afterAuthSuccess(email, familyId);
+      await Auth.signup(email, password);
+      // UID + familyId created in Firestore, but do NOT enter the app yet.
+      // The user must verify their email first. DB.setAuth / Family Sync: not called here.
+      _authShowVerifyPanel(email);
     } catch (e) {
       _authShowError(_authErrorMsg(e.code));
+    }
+  }
+
+  /* "כבר אימתתי — בדוק שוב": reload user from Firebase, check emailVerified */
+  async function authCheckVerified() {
+    _authClearError();
+    try {
+      const user = await Auth.reloadUser();
+      if (!user) { _authShowError('אין משתמש מחובר'); return; }
+      if (user.emailVerified) {
+        // Now verified — fetch familyId and enter the app
+        const familyId = await Auth.login._fetchFamilyId?.(user.uid) || null;
+        // Use internal fetch via a fresh login isn't possible here — re-use onAuthReady flow
+        // by letting onAuthReady fire after reload (it won't re-fire automatically).
+        // Simplest safe approach: call _afterAuthSuccess with the user's email + familyId from Firestore.
+        const snap = await firebase.firestore().doc(`users/${user.uid}`).get();
+        const fid  = snap.exists ? snap.data().familyId : null;
+        _afterAuthSuccess(user.email, fid);
+      } else {
+        _authShowError('האימייל טרם אומת. בדוק את תיבת הדואר שלך ולחץ על הקישור.');
+      }
+    } catch (e) {
+      _authShowError('שגיאה בבדיקה — נסה שוב');
+    }
+  }
+
+  /* Resend verification email */
+  async function authResendVerification() {
+    _authClearError();
+    try {
+      await Auth.resendVerification();
+      _authShowSuccess('מייל אימות נשלח מחדש ✓ בדוק את תיבת הדואר שלך');
+    } catch (e) {
+      if (e.code === 'auth/too-many-requests') {
+        _authShowError('יותר מדי ניסיונות — המתן מספר דקות ונסה שוב');
+      } else {
+        _authShowError('שגיאה בשליחה — בדוק חיבור ונסה שוב');
+      }
+    }
+  }
+
+  /* Forgot password — send reset email */
+  async function authForgotPassword() {
+    _authClearError();
+    const email = document.getElementById('auth-forgot-email')?.value?.trim();
+    if (!email) { _authShowError('יש להזין כתובת אימייל'); return; }
+    try {
+      await Auth.forgotPassword(email);
+      _authShowSuccess('מייל לאיפוס סיסמה נשלח ✓ בדוק את תיבת הדואר שלך');
+    } catch (e) {
+      if (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-email') {
+        _authShowError('כתובת האימייל לא נמצאה במערכת');
+      } else if (e.code === 'auth/too-many-requests') {
+        _authShowError('יותר מדי ניסיונות — המתן מספר דקות');
+      } else {
+        _authShowError('שגיאה בשליחה — נסה שוב');
+      }
     }
   }
 
@@ -3202,6 +3326,14 @@ const App = (() => {
       if (_authRouted) return;
       _authRouted = true;
 
+      // Block unverified users — show verify panel, never touch DB or Family Sync.
+      if (!user.emailVerified) {
+        _authRouted = false; // allow re-entry once verified
+        _authShowVerifyPanel(user.email);
+        goto('screen-auth');
+        return;
+      }
+
       // Stage B — B4: fix the familyId race.
       // Route with whatever identity we have cached (instant, works offline).
       // Firestore fetch is async and updates UI+binding after routing — does NOT re-route.
@@ -3330,6 +3462,7 @@ const App = (() => {
     checkForUpdate,
     stub,
     authTab, authLogin, authSignup, authLogout,
+    authShowForgot, authBackToLogin, authCheckVerified, authResendVerification, authForgotPassword,
   };
 })();
 
