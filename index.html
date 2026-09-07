@@ -11,6 +11,15 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* Email verification & forgot-password panels */
+    .auth-verify-icon  { font-size: 2.5rem; text-align: center; margin: 8px 0 4px; }
+    .auth-verify-title { font-size: 1.1rem; font-weight: 700; color: #b94040; text-align: center; margin-bottom: 8px; }
+    .auth-verify-body  { font-size: 0.9rem; color: #555; text-align: center; line-height: 1.6; margin-bottom: 16px; }
+    .auth-btn.secondary { background: #f0f0f0; color: #333; border: 1px solid #ccc; }
+    .auth-btn.ghost     { background: transparent; color: #b94040; border: none; font-size: 0.88rem; margin-top: 4px; }
+    .auth-success { color: #2a7a2a; background: #eafaea; border: 1px solid #b2ddb2; border-radius: 8px; padding: 10px 14px; margin-top: 10px; font-size: 0.9rem; text-align: center; }
+  </style>
   <style id="dash-overrides">
     /* Remove global screen padding — dash header is self-contained */
     #screen-dash { padding-top: 0 !important; }
@@ -74,6 +83,7 @@
           <input class="auth-input" id="auth-login-email"    type="email"    placeholder="אימייל"  autocomplete="email" inputmode="email">
           <input class="auth-input" id="auth-login-password" type="password" placeholder="סיסמה"  autocomplete="current-password">
           <button class="auth-btn primary" onclick="App.authLogin()">כניסה</button>
+          <button class="auth-btn ghost" onclick="App.authShowForgot()">שכחתי סיסמה</button>
         </div>
 
         <!-- Signup form -->
@@ -83,7 +93,31 @@
           <button class="auth-btn primary" onclick="App.authSignup()">יצירת חשבון</button>
         </div>
 
+        <!-- Email verification panel — shown after signup or when login blocked -->
+        <div id="auth-panel-verify" style="display:none;">
+          <div class="auth-verify-icon">📧</div>
+          <div class="auth-verify-title">אמת את כתובת האימייל</div>
+          <div class="auth-verify-body">
+            נשלח מייל אימות לכתובת<br>
+            <strong id="auth-verify-email"></strong><br><br>
+            יש לפתוח את המייל וללחוץ על הקישור לאימות.
+          </div>
+          <button class="auth-btn primary" onclick="App.authCheckVerified()">✅ כבר אימתתי — בדוק שוב</button>
+          <button class="auth-btn secondary" onclick="App.authResendVerification()">📨 שלח מייל אימות שוב</button>
+          <button class="auth-btn ghost" onclick="App.authBackToLogin()">חזרה להתחברות</button>
+        </div>
+
+        <!-- Forgot password panel -->
+        <div id="auth-panel-forgot" style="display:none;">
+          <div class="auth-verify-title">איפוס סיסמה</div>
+          <div class="auth-verify-body">הזן את כתובת האימייל שלך ונשלח לך קישור לאיפוס הסיסמה.</div>
+          <input class="auth-input" id="auth-forgot-email" type="email" placeholder="אימייל" autocomplete="email" inputmode="email">
+          <button class="auth-btn primary" onclick="App.authForgotPassword()">שלח מייל איפוס</button>
+          <button class="auth-btn ghost" onclick="App.authBackToLogin()">חזרה להתחברות</button>
+        </div>
+
         <div id="auth-error" class="auth-error" style="display:none;"></div>
+        <div id="auth-success" class="auth-success" style="display:none;"></div>
       </div>
     </div>
 
