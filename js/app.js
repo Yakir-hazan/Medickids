@@ -310,6 +310,14 @@ const App = (() => {
 
   let heroState = { type: 'calm', childId: null }; // remembers what the hero card currently represents, for heroClick()
 
+  /* Tracks which (childId, productId) pairs were already queued for creation in this
+     session. Prevents a second renderDashboard() call — before the first addPrescription()
+     has flushed to state — from inserting a duplicate record.
+     This is a deterministic in-flight guard, not a timer: once a slot is claimed the Set
+     holds it for the lifetime of the page, so concurrent calls are safely deduplicated
+     regardless of timing. */
+  const _suppCreationInFlight = new Set();
+
   /* Auto-create supplement prescriptions for children in the eligible age range.
      Runs once on every renderDashboard — idempotent (won't duplicate). */
   function _ensureSupplementPrescriptions() {
@@ -346,7 +354,9 @@ const App = (() => {
         const wasCompleted = state.prescriptions.find(
           (p) => p.childId === c.id && p.productId === productId && p.status === 'completed'
         );
-        if (!exists && !wasCompleted) {
+        const inFlightKey = `${c.id}:${productId}`;
+        if (!exists && !wasCompleted && !_suppCreationInFlight.has(inFlightKey)) {
+          _suppCreationInFlight.add(inFlightKey); // claim the slot before addPrescription writes
           DB.addPrescription({
             childId: c.id,
             productId,
@@ -354,6 +364,8 @@ const App = (() => {
             isCourse: false,
             reminder: { on: true, time: '08:00' }, // on by default
           });
+          // Once state is updated, the next call will find `exists` and skip the Set check.
+          // The Set stays claimed for the page session as a belt-and-suspenders guard.
         }
       });
     });
@@ -2801,14 +2813,19 @@ const App = (() => {
       const user = await Auth.reloadUser();
       if (!user) { _authShowError('אין משתמש מחובר'); return; }
       if (user.emailVerified) {
-        // Now verified — fetch familyId and enter the app
-        const familyId = await Auth.login._fetchFamilyId?.(user.uid) || null;
-        // Use internal fetch via a fresh login isn't possible here — re-use onAuthReady flow
-        // by letting onAuthReady fire after reload (it won't re-fire automatically).
-        // Simplest safe approach: call _afterAuthSuccess with the user's email + familyId from Firestore.
-        const snap = await firebase.firestore().doc(`users/${user.uid}`).get();
-        const fid  = snap.exists ? snap.data().familyId : null;
-        _afterAuthSuccess(user.email, fid);
+        // Verified — fetch familyId from Firestore, bind DB, then let onAuthReady route.
+        // We do NOT call _afterAuthSuccess here to avoid a duplicate routing path.
+        // Instead: reset _authRouted so the next onAuthReady invocation routes normally,
+        // then trigger it manually since Firebase won't re-fire after user.reload().
+        try {
+          const snap = await firebase.firestore().doc(`users/${user.uid}`).get();
+          const fid  = snap.exists ? snap.data().familyId : null;
+          _afterAuthSuccess(user.email, fid); // DB binding only — no routing (see _afterAuthSuccess)
+        } catch (e) { /* non-fatal — onAuthReady will fix familyId asynchronously */ }
+        // Manually invoke the onAuthReady routing path since Firebase won't re-fire after reload().
+        _authRouted = false;
+        // Re-enter the routing flow directly — same code path as onAuthReady for a verified user.
+        _routeAfterAuth();
       } else {
         _authShowError('האימייל טרם אומת. בדוק את תיבת הדואר שלך ולחץ על הקישור.');
       }
@@ -2863,30 +2880,24 @@ const App = (() => {
 
   /* Called after successful login or signup */
   function _afterAuthSuccess(email, familyId) {
+    // DB-only: bind the authenticated user's identity to local state.
+    // NO routing here — onAuthReady is the single owner of routing after sign-in.
+    // This prevents _ensureSupplementPrescriptions() from running twice (once here
+    // via goto→renderDashboard, and once via onAuthReady→_routeAfterAuth→renderDashboard).
     _renderAccountInfo(email, familyId);
 
-    // Stage B — B1/B3: bind local state to this user
     const incomingUid = Auth.currentUid();
     const localOwner  = DB.ownerUid();
 
     if (localOwner && localOwner !== incomingUid) {
-      // Different user — wipe in-memory state so this user sees nothing of the previous one.
-      // Disk data is left intact; Stage C will handle merge/upload decisions.
+      // Different user — wipe in-memory state (UID-switch fix stays intact).
       DB.clearAuth();
     }
 
-    // Persist the identity binding (uid + familyId) for offline / fast reload
     if (incomingUid) {
       DB.setAuth({ uid: incomingUid, familyId: familyId || null });
     }
-
-    // Continue normal app flow
-    const isReturningUser = DB.get().children.length > 0;
-    if (isReturningUser) {
-      goto('screen-dash');
-    } else {
-      startOnboarding();
-    }
+    // Routing is handled exclusively by onAuthReady → _routeAfterAuth().
   }
 
   /* Update the account rows in Settings */
