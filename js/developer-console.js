@@ -348,7 +348,7 @@
       runBtn.style.cursor = nowConfirmed ? 'pointer' : 'default';
     }
   };
-  window.dcRunCleanup = function() { DevCenterUI.runCleanup(); };
+  window.dcRunCleanup = function() { if (window.DevCenterUI) window.DevCenterUI.runCleanup(); };
 
   window.DevCenterUI = {
     close: closePanel,
