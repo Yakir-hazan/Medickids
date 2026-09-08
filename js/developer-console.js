@@ -506,13 +506,41 @@
   }
 
   /* ---------- Database tab (read-only) ---------- */
+  function _copyText(text) {
+    // iOS PWA-safe copy: try clipboard API first, fall back to textarea trick
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).catch(() => _copyFallback(text));
+    } else {
+      _copyFallback(text);
+    }
+  }
+  function _copyFallback(text) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;';
+      document.body.appendChild(ta);
+      ta.focus(); ta.select();
+      document.execCommand('copy');
+      ta.remove();
+    } catch (e) {}
+  }
   function renderDatabaseTab() {
     let json = '(DB not ready)';
-    try { json = JSON.stringify(typeof DB !== 'undefined' ? DB.get() : {}, null, 2); } catch (e) {}
+    let rxJson = '(DB not ready)';
+    try {
+      const db = typeof DB !== 'undefined' ? DB.get() : {};
+      json = JSON.stringify(db, null, 2);
+      rxJson = JSON.stringify(db.prescriptions || [], null, 2);
+    } catch (e) {}
     return `
-      <div style="margin-bottom:10px;">
+      <div style="margin-bottom:10px;display:flex;flex-wrap:wrap;gap:8px;">
         <button onclick="DevCenterUI.exportPackage()" style="padding:8px 14px;border-radius:8px;background:#7C6FF0;color:#fff;border:none;font-size:13px;">📤 ייצוא DB (JSON)</button>
+        <button onclick="_copyText(${JSON.stringify(rxJson)})" style="padding:8px 14px;border-radius:8px;background:#2a7a2a;color:#fff;border:none;font-size:13px;">📋 העתק prescriptions</button>
       </div>
+      <div style="font-size:11px;color:#aaa;margin-bottom:6px;">📋 prescriptions (${(()=>{try{return DB.get().prescriptions.length}catch(e){return'?'}})()}):</div>
+      <div id="devctr-rx-box" style="font-size:11px;font-family:monospace;direction:ltr;text-align:left;white-space:pre-wrap;word-break:break-all;background:#1a1a2e;padding:10px;border-radius:8px;max-height:220px;overflow-y:auto;margin-bottom:10px;">${escapeHtml(rxJson)}</div>
+      <div style="font-size:11px;color:#aaa;margin-bottom:6px;">📦 Full DB state:</div>
       <div style="font-size:11px;font-family:monospace;direction:ltr;text-align:left;white-space:pre-wrap;word-break:break-all;background:#1a1a2e;padding:10px;border-radius:8px;">${escapeHtml(json)}</div>
     `;
   }
@@ -666,4 +694,5 @@
     return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
 })();
+
 
