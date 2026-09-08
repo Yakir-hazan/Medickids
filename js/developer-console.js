@@ -331,6 +331,25 @@
     `).join('');
   }
 
+  // iOS PWA innerHTML onclick needs global window functions
+  window.dcToggleConfirm = function() {
+    const btn = document.getElementById('cleanup-confirm-btn');
+    const icon = document.getElementById('cleanup-confirm-icon');
+    const runBtn = document.getElementById('cleanup-run-btn');
+    if (!btn || !runBtn) return;
+    const confirmed = runBtn.getAttribute('data-confirmed') === 'true';
+    const nowConfirmed = !confirmed;
+    runBtn.setAttribute('data-confirmed', String(nowConfirmed));
+    if (icon) icon.textContent = nowConfirmed ? '☑' : '☐';
+    if (btn) btn.style.background = nowConfirmed ? '#1b5e20' : '#333';
+    if (runBtn) {
+      runBtn.style.background = nowConfirmed ? '#c62828' : '#555';
+      runBtn.style.color = nowConfirmed ? '#fff' : '#aaa';
+      runBtn.style.cursor = nowConfirmed ? 'pointer' : 'default';
+    }
+  };
+  window.dcRunCleanup = function() { DevCenterUI.runCleanup(); };
+
   window.DevCenterUI = {
     close: closePanel,
     setTab: (id) => { currentTab = id; renderPanelBody(); const t = document.getElementById('devctr-tabs'); if (t) renderPanel(); },
@@ -578,14 +597,14 @@
         </div>
 
         <button id="cleanup-confirm-btn"
-          onclick="DevCenterUI.toggleCleanupConfirm()"
+          onclick="window.dcToggleConfirm()"
           style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;border-radius:8px;background:#333;color:#fff;border:1px solid #555;font-size:13px;cursor:pointer;margin-bottom:10px;text-align:right;">
           <span id="cleanup-confirm-icon" style="font-size:18px;">☐</span>
           <span>אני מאשר/ת את המחיקה של שתי הכפילויות בלבד</span>
         </button>
 
         <button id="cleanup-run-btn"
-          onclick="DevCenterUI.runCleanup()"
+          onclick="window.dcRunCleanup()"
           style="padding:10px 18px;border-radius:8px;background:#555;color:#aaa;border:none;font-size:13px;cursor:default;width:100%;"
           data-confirmed="false">
           🗑 בצע Soft-Delete לכפילויות
