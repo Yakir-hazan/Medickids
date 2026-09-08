@@ -584,7 +584,14 @@
       <div style="margin-bottom:8px;margin-top:8px;font-size:12px;color:#4caf50;font-weight:600;">✅ יישמר:</div>
       ${keepHtml}
       <div id="cleanup-result" style="margin-top:10px;font-size:12px;min-height:20px;"></div>
-      <button id="devctr-cleanup-btn" style="margin-top:10px;padding:12px 18px;border-radius:8px;background:#c62828;color:#fff;border:none;font-size:15px;font-weight:700;width:100%;cursor:pointer;">
+      <button id="devctr-cleanup-confirm-btn"
+        style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;border-radius:8px;background:#333;color:#fff;border:1px solid #555;font-size:13px;cursor:pointer;margin-top:10px;text-align:right;">
+        <span id="devctr-cleanup-confirm-icon" style="font-size:18px;">☐</span>
+        <span>אני מאשר/ת את המחיקה של שתי הכפילויות בלבד</span>
+      </button>
+      <button id="devctr-cleanup-btn"
+        disabled
+        style="margin-top:8px;padding:12px 18px;border-radius:8px;background:#555;color:#aaa;border:none;font-size:15px;font-weight:700;width:100%;cursor:default;">
         🗑 בצע Soft-Delete לכפילויות
       </button>
     </div>`;
@@ -687,12 +694,29 @@
       <div style="font-size:11px;color:#aaa;margin-bottom:6px;">📦 Full DB state:</div>
       <div style="font-size:11px;font-family:monospace;direction:ltr;text-align:left;white-space:pre-wrap;word-break:break-all;background:#1a1a2e;padding:10px;border-radius:8px;">${escapeHtml(json)}</div>
     `;
-    // Attach cleanup button after innerHTML renders
+    // Attach cleanup controls after innerHTML renders
     setTimeout(() => {
+      const confirmBtn = document.getElementById('devctr-cleanup-confirm-btn');
+      const confirmIcon = document.getElementById('devctr-cleanup-confirm-icon');
+      if (confirmBtn && !confirmBtn._bound) {
+        confirmBtn._bound = true;
+        confirmBtn.addEventListener('click', function() {
+          const runBtn = document.getElementById('devctr-cleanup-btn');
+          if (!runBtn) return;
+          const nowConfirmed = runBtn.disabled;
+          runBtn.disabled = !nowConfirmed;
+          runBtn.style.background = nowConfirmed ? '#c62828' : '#555';
+          runBtn.style.color = nowConfirmed ? '#fff' : '#aaa';
+          runBtn.style.cursor = nowConfirmed ? 'pointer' : 'default';
+          if (confirmIcon) confirmIcon.textContent = nowConfirmed ? '☑' : '☐';
+          if (confirmBtn) confirmBtn.style.background = nowConfirmed ? '#1b5e20' : '#333';
+        });
+      }
       const btn = document.getElementById('devctr-cleanup-btn');
       if (btn && !btn._bound) {
         btn._bound = true;
         btn.addEventListener('click', function() {
+          if (btn.disabled) return;
           const targets = ['mtqmwi9ek3ren','mtqmwi9lsvy5n'];
           const keeps   = ['mtqmsgzhj6mna','mtqmsgzhea4rp'];
           const resultEl = document.getElementById('cleanup-result');
