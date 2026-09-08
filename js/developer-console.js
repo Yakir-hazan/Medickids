@@ -596,17 +596,9 @@
           • ⚠️ אין אפשרות לאמת שדוקומנט ספציפי נכתב בהצלחה ל-Firestore — בדוק ב-Firebase Console
         </div>
 
-        <button id="cleanup-confirm-btn"
-          onclick="window.dcToggleConfirm()"
-          style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;border-radius:8px;background:#333;color:#fff;border:1px solid #555;font-size:13px;cursor:pointer;margin-bottom:10px;text-align:right;">
-          <span id="cleanup-confirm-icon" style="font-size:18px;">☐</span>
-          <span>אני מאשר/ת את המחיקה של שתי הכפילויות בלבד</span>
-        </button>
-
         <button id="cleanup-run-btn"
           onclick="window.dcRunCleanup()"
-          style="padding:10px 18px;border-radius:8px;background:#555;color:#aaa;border:none;font-size:13px;cursor:default;width:100%;"
-          data-confirmed="false">
+          style="padding:10px 18px;border-radius:8px;background:#c62828;color:#fff;border:none;font-size:14px;cursor:pointer;width:100%;font-weight:700;">
           🗑 בצע Soft-Delete לכפילויות
         </button>
         <div id="cleanup-result" style="margin-top:10px;font-size:12px;"></div>
@@ -633,7 +625,7 @@
   async function runCleanup() {
     const btn = document.getElementById('cleanup-run-btn');
     const resultEl = document.getElementById('cleanup-result');
-    if (!btn || btn.getAttribute('data-confirmed') !== 'true') return;
+    if (!btn) return;
 
     // Safety: only operate on the hardcoded IDs — never anything else
     const targetIds = Object.keys(_CLEANUP_IDS);
