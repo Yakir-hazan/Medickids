@@ -378,6 +378,7 @@
     },
     exportPackage: exportDebugPackage,
     runCleanup: runCleanup,
+    toggleCleanupConfirm: toggleCleanupConfirm,
     shareReport: shareReport,
     copyReport: copyReport,
     copyAllLogs: copyAllLogs,
@@ -576,26 +577,44 @@
           • ⚠️ אין אפשרות לאמת שדוקומנט ספציפי נכתב בהצלחה ל-Firestore — בדוק ב-Firebase Console
         </div>
 
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#fff;margin-bottom:10px;cursor:pointer;">
-          <input type="checkbox" id="cleanup-confirm-cb" onchange="document.getElementById('cleanup-run-btn').disabled=!this.checked;" style="width:16px;height:16px;">
-          אני מאשר/ת את המחיקה של שתי הכפילויות בלבד
-        </label>
+        <button id="cleanup-confirm-btn"
+          onclick="DevCenterUI.toggleCleanupConfirm()"
+          style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;border-radius:8px;background:#333;color:#fff;border:1px solid #555;font-size:13px;cursor:pointer;margin-bottom:10px;text-align:right;">
+          <span id="cleanup-confirm-icon" style="font-size:18px;">☐</span>
+          <span>אני מאשר/ת את המחיקה של שתי הכפילויות בלבד</span>
+        </button>
 
-        <button id="cleanup-run-btn" disabled
+        <button id="cleanup-run-btn"
           onclick="DevCenterUI.runCleanup()"
-          style="padding:10px 18px;border-radius:8px;background:#c62828;color:#fff;border:none;font-size:13px;cursor:pointer;opacity:0.6;"
-          onmouseover="if(!this.disabled)this.style.opacity='1'"
-          onmouseout="if(!this.disabled)this.style.opacity='0.9'">
+          style="padding:10px 18px;border-radius:8px;background:#555;color:#aaa;border:none;font-size:13px;cursor:default;width:100%;"
+          data-confirmed="false">
           🗑 בצע Soft-Delete לכפילויות
         </button>
         <div id="cleanup-result" style="margin-top:10px;font-size:12px;"></div>
       </div>`;
   }
 
+  function toggleCleanupConfirm() {
+    const btn = document.getElementById('cleanup-confirm-btn');
+    const icon = document.getElementById('cleanup-confirm-icon');
+    const runBtn = document.getElementById('cleanup-run-btn');
+    if (!btn || !runBtn) return;
+    const confirmed = runBtn.getAttribute('data-confirmed') === 'true';
+    const nowConfirmed = !confirmed;
+    runBtn.setAttribute('data-confirmed', String(nowConfirmed));
+    if (icon) icon.textContent = nowConfirmed ? '☑' : '☐';
+    if (btn) btn.style.background = nowConfirmed ? '#1b5e20' : '#333';
+    if (runBtn) {
+      runBtn.style.background = nowConfirmed ? '#c62828' : '#555';
+      runBtn.style.color = nowConfirmed ? '#fff' : '#aaa';
+      runBtn.style.cursor = nowConfirmed ? 'pointer' : 'default';
+    }
+  }
+
   async function runCleanup() {
     const btn = document.getElementById('cleanup-run-btn');
     const resultEl = document.getElementById('cleanup-result');
-    if (!btn || btn.disabled) return;
+    if (!btn || btn.getAttribute('data-confirmed') !== 'true') return;
 
     // Safety: only operate on the hardcoded IDs — never anything else
     const targetIds = Object.keys(_CLEANUP_IDS);
