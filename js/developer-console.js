@@ -377,6 +377,7 @@
       }, 450);
     },
     exportPackage: exportDebugPackage,
+    runCleanup: runCleanup,
     shareReport: shareReport,
     copyReport: copyReport,
     copyAllLogs: copyAllLogs,
@@ -505,6 +506,149 @@
         <span>🟡 OneSignal</span><span id="devctr-health-os" style="direction:ltr;opacity:.85;">בודק…</span></div>`;
   }
 
+  /* ---------- Cleanup tool — known duplicate prescriptions (one-time use) ----------
+     IDs are hardcoded and verified. Uses DB.deletePrescription() (soft-delete only).
+     Becomes a no-op once both records have deletedAt set.                           */
+  const _CLEANUP_IDS = {
+    'mtqmwi9ek3ren': { label: 'vitamin_d_drops (כפול)', keep: 'mtqmsgzhj6mna' },
+    'mtqmwi9lsvy5n': { label: 'iron_drops (כפול)',       keep: 'mtqmsgzhea4rp' },
+  };
+  const _KEEP_IDS = ['mtqmsgzhj6mna', 'mtqmsgzhea4rp'];
+
+  function _cleanupRows() {
+    let rxs;
+    try { rxs = DB.get().prescriptions; } catch (e) { return []; }
+    return Object.entries(_CLEANUP_IDS).map(([id, meta]) => {
+      const rec = rxs.find(r => r.id === id);
+      const keepRec = rxs.find(r => r.id === meta.keep);
+      return { id, meta, rec, keepRec, done: rec && !!rec.deletedAt };
+    });
+  }
+
+  function _renderCleanupSection() {
+    const rows = _cleanupRows();
+    const allDone = rows.every(r => r.done || !r.rec);
+
+    const rowsHtml = rows.map(r => {
+      if (!r.rec) {
+        return `<div style="padding:6px 0;color:#aaa;font-size:12px;">⚪ ${r.id} — לא נמצאה ב-state (אולי כבר נמחקה)</div>`;
+      }
+      if (r.done) {
+        return `<div style="padding:6px 0;color:#4caf50;font-size:12px;">✅ ${r.id} — ${r.meta.label} — כבר מסומנת deletedAt</div>`;
+      }
+      return `<div style="padding:6px 0;color:#e57373;font-size:12px;">🔴 ${r.id} — ${r.meta.label} — status: ${r.rec.status}, doseLog: ${(r.rec.doseLog||[]).length}</div>`;
+    }).join('');
+
+    const keepHtml = _KEEP_IDS.map(id => {
+      let rec; try { rec = DB.get().prescriptions.find(r => r.id === id); } catch(e){}
+      if (!rec) return `<div style="padding:4px 0;color:#aaa;font-size:12px;">⚪ ${id} — לא נמצאה</div>`;
+      return `<div style="padding:4px 0;color:#4caf50;font-size:12px;">✅ ${id} — ${rec.productId} — status: ${rec.status}${rec.deletedAt ? ' ⚠️ deletedAt קיים!' : ''}</div>`;
+    }).join('');
+
+    if (allDone) {
+      return `
+        <div style="background:#1e2d1e;border:1px solid #4caf50;border-radius:8px;padding:12px;margin-bottom:14px;">
+          <div style="font-weight:700;color:#4caf50;margin-bottom:8px;">🧹 Cleanup — כפילויות ידועות</div>
+          <div style="color:#4caf50;font-size:13px;">✅ כל הכפילויות טופלו. הכלי אינו פעיל.</div>
+        </div>`;
+    }
+
+    return `
+      <div style="background:#2d1e1e;border:1px solid #e57373;border-radius:8px;padding:12px;margin-bottom:14px;">
+        <div style="font-weight:700;color:#e57373;margin-bottom:8px;">🧹 Cleanup — כפילויות prescriptions ידועות</div>
+        <div style="font-size:11px;color:#aaa;margin-bottom:8px;">⚠️ פועל על IDs קשיחים בלבד. לא ניתן למחוק ID אחר.</div>
+
+        <div style="margin-bottom:10px;">
+          <div style="font-size:12px;color:#e57373;font-weight:600;margin-bottom:4px;">🔴 עומד להימחק (soft-delete):</div>
+          ${rowsHtml}
+        </div>
+
+        <div style="margin-bottom:10px;">
+          <div style="font-size:12px;color:#4caf50;font-weight:600;margin-bottom:4px;">✅ יישמר (לא נגעים):</div>
+          ${keepHtml}
+        </div>
+
+        <div style="margin-bottom:10px;padding:8px;background:#1a1a1a;border-radius:6px;font-size:11px;color:#aaa;">
+          <strong style="color:#fff;">מה בדיוק יקרה:</strong><br>
+          • DB.deletePrescription(id) יקרא לכל כפילות<br>
+          • deletedAt + updatedAt יוגדרו ב-localStorage מיידית<br>
+          • _pushToFirestore יישלח ברקע (fire-and-forget)<br>
+          • ⚠️ אין אפשרות לאמת שדוקומנט ספציפי נכתב בהצלחה ל-Firestore — בדוק ב-Firebase Console
+        </div>
+
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#fff;margin-bottom:10px;cursor:pointer;">
+          <input type="checkbox" id="cleanup-confirm-cb" onchange="document.getElementById('cleanup-run-btn').disabled=!this.checked;" style="width:16px;height:16px;">
+          אני מאשר/ת את המחיקה של שתי הכפילויות בלבד
+        </label>
+
+        <button id="cleanup-run-btn" disabled
+          onclick="DevCenterUI.runCleanup()"
+          style="padding:10px 18px;border-radius:8px;background:#c62828;color:#fff;border:none;font-size:13px;cursor:pointer;opacity:0.6;"
+          onmouseover="if(!this.disabled)this.style.opacity='1'"
+          onmouseout="if(!this.disabled)this.style.opacity='0.9'">
+          🗑 בצע Soft-Delete לכפילויות
+        </button>
+        <div id="cleanup-result" style="margin-top:10px;font-size:12px;"></div>
+      </div>`;
+  }
+
+  async function runCleanup() {
+    const btn = document.getElementById('cleanup-run-btn');
+    const resultEl = document.getElementById('cleanup-result');
+    if (!btn || btn.disabled) return;
+
+    // Safety: only operate on the hardcoded IDs — never anything else
+    const targetIds = Object.keys(_CLEANUP_IDS);
+    btn.disabled = true;
+    btn.textContent = '⏳ מבצע...';
+    if (resultEl) resultEl.innerHTML = '';
+
+    let results = [];
+    for (const id of targetIds) {
+      try {
+        let rxs = DB.get().prescriptions;
+        const rec = rxs.find(r => r.id === id);
+        if (!rec) { results.push(`⚪ ${id} — לא נמצאה, דילוג`); continue; }
+        if (rec.deletedAt) { results.push(`✅ ${id} — כבר מסומנת deletedAt, דילוג`); continue; }
+        DB.deletePrescription(id);
+        // verify local state updated
+        const after = DB.get().prescriptions.find(r => r.id === id);
+        if (after && after.deletedAt) {
+          results.push(`✅ ${id} — deletedAt נקבע ב-localStorage (${new Date(after.deletedAt).toLocaleTimeString()})`);
+        } else {
+          results.push(`❌ ${id} — שגיאה: deletedAt לא נקבע!`);
+        }
+      } catch (e) {
+        results.push(`❌ ${id} — חריגה: ${e.message}`);
+      }
+    }
+
+    // check keep records untouched
+    for (const id of _KEEP_IDS) {
+      try {
+        const rec = DB.get().prescriptions.find(r => r.id === id);
+        if (rec && !rec.deletedAt) results.push(`✅ ${id} — שמור ו-active`);
+        else if (rec && rec.deletedAt) results.push(`⚠️ ${id} — deletedAt קיים (לא אמור להיות!)`);
+        else results.push(`⚠️ ${id} — לא נמצאה`);
+      } catch(e) {}
+    }
+
+    // sync status (general — cannot verify specific documents)
+    let syncStatus = '?';
+    try { syncStatus = DB.getSyncStatus().state; } catch(e) {}
+    results.push(`📡 Sync status: ${syncStatus} — ⚠️ לא ניתן לאמת כתיבה ספציפית ל-Firestore. בדוק ב-Firebase Console.`);
+
+    if (resultEl) {
+      resultEl.innerHTML = results.map(r => `<div style="padding:3px 0;">${r}</div>`).join('');
+    }
+
+    // re-render the section to reflect new state
+    setTimeout(() => {
+      const dbBody = document.getElementById('devctr-db-cleanup');
+      if (dbBody) dbBody.innerHTML = _renderCleanupSection();
+    }, 800);
+  }
+
   /* ---------- Database tab (read-only) ---------- */
   function _copyText(text) {
     // iOS PWA-safe copy: try clipboard API first, fall back to textarea trick
@@ -534,6 +678,7 @@
       rxJson = JSON.stringify(db.prescriptions || [], null, 2);
     } catch (e) {}
     return `
+      <div id="devctr-db-cleanup">${_renderCleanupSection()}</div>
       <div style="margin-bottom:10px;display:flex;flex-wrap:wrap;gap:8px;">
         <button onclick="DevCenterUI.exportPackage()" style="padding:8px 14px;border-radius:8px;background:#7C6FF0;color:#fff;border:none;font-size:13px;">📤 ייצוא DB (JSON)</button>
         <button onclick="_copyText(${JSON.stringify(rxJson)})" style="padding:8px 14px;border-radius:8px;background:#2a7a2a;color:#fff;border:none;font-size:13px;">📋 העתק prescriptions</button>
