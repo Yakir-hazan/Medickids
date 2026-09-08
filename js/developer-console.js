@@ -546,81 +546,50 @@
   }
 
   function _renderCleanupSection() {
-    const rows = _cleanupRows();
-    const allDone = rows.every(r => r.done || !r.rec);
+    let rxs = [];
+    try { rxs = DB.get().prescriptions || []; } catch(e) {}
+    const targets = ['mtqmwi9ek3ren','mtqmwi9lsvy5n'];
+    const keeps   = ['mtqmsgzhj6mna','mtqmsgzhea4rp'];
+    const labels  = {'mtqmwi9ek3ren':'vitamin_d_drops (כפול)','mtqmwi9lsvy5n':'iron_drops (כפול)'};
 
-    const rowsHtml = rows.map(r => {
-      if (!r.rec) {
-        return `<div style="padding:6px 0;color:#aaa;font-size:12px;">⚪ ${r.id} — לא נמצאה ב-state (אולי כבר נמחקה)</div>`;
-      }
-      if (r.done) {
-        return `<div style="padding:6px 0;color:#4caf50;font-size:12px;">✅ ${r.id} — ${r.meta.label} — כבר מסומנת deletedAt</div>`;
-      }
-      return `<div style="padding:6px 0;color:#e57373;font-size:12px;">🔴 ${r.id} — ${r.meta.label} — status: ${r.rec.status}, doseLog: ${(r.rec.doseLog||[]).length}</div>`;
-    }).join('');
-
-    const keepHtml = _KEEP_IDS.map(id => {
-      let rec; try { rec = DB.get().prescriptions.find(r => r.id === id); } catch(e){}
-      if (!rec) return `<div style="padding:4px 0;color:#aaa;font-size:12px;">⚪ ${id} — לא נמצאה</div>`;
-      return `<div style="padding:4px 0;color:#4caf50;font-size:12px;">✅ ${id} — ${rec.productId} — status: ${rec.status}${rec.deletedAt ? ' ⚠️ deletedAt קיים!' : ''}</div>`;
-    }).join('');
+    const allDone = targets.every(id => {
+      const r = rxs.find(x => x.id === id);
+      return !r || !!r.deletedAt;
+    });
 
     if (allDone) {
-      return `
-        <div style="background:#1e2d1e;border:1px solid #4caf50;border-radius:8px;padding:12px;margin-bottom:14px;">
-          <div style="font-weight:700;color:#4caf50;margin-bottom:8px;">🧹 Cleanup — כפילויות ידועות</div>
-          <div style="color:#4caf50;font-size:13px;">✅ כל הכפילויות טופלו. הכלי אינו פעיל.</div>
-        </div>`;
-    }
-
-    return `
-      <div style="background:#2d1e1e;border:1px solid #e57373;border-radius:8px;padding:12px;margin-bottom:14px;">
-        <div style="font-weight:700;color:#e57373;margin-bottom:8px;">🧹 Cleanup — כפילויות prescriptions ידועות</div>
-        <div style="font-size:11px;color:#aaa;margin-bottom:8px;">⚠️ פועל על IDs קשיחים בלבד. לא ניתן למחוק ID אחר.</div>
-
-        <div style="margin-bottom:10px;">
-          <div style="font-size:12px;color:#e57373;font-weight:600;margin-bottom:4px;">🔴 עומד להימחק (soft-delete):</div>
-          ${rowsHtml}
-        </div>
-
-        <div style="margin-bottom:10px;">
-          <div style="font-size:12px;color:#4caf50;font-weight:600;margin-bottom:4px;">✅ יישמר (לא נגעים):</div>
-          ${keepHtml}
-        </div>
-
-        <div style="margin-bottom:10px;padding:8px;background:#1a1a1a;border-radius:6px;font-size:11px;color:#aaa;">
-          <strong style="color:#fff;">מה בדיוק יקרה:</strong><br>
-          • DB.deletePrescription(id) יקרא לכל כפילות<br>
-          • deletedAt + updatedAt יוגדרו ב-localStorage מיידית<br>
-          • _pushToFirestore יישלח ברקע (fire-and-forget)<br>
-          • ⚠️ אין אפשרות לאמת שדוקומנט ספציפי נכתב בהצלחה ל-Firestore — בדוק ב-Firebase Console
-        </div>
-
-        <button id="cleanup-run-btn"
-          onclick="window.dcRunCleanup()"
-          style="padding:10px 18px;border-radius:8px;background:#c62828;color:#fff;border:none;font-size:14px;cursor:pointer;width:100%;font-weight:700;">
-          🗑 בצע Soft-Delete לכפילויות
-        </button>
-        <div id="cleanup-result" style="margin-top:10px;font-size:12px;"></div>
+      return `<div style="background:#1e2d1e;border:1px solid #4caf50;border-radius:8px;padding:12px;margin-bottom:14px;">
+        <div style="font-weight:700;color:#4caf50;margin-bottom:8px;">🧹 Cleanup</div>
+        <div style="color:#4caf50;font-size:13px;">✅ כל הכפילויות טופלו.</div>
       </div>`;
+    }
+
+    const rowsHtml = targets.map(id => {
+      const r = rxs.find(x => x.id === id);
+      if (!r) return `<div style="color:#aaa;font-size:12px;padding:4px 0;">⚪ ${id} — לא נמצאה</div>`;
+      if (r.deletedAt) return `<div style="color:#4caf50;font-size:12px;padding:4px 0;">✅ ${id} — ${labels[id]} — כבר נמחקה</div>`;
+      return `<div style="color:#e57373;font-size:12px;padding:4px 0;">🔴 ${id} — ${labels[id]} — active</div>`;
+    }).join('');
+
+    const keepHtml = keeps.map(id => {
+      const r = rxs.find(x => x.id === id);
+      if (!r) return `<div style="color:#aaa;font-size:12px;padding:4px 0;">⚪ ${id}</div>`;
+      return `<div style="color:#4caf50;font-size:12px;padding:4px 0;">✅ ${id} — ${r.productId} — active</div>`;
+    }).join('');
+
+    return `<div style="background:#2d1e1e;border:1px solid #e57373;border-radius:8px;padding:12px;margin-bottom:14px;">
+      <div style="font-weight:700;color:#e57373;margin-bottom:8px;">🧹 Cleanup — כפילויות prescriptions</div>
+      <div style="margin-bottom:8px;font-size:12px;color:#e57373;font-weight:600;">🔴 עומד להימחק:</div>
+      ${rowsHtml}
+      <div style="margin-bottom:8px;margin-top:8px;font-size:12px;color:#4caf50;font-weight:600;">✅ יישמר:</div>
+      ${keepHtml}
+      <div id="cleanup-result" style="margin-top:10px;font-size:12px;min-height:20px;"></div>
+      <button id="devctr-cleanup-btn" style="margin-top:10px;padding:12px 18px;border-radius:8px;background:#c62828;color:#fff;border:none;font-size:15px;font-weight:700;width:100%;cursor:pointer;">
+        🗑 בצע Soft-Delete לכפילויות
+      </button>
+    </div>`;
   }
 
-  function toggleCleanupConfirm() {
-    const btn = document.getElementById('cleanup-confirm-btn');
-    const icon = document.getElementById('cleanup-confirm-icon');
-    const runBtn = document.getElementById('cleanup-run-btn');
-    if (!btn || !runBtn) return;
-    const confirmed = runBtn.getAttribute('data-confirmed') === 'true';
-    const nowConfirmed = !confirmed;
-    runBtn.setAttribute('data-confirmed', String(nowConfirmed));
-    if (icon) icon.textContent = nowConfirmed ? '☑' : '☐';
-    if (btn) btn.style.background = nowConfirmed ? '#1b5e20' : '#333';
-    if (runBtn) {
-      runBtn.style.background = nowConfirmed ? '#c62828' : '#555';
-      runBtn.style.color = nowConfirmed ? '#fff' : '#aaa';
-      runBtn.style.cursor = nowConfirmed ? 'pointer' : 'default';
-    }
-  }
 
   async function runCleanup() {
     const btn = document.getElementById('cleanup-run-btn');
@@ -718,6 +687,46 @@
       <div style="font-size:11px;color:#aaa;margin-bottom:6px;">📦 Full DB state:</div>
       <div style="font-size:11px;font-family:monospace;direction:ltr;text-align:left;white-space:pre-wrap;word-break:break-all;background:#1a1a2e;padding:10px;border-radius:8px;">${escapeHtml(json)}</div>
     `;
+    // Attach cleanup button after innerHTML renders
+    setTimeout(() => {
+      const btn = document.getElementById('devctr-cleanup-btn');
+      if (btn && !btn._bound) {
+        btn._bound = true;
+        btn.addEventListener('click', function() {
+          const targets = ['mtqmwi9ek3ren','mtqmwi9lsvy5n'];
+          const keeps   = ['mtqmsgzhj6mna','mtqmsgzhea4rp'];
+          const resultEl = document.getElementById('cleanup-result');
+          const results = [];
+          for (const id of targets) {
+            try {
+              const rxs = DB.get().prescriptions;
+              const rec = rxs.find(r => r.id === id);
+              if (!rec) { results.push('⚪ ' + id + ' — לא נמצאה'); continue; }
+              if (rec.deletedAt) { results.push('✅ ' + id + ' — כבר נמחקה'); continue; }
+              DB.deletePrescription(id);
+              const after = DB.get().prescriptions.find(r => r.id === id);
+              if (after && after.deletedAt) {
+                results.push('✅ ' + id + ' — deletedAt נקבע!');
+              } else {
+                results.push('❌ ' + id + ' — שגיאה!');
+              }
+            } catch(e) { results.push('❌ ' + id + ' — ' + e.message); }
+          }
+          for (const id of keeps) {
+            try {
+              const rec = DB.get().prescriptions.find(r => r.id === id);
+              results.push((rec && !rec.deletedAt) ? '✅ ' + id + ' — שמור' : '⚠️ ' + id + ' — בעיה!');
+            } catch(e) {}
+          }
+          let syncSt = '?'; try { syncSt = DB.getSyncStatus().state; } catch(e) {}
+          results.push('📡 Sync: ' + syncSt + ' — בדוק ב-Firebase Console לאימות');
+          if (resultEl) resultEl.innerHTML = results.map(r => '<div>' + r + '</div>').join('');
+          btn.textContent = '✅ בוצע';
+          btn.style.background = '#1b5e20';
+          btn.disabled = true;
+        });
+      }
+    }, 100);
   }
 
   /* ---------- Storage tab (read-only) ---------- */
