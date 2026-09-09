@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.49 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.114';
+  const APP_VERSION = '1.0.0-beta.115';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -3040,26 +3040,116 @@ const App = (() => {
     });
   }
 
-  /* ---------- danger zone ---------- */
-  function confirmReset() {
-    const sure = confirm('לאפס את כל הנתונים? כל הילדים, התרופות והמדידות יימחקו לצמיתות. הפעולה אינה הפיכה.');
-    if (!sure) return;
-    const reallySure = confirm('בטוח/ה לגמרי? זו הזדמנות אחרונה לבטל.');
-    if (!reallySure) return;
-    try {
-      DB.reset();
-    } catch (e) {
-      toast('⚠️ האיפוס נכשל — נסו שוב');
-      return;
+  /* ---------- danger zone — Full Reset ----------
+     "איפוס נתונים" deletes the family's data permanently, from Firestore AND every
+     device signed into this family — not just this device's local cache. See
+     api/delete-family.js for the server side. The one rule that must never be broken:
+     local state is only ever cleared AFTER the server has confirmed the Firestore
+     delete succeeded. Never the other way around — a local-clear-then-server-delete
+     order is exactly what caused the original cross-device duplicate-child bug. */
+
+  function _resetLock(message) {
+    let overlay = document.getElementById('reset-lock-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'reset-lock-overlay';
+      overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(20,20,20,.92);' +
+        'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;' +
+        'color:#fff;font-size:15px;text-align:center;padding:24px;direction:rtl;';
+      document.body.appendChild(overlay);
     }
-    toast('כל הנתונים אופסו');
-    renderLanding();
-    renderDashboard();
-    renderHistory();
-    renderTemp();
-    renderSettings();
-    renderKids();
-    goto('screen-kids');
+    overlay.innerHTML =
+      '<div style="width:34px;height:34px;border:3px solid #444;border-top-color:#4caf50;border-radius:50%;animation:spin 0.8s linear infinite;"></div>' +
+      '<div id="reset-lock-msg"></div>' +
+      '<style>@keyframes spin{to{transform:rotate(360deg)}}</style>';
+    document.getElementById('reset-lock-msg').textContent = message;
+  }
+  function _resetLockUpdate(message) {
+    const el = document.getElementById('reset-lock-msg');
+    if (el) el.textContent = message;
+  }
+  function _resetUnlock() {
+    const overlay = document.getElementById('reset-lock-overlay');
+    if (overlay) overlay.remove();
+  }
+
+  /* Best-effort wait for any in-flight write to settle before we start deleting —
+     narrows (does not eliminate) the window for a queued write to land after the
+     server-side delete. Firestore's SDK gives no way to truly cancel an in-flight
+     write, so this is a bounded wait, not a guarantee. */
+  async function _waitForSyncIdle(maxMs = 5000) {
+    const start = Date.now();
+    while (DB.getSyncStatus().state === 'pending' && Date.now() - start < maxMs) {
+      await new Promise((r) => setTimeout(r, 300));
+    }
+  }
+
+  async function confirmReset() {
+    const sure = confirm(
+      'האיפוס ימחק את כל נתוני המשפחה לצמיתות, בכל המכשירים המחוברים למשפחה. ' +
+      'אם הורה נוסף מחובר לאותה משפחה, גם הנתונים שהוא הזין יימחקו. זו מחיקה משפחתית, לא רק של המכשיר הזה.'
+    );
+    if (!sure) return;
+    const reallySure = confirm('בטוח/ה לגמרי? זו הזדמנות אחרונה לבטל — הפעולה אינה הפיכה.');
+    if (!reallySure) return;
+
+    const user = Auth.currentUser();
+    if (!user) { toast('⚠️ יש להתחבר מחדש כדי לאפס נתונים'); return; }
+
+    _resetLock('מוחק את נתוני המשפחה…');
+    try {
+      await _waitForSyncIdle();
+      DB.stopSync(); // no _pushToFirestore() call can fire from this point (checks _fsFamilyId)
+
+      const idToken = await user.getIdToken();
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 25000);
+      let resp, body;
+      try {
+        resp = await fetch('/api/delete-family', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${idToken}` },
+          signal: controller.signal,
+        });
+        body = await resp.json().catch(() => ({}));
+      } finally {
+        clearTimeout(timeoutId);
+      }
+
+      if (!resp.ok || body.success !== true) {
+        // Explicit non-success (incl. partial deletion) — do NOT touch local state,
+        // do NOT navigate, do NOT claim success.
+        console.error('[FullReset] server delete did not confirm success:', resp.status, body);
+        toast('⚠️ האיפוס לא הושלם — הנתונים לא נמחקו במלואם. נסו שוב.');
+        // Sync was stopped above; resume it so the app keeps working normally
+        // while the user decides whether to retry.
+        const familyId = DB.ownerFamilyId();
+        if (familyId) DB.initSync(familyId);
+        return;
+      }
+
+      // Server confirmed the Firestore delete succeeded — only now touch local state.
+      DB.reset(); // wipes local state, preserves auth (uid/familyId unchanged)
+      const familyId = DB.ownerFamilyId();
+      if (familyId) DB.initSync(familyId); // re-subscribe to the now-empty collections
+
+      renderLanding();
+      renderDashboard();
+      renderHistory();
+      renderTemp();
+      renderSettings();
+      renderKids();
+      toast('כל נתוני המשפחה נמחקו');
+      goto('screen-kids');
+    } catch (e) {
+      console.error('[FullReset] failed:', e);
+      toast('⚠️ האיפוס נכשל (בעיית רשת?) — הנתונים לא נמחקו. נסו שוב.');
+      const familyId = DB.ownerFamilyId();
+      if (familyId) DB.initSync(familyId);
+    } finally {
+      _resetUnlock();
+    }
   }
 
   /* On app open: ensure every active supplement prescription either has a future push scheduled,
