@@ -216,11 +216,24 @@ const DB = (() => {
     // else: local is same-or-newer — no-op, by design (see comment above)
   }
 
+  /* Remove one record from local state by id (used only for real hard-deletes coming
+     from Firestore — e.g. a Full Reset on another device). Distinct from the app's normal
+     soft-delete (deletedAt), which never calls this. Does NOT push back to Firestore —
+     one-way remote-to-local, same as _applyRemoteDoc. */
+  function _removeLocalDoc(entityType, id) {
+    const list = state[entityType];
+    const idx = list.findIndex((r) => r.id === id);
+    if (idx !== -1) list.splice(idx, 1);
+  }
+
   /* One-time backfill of existing local records into Firestore, for an existing install
      upgrading to this sync-enabled version. Safe under concurrent runs from two devices:
      each record is compared (get-before-set) against whatever's already remote, and
      whichever side has the newer updatedAt wins — never a blind overwrite. Safe to re-run
-     (idempotent): a record already correctly migrated is simply left alone (same or older). */
+     (idempotent): a record already correctly migrated is simply left alone (same or older).
+     Also safe to re-run against an EMPTY local state (e.g. right after a Full Reset, before
+     initSync() is called again): the loop below iterates state[entityType], which is empty
+     at that point, so this becomes a harmless no-op that just re-writes the migration marker. */
   async function _migrateLocalToFirestore(familyId) {
     const metaRef = _fsFamilyRef(familyId).collection('_meta').doc('migration');
     try {
@@ -267,7 +280,13 @@ const DB = (() => {
       .onSnapshot({ includeMetadataChanges: true }, (snap) => {
         let changed = false;
         snap.docChanges().forEach((change) => {
-          if (change.type === 'removed') return; // we never hard-delete; soft-delete via deletedAt
+          if (change.type === 'removed') {
+            // Hard delete on another device (Full Reset via api/delete-family.js is the only
+            // source of these today — the app itself only ever soft-deletes via deletedAt).
+            _removeLocalDoc(entityType, change.doc.id);
+            changed = true;
+            return;
+          }
           _applyRemoteDoc(entityType, change.doc.id, change.doc.data({ serverTimestamps: 'estimate' }));
           changed = true;
         });
