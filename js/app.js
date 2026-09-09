@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.49 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.113';
+  const APP_VERSION = '1.0.0-beta.114';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -315,8 +315,25 @@ const App = (() => {
      has flushed to state — from inserting a duplicate record.
      This is a deterministic in-flight guard, not a timer: once a slot is claimed the Set
      holds it for the lifetime of the page, so concurrent calls are safely deduplicated
-     regardless of timing. */
+     regardless of timing.
+     NOTE: this Set is per-runtime only — it does NOT protect against two different
+     devices both deciding to auto-create the same supplement prescription before either
+     has seen the other's Firestore write. See supplementPrescriptionId() below for the
+     cross-device fix (Cross-Device Duplicate Audit, hotfix). */
   const _suppCreationInFlight = new Set();
+
+  /* Deterministic Firestore document id for an auto-created supplement prescription.
+     Hotfix for cross-device duplicate creation: previously each auto-created supplement
+     prescription got a random id (uid()), so two devices racing to auto-create the same
+     (childId, productId) supplement before either had seen the other's write ended up
+     creating two separate Firestore documents. By keying the id off (childId, productId)
+     instead, both devices compute the SAME id locally (no round trip — offline-safe) and
+     _pushToFirestore's doc(id).set(..., {merge:true}) naturally collapses concurrent
+     creates into a single document. Does not change any business logic — only how the
+     record's id is chosen. */
+  function supplementPrescriptionId(childId, productId) {
+    return `supp_${childId}_${productId}`;
+  }
 
   /* Auto-create supplement prescriptions for children in the eligible age range.
      Runs once on every renderDashboard — idempotent (won't duplicate). */
@@ -358,6 +375,7 @@ const App = (() => {
         if (!exists && !wasCompleted && !_suppCreationInFlight.has(inFlightKey)) {
           _suppCreationInFlight.add(inFlightKey); // claim the slot before addPrescription writes
           DB.addPrescription({
+            id: supplementPrescriptionId(c.id, productId), // deterministic — see cross-device fix note above
             childId: c.id,
             productId,
             protocolType: 'daily',
