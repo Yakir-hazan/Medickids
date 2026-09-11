@@ -323,9 +323,10 @@
           <span>${CAT_ICON[e.category] || '⚪'}</span>
           <span style="opacity:.5;font-size:11px;">${formatTime(e.ts)}</span>
           <span style="flex:1;">${escapeHtml(e.label)}</span>
+          <span onclick="event.stopPropagation();DevCenterUI.copyOneEvent(${e.id})" style="padding:2px 7px;border-radius:6px;background:#2a2a44;font-size:11px;cursor:pointer;">📋</span>
         </div>
         <div style="font-size:12px;opacity:.55;margin-right:24px;">${escapeHtml(truncate(e.detail, 120))}</div>
-        <div id="devctr-detail-${e.id}" style="display:none;margin-top:6px;margin-right:24px;background:#1a1a2e;border-radius:8px;padding:8px;font-size:11px;font-family:monospace;direction:ltr;text-align:left;white-space:pre-wrap;word-break:break-all;"></div>
+        <div id="devctr-detail-${e.id}" style="display:none;margin-top:6px;margin-right:24px;background:#1a1a2e;border-radius:8px;padding:8px;font-size:11px;font-family:monospace;direction:ltr;text-align:left;white-space:pre-wrap;word-break:break-all;-webkit-user-select:text;user-select:text;"></div>
         ${breadcrumbMode && i < ordered.length - 1 ? '<div style="text-align:center;opacity:.3;font-size:11px;">↓</div>' : ''}
       </div>
     `).join('');
@@ -367,16 +368,14 @@
       if (el.style.display === 'block') { el.style.display = 'none'; return; }
       const ev = events.find((e) => e.id === id);
       if (!ev) return;
-      const lines = [];
-      lines.push(`session: ${ev.session}   duration: ${ev.duration != null ? ev.duration + 'ms' : '—'}`);
-      if (ev.args) lines.push(`args: ${ev.args}`);
-      if (ev.returnValue) lines.push(`return: ${ev.returnValue}`);
-      if (ev.status != null) lines.push(`status: ${ev.status}`);
-      if (ev.stack) lines.push(`stack: ${ev.stack}`);
-      if (ev.stateBefore) lines.push(`\nstate BEFORE:\n${ev.stateBefore}`);
-      if (ev.stateAfter) lines.push(`\nstate AFTER:\n${ev.stateAfter}`);
-      el.textContent = lines.join('\n');
+      el.textContent = _eventDetailText(ev);
       el.style.display = 'block';
+    },
+    copyOneEvent: (id) => {
+      const ev = events.find((e) => e.id === id);
+      if (!ev) return;
+      const header = `${ev.label}${ev.detail !== undefined ? '\n' + ev.detail : ''}`;
+      _copyText(`${header}\n${_eventDetailText(ev)}`.trim());
     },
     replay: () => {
       const list = filteredEvents();
@@ -870,6 +869,28 @@
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text)
         .then(() => { alert('הלוגים הועתקו ✅'); })
+        .catch(() => _fallbackCopy(text));
+    } else {
+      _fallbackCopy(text);
+    }
+  }
+
+  function _eventDetailText(ev) {
+    const lines = [];
+    lines.push(`session: ${ev.session}   duration: ${ev.duration != null ? ev.duration + 'ms' : '—'}`);
+    if (ev.args) lines.push(`args: ${ev.args}`);
+    if (ev.returnValue) lines.push(`return: ${ev.returnValue}`);
+    if (ev.status != null) lines.push(`status: ${ev.status}`);
+    if (ev.stack) lines.push(`stack: ${ev.stack}`);
+    if (ev.stateBefore) lines.push(`\nstate BEFORE:\n${ev.stateBefore}`);
+    if (ev.stateAfter) lines.push(`\nstate AFTER:\n${ev.stateAfter}`);
+    return lines.join('\n');
+  }
+
+  function _copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text)
+        .then(() => { alert('הועתק ✅'); })
         .catch(() => _fallbackCopy(text));
     } else {
       _fallbackCopy(text);
