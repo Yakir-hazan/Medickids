@@ -80,10 +80,23 @@
   }
 
   let renderScheduled = false;
+  let _touchingPanel = false;
+  let _renderPendingAfterTouch = false;
   function scheduleRender() {
     if (renderScheduled) return;
     renderScheduled = true;
-    requestAnimationFrame(() => { renderScheduled = false; renderPanelBody(); });
+    requestAnimationFrame(() => {
+      renderScheduled = false;
+      // BUGFIX: with the panel open, Firestore's constant Listen-channel traffic (and
+      // every DB.* call) logs an event roughly every few seconds, which used to trigger
+      // an immediate renderPanelBody() — replacing the whole tab body's DOM, including
+      // whatever the user's finger was mid-tap on. On iOS this meant a tap that started
+      // just before a re-render simply never fired, making the console feel completely
+      // unresponsive. Deferring the render until the finger actually lifts fixes this
+      // without giving up live updates.
+      if (_touchingPanel) { _renderPendingAfterTouch = true; return; }
+      renderPanelBody();
+    });
   }
 
   // public API — this is what future features should call instead of console.log
@@ -114,11 +127,9 @@
 
   window.addEventListener('online', function () {
     logEvent(CATEGORY.INFO, 'system', 'Back Online', '');
-    if (panelOpen && currentTab === 'health') renderPanelBody();
   });
   window.addEventListener('offline', function () {
     logEvent(CATEGORY.WARNING, 'system', 'Went Offline', '');
-    if (panelOpen && currentTab === 'health') renderPanelBody();
   });
 
   (function installFetchHook() {
@@ -224,6 +235,14 @@
       panel.setAttribute('style', 'position:fixed;inset:0;z-index:9999999;background:#0f0f1a;color:#e8e8f0;' +
         'font-family:-apple-system,system-ui,sans-serif;display:flex;flex-direction:column;direction:rtl;');
       document.body.appendChild(panel);
+      // attached once to the stable outer panel node, so it survives renderPanel()/
+      // renderPanelBody() replacing everything inside it via innerHTML
+      panel.addEventListener('touchstart', () => { _touchingPanel = true; }, { passive: true });
+      panel.addEventListener('touchend', () => {
+        _touchingPanel = false;
+        if (_renderPendingAfterTouch) { _renderPendingAfterTouch = false; renderPanelBody(); }
+      }, { passive: true });
+      panel.addEventListener('touchcancel', () => { _touchingPanel = false; }, { passive: true });
     }
     panel.style.display = 'flex';
     renderPanel();
