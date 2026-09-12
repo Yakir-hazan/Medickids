@@ -248,8 +248,8 @@
       <div style="padding:10px 12px;background:#1a1a2e;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
         <div style="font-weight:700;">🐞 Developer Center <span style="opacity:.5;font-weight:400;font-size:12px;">Session ${SESSION_ID}</span></div>
         <div style="display:flex;align-items:center;gap:8px;">
-          <button onclick="DevCenterUI.copyAllLogs()" style="padding:5px 10px;border-radius:8px;background:#7C6FF0;color:#fff;border:none;font-size:12px;cursor:pointer;">📋 העתק הכל</button>
-          <div onclick="DevCenterUI.close()" style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;">✕</div>
+          <button onclick="dcCopyAllLogs()" style="padding:5px 10px;border-radius:8px;background:#7C6FF0;color:#fff;border:none;font-size:12px;cursor:pointer;">📋 העתק הכל</button>
+          <div onclick="dcClose()" style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;">✕</div>
         </div>
       </div>
       <div id="devctr-tabs" style="display:flex;overflow-x:auto;background:#16162a;flex-shrink:0;"></div>
@@ -257,7 +257,7 @@
     `;
     const tabsEl = panel.querySelector('#devctr-tabs');
     tabsEl.innerHTML = TABS.map(([id, label]) =>
-      `<div onclick="DevCenterUI.setTab('${id}')" style="padding:9px 12px;white-space:nowrap;cursor:pointer;font-size:13px;
+      `<div onclick="dcSetTab('${id}')" style="padding:9px 12px;white-space:nowrap;cursor:pointer;font-size:13px;
         ${currentTab === id ? 'border-bottom:2px solid #7C6FF0;color:#fff;' : 'color:#888;'}">${label}</div>`).join('');
     renderPanelBody();
   }
@@ -298,11 +298,11 @@
       <div style="display:flex;gap:6px;margin-bottom:8px;">
         <input id="devctr-search" value="${escapeHtml(searchQuery)}" placeholder="🔍 חיפוש..." oninput="DevCenterUI.setSearch(this.value)"
           style="flex:1;padding:8px;border-radius:8px;border:1px solid #333;background:#1a1a2e;color:#fff;font-size:13px;">
-        <div onclick="DevCenterUI.toggleBreadcrumb()" style="padding:8px 10px;border-radius:8px;background:${breadcrumbMode ? '#7C6FF0' : '#1a1a2e'};font-size:13px;cursor:pointer;white-space:nowrap;">🔗 שרשרת</div>
-        <div onclick="DevCenterUI.replay()" style="padding:8px 10px;border-radius:8px;background:#1a1a2e;font-size:13px;cursor:pointer;white-space:nowrap;">▶️ Replay</div>
+        <div onclick="dcToggleBreadcrumb()" style="padding:8px 10px;border-radius:8px;background:${breadcrumbMode ? '#7C6FF0' : '#1a1a2e'};font-size:13px;cursor:pointer;white-space:nowrap;">🔗 שרשרת</div>
+        <div onclick="dcReplay()" style="padding:8px 10px;border-radius:8px;background:#1a1a2e;font-size:13px;cursor:pointer;white-space:nowrap;">▶️ Replay</div>
       </div>
       <div style="display:flex;gap:6px;overflow-x:auto;margin-bottom:10px;">
-        ${chips.map(([id, label]) => `<div onclick="DevCenterUI.setFilter('${id}')" style="padding:5px 10px;border-radius:20px;font-size:12px;white-space:nowrap;cursor:pointer;
+        ${chips.map(([id, label]) => `<div onclick="dcSetFilter('${id}')" style="padding:5px 10px;border-radius:20px;font-size:12px;white-space:nowrap;cursor:pointer;
           background:${quickFilter === id ? '#7C6FF0' : '#1a1a2e'};">${label}</div>`).join('')}
       </div>
       <div id="devctr-timeline-list-wrap">${renderEventList(list)}</div>
@@ -317,13 +317,13 @@
     if (!list.length) return `<div style="opacity:.5;text-align:center;padding:30px 0;">אין אירועים עדיין</div>`;
     const ordered = list.slice().reverse(); // newest first
     return ordered.map((e, i) => `
-      <div id="devctr-ev-${e.id}" onclick="DevCenterUI.toggleDetail(${e.id})" style="padding:8px 0;border-bottom:1px solid #222;cursor:pointer;">
+      <div id="devctr-ev-${e.id}" onclick="dcToggleDetailEv(${e.id})" style="padding:8px 0;border-bottom:1px solid #222;cursor:pointer;">
         <div style="display:flex;gap:8px;align-items:baseline;font-size:13px;">
           <span style="opacity:.4;font-size:11px;">#${String(e.id).padStart(6, '0')}</span>
           <span>${CAT_ICON[e.category] || '⚪'}</span>
           <span style="opacity:.5;font-size:11px;">${formatTime(e.ts)}</span>
           <span style="flex:1;">${escapeHtml(e.label)}</span>
-          <span onclick="event.stopPropagation();DevCenterUI.copyOneEvent(${e.id})" style="padding:2px 7px;border-radius:6px;background:#2a2a44;font-size:11px;cursor:pointer;">📋</span>
+          <span onclick="event.stopPropagation();dcCopyOneEvent(${e.id})" style="padding:2px 7px;border-radius:6px;background:#2a2a44;font-size:11px;cursor:pointer;">📋</span>
         </div>
         <div style="font-size:12px;opacity:.55;margin-right:24px;">${escapeHtml(truncate(e.detail, 120))}</div>
         <div id="devctr-detail-${e.id}" style="display:none;margin-top:6px;margin-right:24px;background:#1a1a2e;border-radius:8px;padding:8px;font-size:11px;font-family:monospace;direction:ltr;text-align:left;white-space:pre-wrap;word-break:break-all;-webkit-user-select:text;user-select:text;"></div>
@@ -350,6 +350,31 @@
     }
   };
   window.dcRunCleanup = function() { if (window.DevCenterUI) window.DevCenterUI.runCleanup(); };
+
+  /* All of the below exist for the same reason as dcRunCleanup above: on this iOS PWA,
+     onclick="DevCenterUI.someMethod()" set via innerHTML throws
+     "ReferenceError: Can't find variable: DevCenterUI" — even though window.DevCenterUI
+     is genuinely assigned and every other part of the panel (which calls it from plain
+     JS, not from an inline HTML attribute) works fine. Routing every inline onclick
+     through a flat window.dcXxx() function — which then does the DevCenterUI.xxx() call
+     from ordinary script scope, not from inside an HTML attribute — reliably works
+     around it. Confirmed broken without this indirection via real-device testing
+     (2025 Full Reset debugging session): every DevCenterUI.x() called directly from an
+     onclick attribute failed, including the pre-existing "העתק הכל" button. */
+  window.dcClose = function() { if (window.DevCenterUI) window.DevCenterUI.close(); };
+  window.dcSetTab = function(id) { if (window.DevCenterUI) window.DevCenterUI.setTab(id); };
+  window.dcToggleBreadcrumb = function() { if (window.DevCenterUI) window.DevCenterUI.toggleBreadcrumb(); };
+  window.dcReplay = function() { if (window.DevCenterUI) window.DevCenterUI.replay(); };
+  window.dcSetFilter = function(id) { if (window.DevCenterUI) window.DevCenterUI.setFilter(id); };
+  window.dcToggleDetailEv = function(id) { if (window.DevCenterUI) window.DevCenterUI.toggleDetail(id); };
+  window.dcCopyOneEvent = function(id) { if (window.DevCenterUI) window.DevCenterUI.copyOneEvent(id); };
+  window.dcCopyAllLogs = function() { if (window.DevCenterUI) window.DevCenterUI.copyAllLogs(); };
+  window.dcExportPackage = function() { if (window.DevCenterUI) window.DevCenterUI.exportPackage(); };
+  window.dcTestToast = function() { if (window.DevCenterUI) window.DevCenterUI.testToast(); };
+  window.dcDisableDevMode = function() { if (window.DevCenterUI) window.DevCenterUI.disableDevMode(); };
+  window.dcShareReport = function() { if (window.DevCenterUI) window.DevCenterUI.shareReport(); };
+  window.dcCopyReport = function() { if (window.DevCenterUI) window.DevCenterUI.copyReport(); };
+
 
   window.DevCenterUI = {
     close: closePanel,
@@ -685,7 +710,7 @@
     return `
       <div id="devctr-db-cleanup">${_renderCleanupSection()}</div>
       <div style="margin-bottom:10px;display:flex;flex-wrap:wrap;gap:8px;">
-        <button onclick="DevCenterUI.exportPackage()" style="padding:8px 14px;border-radius:8px;background:#7C6FF0;color:#fff;border:none;font-size:13px;">📤 ייצוא DB (JSON)</button>
+        <button onclick="dcExportPackage()" style="padding:8px 14px;border-radius:8px;background:#7C6FF0;color:#fff;border:none;font-size:13px;">📤 ייצוא DB (JSON)</button>
         <button onclick="_copyText(${JSON.stringify(rxJson)})" style="padding:8px 14px;border-radius:8px;background:#2a7a2a;color:#fff;border:none;font-size:13px;">📋 העתק prescriptions</button>
       </div>
       <div style="font-size:11px;color:#aaa;margin-bottom:6px;">📋 prescriptions (${(()=>{try{return DB.get().prescriptions.length}catch(e){return'?'}})()}):</div>
@@ -793,8 +818,8 @@
   function renderToolsTab() {
     return `
       <div style="opacity:.6;font-size:12px;margin-bottom:10px;">כלים לא-הרסניים בלבד. פעולות כמו Reset DB / Import / Clear Cache יתווספו בשלב נפרד עם הגנות ייעודיות.</div>
-      <button onclick="DevCenterUI.testToast()" style="display:block;width:100%;margin-bottom:8px;padding:10px;border-radius:8px;background:#1a1a2e;color:#fff;border:none;font-size:13px;text-align:right;">🔔 Test Toast</button>
-      <button onclick="DevCenterUI.disableDevMode()" style="display:block;width:100%;margin-bottom:8px;padding:10px;border-radius:8px;background:#3a1a1a;color:#ff8888;border:none;font-size:13px;text-align:right;">🚫 כבה מצב מפתח</button>
+      <button onclick="dcTestToast()" style="display:block;width:100%;margin-bottom:8px;padding:10px;border-radius:8px;background:#1a1a2e;color:#fff;border:none;font-size:13px;text-align:right;">🔔 Test Toast</button>
+      <button onclick="dcDisableDevMode()" style="display:block;width:100%;margin-bottom:8px;padding:10px;border-radius:8px;background:#3a1a1a;color:#ff8888;border:none;font-size:13px;text-align:right;">🚫 כבה מצב מפתח</button>
     `;
   }
 
@@ -817,9 +842,9 @@
   function renderExportTab() {
     return `
       <div style="opacity:.6;font-size:12px;margin-bottom:14px;">Debug Package: גרסה + Device + DB + Timeline מלא + שגיאות + Network, בקובץ JSON אחד.</div>
-      <button onclick="DevCenterUI.shareReport()" style="display:block;width:100%;margin-bottom:8px;padding:10px;border-radius:8px;background:#7C6FF0;color:#fff;border:none;font-size:13px;">📤 Share Debug Package</button>
-      <button onclick="DevCenterUI.copyReport()" style="display:block;width:100%;margin-bottom:8px;padding:10px;border-radius:8px;background:#1a1a2e;color:#fff;border:none;font-size:13px;">📋 העתקה (Copy)</button>
-      <button onclick="DevCenterUI.exportPackage()" style="display:block;width:100%;margin-bottom:8px;padding:10px;border-radius:8px;background:#1a1a2e;color:#fff;border:none;font-size:13px;">⬇️ הורדה כקובץ</button>
+      <button onclick="dcShareReport()" style="display:block;width:100%;margin-bottom:8px;padding:10px;border-radius:8px;background:#7C6FF0;color:#fff;border:none;font-size:13px;">📤 Share Debug Package</button>
+      <button onclick="dcCopyReport()" style="display:block;width:100%;margin-bottom:8px;padding:10px;border-radius:8px;background:#1a1a2e;color:#fff;border:none;font-size:13px;">📋 העתקה (Copy)</button>
+      <button onclick="dcExportPackage()" style="display:block;width:100%;margin-bottom:8px;padding:10px;border-radius:8px;background:#1a1a2e;color:#fff;border:none;font-size:13px;">⬇️ הורדה כקובץ</button>
       <div style="opacity:.5;font-size:11px;margin-top:14px;">⚠️ הדוח כולל שמות ילדים, משקלים ותרופות — שתפו רק עם מי שאתם סומכים עליו.</div>
     `;
   }
