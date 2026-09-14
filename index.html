@@ -181,7 +181,7 @@
               תרופות, חום, טיפולים, תוספים ותזכורות — <span class="font-semibold text-primary">Medickids</span> זוכרת בשבילכם.
             </p>
             <div class="relative w-full max-w-xs mb-space-md">
-              <button class="group relative flex items-center justify-center gap-space-sm w-full h-[52px] rounded-full bg-primary text-on-primary text-[14px] font-medium shadow-[0_12px_28px_rgba(0,92,85,0.28)] active:scale-[0.98] transition-all overflow-hidden" onclick="document.getElementById('landing-a2hs').scrollIntoView({behavior:'smooth'})">
+              <button class="group relative flex items-center justify-center gap-space-sm w-full h-[52px] rounded-full bg-primary text-on-primary text-[14px] font-medium shadow-[0_12px_28px_rgba(0,92,85,0.28)] active:scale-[0.98] transition-all overflow-hidden" onclick="App.showInstallGuide()">
                 <span class="font-bold">התחילו עכשיו — ללא עלות</span>
                 <span class="material-symbols-outlined text-[20px]">arrow_back</span>
               </button>
@@ -354,7 +354,7 @@
           </section>
 
           <!-- ADD TO HOME SCREEN — functional install step -->
-          <section id="landing-a2hs" class="w-full px-margin-mobile py-space-xl flex flex-col items-center">
+          <section id="landing-a2hs" class="w-full px-margin-mobile py-space-xl flex flex-col items-center" style="display:none;">
             <div class="w-full max-w-sm text-center mb-space-lg">
               <div class="w-14 h-14 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto mb-space-sm"><span class="material-symbols-outlined text-[28px]">install_mobile</span></div>
               <h2 class="text-[22px] leading-8 font-bold text-on-surface mb-2">כמעט מוכנים</h2>
@@ -1022,6 +1022,7 @@
 
 </body>
 </html>
+
 
 
 
