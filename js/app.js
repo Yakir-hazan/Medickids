@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.49 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.118';
+  const APP_VERSION = '1.0.0-beta.119';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -25,6 +25,9 @@ const App = (() => {
   let editingKidId = null; // null = add mode
   let selectedChildId = null; // שלב 3 — selected child panel
   let deferredInstallPrompt = null;
+  let _landingActive = false;   // true while the A2HS landing screen owns navigation
+  let _pendingAuthUser;         // undefined = auth not resolved yet; latest user|null while landing shows
+  let _authRouted = false;      // guards against double-routing (Firebase fires onAuthStateChanged twice)
 
   /* ── onboarding state ── */
   let _obParent  = 'dad';   // 'dad' | 'mom'
@@ -66,7 +69,14 @@ const App = (() => {
     deferredInstallPrompt.prompt();
     deferredInstallPrompt.userChoice.finally(() => { deferredInstallPrompt = null; });
   }
-  function skipLanding() { showSplash(); }
+  function skipLanding() {
+    _landingActive = false;
+    if (_pendingAuthUser !== undefined) {
+      _continueAuthRouting(_pendingAuthUser);
+    } else {
+      showSplash(); // auth hasn't resolved yet — onAuthReady will route once it fires
+    }
+  }
 
   /* ---------- helpers ---------- */
   function nowHHMM() {
@@ -3420,6 +3430,13 @@ const App = (() => {
   function init() {
     // Render all screens so they're ready before any transition
     renderLanding();
+    // Show the A2HS landing screen immediately for any non-standalone (browser) visit —
+    // independent of auth state, so brand-new / logged-out visitors see it too, not just
+    // returning signed-in users. Navigation resumes (via skipLanding) once dismissed.
+    if (!isStandalone()) {
+      _landingActive = true;
+      goto('screen-landing');
+    }
     renderDashboard();
     renderSettings();
     setInterval(renderDashboard, 60000); // keep "elapsed" times fresh
@@ -3431,70 +3448,12 @@ const App = (() => {
 
     // ── Auth-first routing ────────────────────────────────────────────────
     // onAuthStateChanged fires once on load (user|null), then on every change.
-    // Guard prevents double-routing (Firebase fires twice: cached + server-verified).
-    let _authRouted = false;
+    // While the landing screen is active (non-standalone, not yet dismissed) we stash the
+    // latest user and defer routing — skipLanding()/install continues it once dismissed.
     Auth.onAuthReady((user) => {
-      if (!user) {
-        _authRouted = false; // reset so re-login works
-        DB.stopSync(); // Real Family Sync — no signed-in uid to authorize listeners for
-        if (splashAnimId) { cancelAnimationFrame(splashAnimId); splashAnimId = null; }
-        goto('screen-auth');
-        return;
-      }
-
-      if (_authRouted) return;
-      _authRouted = true;
-
-      // Block unverified users — show verify panel, never touch DB or Family Sync.
-      if (!user.emailVerified) {
-        _authRouted = false; // allow re-entry once verified
-        _authShowVerifyPanel(user.email);
-        goto('screen-auth');
-        return;
-      }
-
-      // Stage B — B4: fix the familyId race.
-      // Route with whatever identity we have cached (instant, works offline).
-      // Firestore fetch is async and updates UI+binding after routing — does NOT re-route.
-      const cachedFamilyId = DB.ownerFamilyId();
-      _renderAccountInfo(user.email, cachedFamilyId);
-
-      // Async Firestore fetch — updates UI and persists authoritative familyId.
-      if (window.firebase && firebase.apps.length) {
-        try {
-          firebase.firestore().doc(`users/${user.uid}`).get().then((snap) => {
-            if (snap.exists) {
-              const freshFamilyId = snap.data().familyId;
-              _renderAccountInfo(user.email, freshFamilyId);
-              if (freshFamilyId && freshFamilyId !== cachedFamilyId) {
-                DB.setAuth({ uid: user.uid, familyId: freshFamilyId });
-                DB.initSync(freshFamilyId);
-              }
-            }
-          }).catch(() => {});
-        } catch(e) {}
-      }
-
-      // Stage B — B1: guard against showing data of a different uid (refresh/reopen path).
-      const localOwner = DB.ownerUid();
-      if (localOwner && localOwner !== user.uid) {
-        DB.clearAuth();
-        // BUGFIX: after clearing a different user's state, load THIS user's per-uid key.
-        // familyId intentionally omitted — setAuth() will preserve whatever familyId is
-        // already stored under this uid's own key, never inheriting one from the previous user.
-        DB.setAuth({ uid: user.uid });
-      } else if (!localOwner) {
-        DB.setAuth({ uid: user.uid, familyId: cachedFamilyId || null });
-      }
-
-      // Real Family Sync: start once we know the local state genuinely belongs to this
-      // signed-in uid (covers a fresh setAuth() above, or an already-matching continuing
-      // session where neither branch above fired).
-      if (DB.ownerUid() === user.uid && DB.ownerFamilyId()) {
-        DB.initSync(DB.ownerFamilyId());
-      }
-
-      _routeAfterAuth();
+      _pendingAuthUser = user;
+      if (_landingActive) return;
+      _continueAuthRouting(user);
     });
     if ('serviceWorker' in navigator) {
       // [SW-DIAG] Registration context
@@ -3543,16 +3502,77 @@ const App = (() => {
 
   }
 
-  /* Called after auth is confirmed (user is signed in).
-     Preserves the original routing logic exactly. */
-  function _routeAfterAuth() {
-    // Step 1: non-standalone browser → show Landing (A2HS prompt), stop here.
-    if (!isStandalone()) {
-      goto('screen-landing');
+  /* Runs the full post-auth routing decision for a given user|null. Called either directly
+     from onAuthReady (already standalone, or landing was skipped in a prior session tick),
+     or from skipLanding() once the A2HS landing screen has just been dismissed. */
+  function _continueAuthRouting(user) {
+    if (!user) {
+      _authRouted = false; // reset so re-login works
+      DB.stopSync(); // Real Family Sync — no signed-in uid to authorize listeners for
+      if (splashAnimId) { cancelAnimationFrame(splashAnimId); splashAnimId = null; }
+      goto('screen-auth');
       return;
     }
 
-    // Step 2: standalone (installed PWA) — decide by data, not by platform.
+    if (_authRouted) return;
+    _authRouted = true;
+
+    // Block unverified users — show verify panel, never touch DB or Family Sync.
+    if (!user.emailVerified) {
+      _authRouted = false; // allow re-entry once verified
+      _authShowVerifyPanel(user.email);
+      goto('screen-auth');
+      return;
+    }
+
+    // Stage B — B4: fix the familyId race.
+    // Route with whatever identity we have cached (instant, works offline).
+    // Firestore fetch is async and updates UI+binding after routing — does NOT re-route.
+    const cachedFamilyId = DB.ownerFamilyId();
+    _renderAccountInfo(user.email, cachedFamilyId);
+
+    // Async Firestore fetch — updates UI and persists authoritative familyId.
+    if (window.firebase && firebase.apps.length) {
+      try {
+        firebase.firestore().doc(`users/${user.uid}`).get().then((snap) => {
+          if (snap.exists) {
+            const freshFamilyId = snap.data().familyId;
+            _renderAccountInfo(user.email, freshFamilyId);
+            if (freshFamilyId && freshFamilyId !== cachedFamilyId) {
+              DB.setAuth({ uid: user.uid, familyId: freshFamilyId });
+              DB.initSync(freshFamilyId);
+            }
+          }
+        }).catch(() => {});
+      } catch(e) {}
+    }
+
+    // Stage B — B1: guard against showing data of a different uid (refresh/reopen path).
+    const localOwner = DB.ownerUid();
+    if (localOwner && localOwner !== user.uid) {
+      DB.clearAuth();
+      // BUGFIX: after clearing a different user's state, load THIS user's per-uid key.
+      // familyId intentionally omitted — setAuth() will preserve whatever familyId is
+      // already stored under this uid's own key, never inheriting one from the previous user.
+      DB.setAuth({ uid: user.uid });
+    } else if (!localOwner) {
+      DB.setAuth({ uid: user.uid, familyId: cachedFamilyId || null });
+    }
+
+    // Real Family Sync: start once we know the local state genuinely belongs to this
+    // signed-in uid (covers a fresh setAuth() above, or an already-matching continuing
+    // session where neither branch above fired).
+    if (DB.ownerUid() === user.uid && DB.ownerFamilyId()) {
+      DB.initSync(DB.ownerFamilyId());
+    }
+
+    _routeAfterAuth();
+  }
+
+  /* Called after auth is confirmed (user is signed in). The A2HS landing decision is now
+     owned up-front by init()/skipLanding() — by the time we get here, if we're not
+     standalone, the user has already explicitly chosen to continue in the browser. */
+  function _routeAfterAuth() {
     const isReturningUser = DB.get().children.length > 0;
 
     if (isReturningUser) {
