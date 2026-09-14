@@ -11,6 +11,44 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script id="tailwind-config">
+  tailwind.config = {
+    corePlugins: { preflight: false }, // don't reset global styles — this app already has its own CSS
+    theme: { extend: {
+      colors: {
+        'tertiary-container': '#945d00', 'surface': '#f8f9ff', 'background': '#f8f9ff',
+        'on-background': '#0b1c30', 'on-secondary-fixed-variant': '#005048', 'secondary-container': '#6df5e1',
+        'surface-dim': '#cbdbf5', 'surface-container': '#e5eeff', 'surface-tint': '#006a63',
+        'on-tertiary-container': '#ffe6cc', 'on-tertiary': '#ffffff', 'error': '#ba1a1a',
+        'on-surface': '#0b1c30', 'outline': '#6e7977', 'surface-container-lowest': '#ffffff',
+        'tertiary-fixed': '#ffddb8', 'on-primary-fixed': '#00201d', 'surface-container-low': '#eff4ff',
+        'surface-bright': '#f8f9ff', 'primary-fixed': '#9cf2e8', 'secondary': '#006b5f',
+        'secondary-fixed-dim': '#4fdbc8', 'inverse-surface': '#213145', 'on-error-container': '#93000a',
+        'surface-variant': '#d3e4fe', 'on-error': '#ffffff', 'secondary-fixed': '#71f8e4',
+        'on-secondary-fixed': '#00201c', 'on-surface-variant': '#3e4947', 'primary-fixed-dim': '#80d5cb',
+        'on-secondary': '#ffffff', 'tertiary-fixed-dim': '#ffb95f', 'primary-container': '#0f766e',
+        'outline-variant': '#bdc9c6', 'on-tertiary-fixed': '#2a1700', 'on-primary-container': '#a3faef',
+        'inverse-on-surface': '#eaf1ff', 'on-tertiary-fixed-variant': '#653e00', 'on-primary': '#ffffff',
+        'primary': '#005c55', 'error-container': '#ffdad6', 'on-primary-fixed-variant': '#00504a',
+        'tertiary': '#734700', 'surface-container-highest': '#d3e4fe', 'inverse-primary': '#80d5cb',
+        'on-secondary-container': '#006f64', 'surface-container-high': '#dce9ff',
+      },
+      borderRadius: { 'DEFAULT': '1rem', 'lg': '2rem', 'xl': '3rem', 'full': '9999px' },
+      spacing: { 'margin-mobile': '1rem', 'gutter-mobile': '0.75rem', 'space-lg': '1.5rem', 'space-sm': '0.5rem', 'space-xl': '2rem', 'space-xs': '0.25rem', 'space-md': '1rem' },
+      fontFamily: { sans: ['Rubik'] },
+    } }
+  };
+</script>
+<style>
+  /* Scoped reset so the Tailwind-based landing content lays out as designed, without
+     touching global preflight (which would affect every other screen in the app). */
+  #screen-landing h1, #screen-landing h2, #screen-landing h3,
+  #screen-landing p, #screen-landing ul, #screen-landing li { margin: 0; padding: 0; list-style: none; }
+  #screen-landing * { box-sizing: border-box; }
+  #screen-landing a { text-decoration: none; color: inherit; }
+</style>
   <style>
     /* Email verification & forgot-password panels */
     .auth-verify-icon  { font-size: 2.5rem; text-align: center; margin: 8px 0 4px; }
@@ -121,37 +159,250 @@
       </div>
     </div>
 
-    <!-- LANDING / ADD TO HOME SCREEN -->
+    <!-- LANDING / MARKETING + ADD TO HOME SCREEN -->
     <div class="screen" id="screen-landing">
-      <div class="scroll" style="padding-top:14px;">
-        <div style="text-align:center;padding:10px 6px 22px;">
-          <div class="splash-icon" style="margin:0 auto 16px;">🌡️</div>
-          <div class="pick-title" style="margin-bottom:8px;">כמעט מוכנים</div>
-          <div class="pick-sub" style="font-size:13.5px;line-height:1.7;">
-            כדי שהאפליקציה תיפתח מהר, בלי דפדפן, ותוכל לשלוח לכם תזכורות —
-            כדאי להוסיף אותה למסך הבית. לוקח 10 שניות.
+      <div class="scroll" style="padding:0;">
+        <div class="flex flex-col w-full text-on-surface" dir="rtl">
+
+          <!-- HERO -->
+          <section class="relative w-full px-margin-mobile pt-space-lg pb-space-xl overflow-hidden flex flex-col items-center text-center">
+            <div class="absolute -top-16 inset-x-0 h-96 bg-gradient-to-b from-secondary-container/20 via-surface-container-low/40 to-transparent pointer-events-none rounded-full blur-3xl"></div>
+            <div class="relative inline-flex items-center gap-2 px-space-md py-1.5 rounded-full bg-surface-container-lowest shadow-[0_2px_12px_rgba(15,118,110,0.08)] mb-space-md">
+              <span class="relative flex h-2.5 w-2.5">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary"></span>
+              </span>
+              <span class="text-primary font-medium text-[12px] tracking-tight">שקט נפשי אמיתי להורים מסביב לשעון</span>
+            </div>
+            <h1 class="relative font-bold text-on-surface max-w-sm tracking-tight mb-space-sm" style="font-size:28px;line-height:36px;">
+              כל מה שחשוב לבריאות של הילדים. <span class="text-primary">במקום אחד.</span>
+            </h1>
+            <p class="relative text-[16px] leading-6 text-on-surface-variant max-w-md mb-space-lg">
+              תרופות, חום, טיפולים, תוספים ותזכורות — <span class="font-semibold text-primary">Medickids</span> זוכרת בשבילכם.
+            </p>
+            <div class="relative w-full max-w-xs mb-space-md">
+              <button class="group relative flex items-center justify-center gap-space-sm w-full h-[52px] rounded-full bg-primary text-on-primary text-[14px] font-medium shadow-[0_12px_28px_rgba(0,92,85,0.28)] active:scale-[0.98] transition-all overflow-hidden" onclick="document.getElementById('landing-a2hs').scrollIntoView({behavior:'smooth'})">
+                <span class="font-bold">התחילו עכשיו — ללא עלות</span>
+                <span class="material-symbols-outlined text-[20px]">arrow_back</span>
+              </button>
+            </div>
+            <div class="relative flex items-center justify-center gap-1.5 px-space-md py-1 rounded-full bg-surface-container-high/60 text-on-surface-variant text-[11px] mb-space-xl">
+              <span class="text-tertiary font-bold">★ 4.9</span>
+              <span>בדירוג הורים</span>
+              <span class="text-outline-variant">•</span>
+              <span class="font-medium text-secondary">מומלץ על ידי רופאי ילדים</span>
+            </div>
+            <div class="relative w-full max-w-sm">
+              <div class="absolute -inset-2 bg-gradient-to-tr from-primary/10 via-secondary-container/20 to-transparent rounded-3xl blur-xl"></div>
+              <div class="relative bg-surface-container-lowest rounded-3xl p-space-md shadow-[0_20px_40px_-10px_rgba(15,118,110,0.12)] text-right flex flex-col gap-space-md">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-space-sm">
+                    <div class="relative">
+                      <div class="w-11 h-11 rounded-full bg-surface-container-highest flex items-center justify-center text-primary text-[20px]"><span>👶</span></div>
+                      <span class="absolute bottom-0 left-0 w-3 h-3 rounded-full bg-primary-container shadow-[0_0_0_2px_#ffffff]"></span>
+                    </div>
+                    <div class="flex flex-col text-right">
+                      <div class="flex items-center gap-1.5">
+                        <span class="text-[16px] font-bold text-on-surface">אורי</span>
+                        <span class="text-[12px] text-on-surface-variant">(בן 3)</span>
+                      </div>
+                      <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-error-container text-on-error-container text-[11px] font-semibold w-max">חום במעקב 🩺</span>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-low text-secondary text-[11px] font-medium">
+                    <span class="material-symbols-outlined text-[14px]">done_all</span>
+                    <span>אמא עדכנה לפני 12 דק׳</span>
+                  </div>
+                </div>
+                <div class="bg-gradient-to-br from-surface-container-low to-surface-container rounded-2xl p-space-md flex flex-col gap-2">
+                  <div class="flex items-center justify-between">
+                    <span class="text-[11px] text-on-surface-variant font-medium">מתי מותר לתת נורופן שוב?</span>
+                    <span class="material-symbols-outlined text-primary text-[18px]">lock_clock</span>
+                  </div>
+                  <div class="flex items-baseline justify-between">
+                    <div class="flex items-baseline gap-1.5">
+                      <span class="text-[28px] font-bold text-primary tracking-tight">02:45</span>
+                      <span class="text-[12px] text-on-surface-variant">שעות</span>
+                    </div>
+                    <span class="text-[12px] font-semibold text-secondary bg-surface-container-lowest px-2.5 py-1 rounded-full shadow-sm">בשעה 18:30</span>
+                  </div>
+                  <div class="w-full bg-surface-container-highest h-2 rounded-full overflow-hidden mt-1"><div class="bg-primary h-full rounded-full" style="width: 58%;"></div></div>
+                </div>
+                <div class="flex items-center justify-between px-space-sm py-2 rounded-xl bg-surface-container-lowest text-on-surface">
+                  <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center text-primary"><span class="material-symbols-outlined text-[16px]">medication</span></div>
+                    <div class="flex flex-col text-right">
+                      <span class="text-[12px] font-semibold text-on-surface">5 מ״ל אקמולי</span>
+                      <span class="text-[11px] text-outline">לפני 2.5 שעות • 14:00</span>
+                    </div>
+                  </div>
+                  <span class="px-2 py-0.5 rounded-full bg-secondary-container/40 text-on-secondary-container text-[11px] font-semibold">ניתן ✓</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- REAL SITUATION TIMELINE -->
+          <section class="w-full px-margin-mobile py-space-xl bg-surface-container-low/60 flex flex-col items-center">
+            <div class="w-full max-w-sm text-center mb-space-lg">
+              <span class="inline-block px-space-sm py-1 rounded-full bg-secondary-container/40 text-secondary text-[11px] font-semibold mb-2">סימולציית לילה עם חום</span>
+              <h2 class="text-[22px] leading-8 font-bold text-on-surface mb-2">אתם מטפלים בילד. Medickids זוכרת את השאר.</h2>
+              <p class="text-[14px] text-on-surface-variant">תרחיש אמיתי של לילה עם חום — איך Medickids שומרת על הסדר ומורידה לחץ:</p>
+            </div>
+            <div class="relative w-full max-w-sm flex flex-col gap-space-md">
+              <div class="absolute right-6 top-6 bottom-6 w-0.5 bg-gradient-to-b from-primary via-secondary to-primary-container opacity-30"></div>
+              <div class="relative flex items-start gap-space-md">
+                <div class="relative z-10 flex-shrink-0 w-12 h-12 rounded-full bg-error-container text-on-error-container flex items-center justify-center shadow-md"><span class="material-symbols-outlined text-[22px]">device_thermostat</span></div>
+                <div class="flex-1 bg-surface-container-lowest rounded-2xl p-space-md shadow-sm">
+                  <div class="flex items-center justify-between mb-1"><span class="text-[15px] font-bold text-on-surface">מדידת חום גבוהה</span><span class="text-[11px] px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-semibold">02:15</span></div>
+                  <p class="text-[14px] text-on-surface-variant leading-relaxed"><span class="font-bold text-error">39.1°C</span> נמדד באוזן. הנתון נרשם בלחיצה אחת ומוזן ישירות לגרף החום.</p>
+                </div>
+              </div>
+              <div class="relative flex items-start gap-space-md">
+                <div class="relative z-10 flex-shrink-0 w-12 h-12 rounded-full bg-primary-fixed text-on-primary-fixed flex items-center justify-center shadow-md"><span class="material-symbols-outlined text-[22px]">calculate</span></div>
+                <div class="flex-1 bg-surface-container-lowest rounded-2xl p-space-md shadow-sm">
+                  <div class="flex items-center justify-between mb-1"><span class="text-[15px] font-bold text-on-surface">מתן תרופה ובדיקת מינון</span><span class="text-[11px] px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-semibold">02:20</span></div>
+                  <p class="text-[14px] text-on-surface-variant leading-relaxed">ניתנו <strong class="text-on-surface">5 מ״ל נורופן</strong>. המינון חושב אוטומטית ומדויק למשקל הילד לפי הנחיות הרופא.</p>
+                </div>
+              </div>
+              <div class="relative flex items-start gap-space-md">
+                <div class="relative z-10 flex-shrink-0 w-12 h-12 rounded-full bg-tertiary-fixed text-on-tertiary-fixed flex items-center justify-center shadow-md"><span class="material-symbols-outlined text-[22px]">shield</span></div>
+                <div class="flex-1 bg-surface-container-lowest rounded-2xl p-space-md shadow-sm">
+                  <div class="flex items-center justify-between mb-1"><span class="text-[15px] font-bold text-on-surface">מרווח בטיחות אוטומטי</span><span class="text-[11px] px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-semibold">02:22</span></div>
+                  <p class="text-[14px] text-on-surface-variant leading-relaxed">נעילת מנה זהה ל-6 שעות. האפליקציה מציגה חלון אלטרנטיבי אם החום יעלה שוב בטרם עת.</p>
+                </div>
+              </div>
+              <div class="relative flex items-start gap-space-md">
+                <div class="relative z-10 flex-shrink-0 w-12 h-12 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center shadow-md"><span class="material-symbols-outlined text-[22px]">sync</span></div>
+                <div class="flex-1 bg-surface-container-lowest rounded-2xl p-space-md shadow-sm">
+                  <div class="flex items-center justify-between mb-1"><span class="text-[15px] font-bold text-on-surface">סנכרון מיידי בין ההורים</span><span class="text-[11px] px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-semibold">07:00</span></div>
+                  <p class="text-[14px] text-on-surface-variant leading-relaxed">בן/בת הזוג פותח/ת את הטלפון ורואה בדיוק מה ניתן ומתי. <span class="text-primary font-semibold">אפס בלבול, בלי להעיר אף אחד.</span></p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- FOUR PILLARS -->
+          <section class="w-full px-margin-mobile py-space-xl flex flex-col items-center">
+            <div class="w-full max-w-sm text-center mb-space-lg">
+              <span class="inline-block px-space-sm py-1 rounded-full bg-surface-container-high text-primary text-[11px] font-semibold mb-2">עוגני הביטחון</span>
+              <h2 class="text-[22px] leading-8 font-bold text-on-surface mb-2">בנוי להורים, על ידי הורים</h2>
+              <p class="text-[14px] text-on-surface-variant">כלים קליניים אינטואיטיביים שמחליפים פתקים, ספקות ושיחות מתוחות.</p>
+            </div>
+            <div class="w-full max-w-sm flex flex-col gap-space-md">
+              <div class="bg-surface-container-lowest rounded-3xl p-space-lg shadow-[0_4px_20px_rgba(15,118,110,0.06)] flex flex-col gap-space-md">
+                <div class="w-12 h-12 rounded-2xl bg-surface-container-low text-primary flex items-center justify-center"><span class="material-symbols-outlined text-[28px]">query_stats</span></div>
+                <div class="flex flex-col gap-1 text-right">
+                  <h3 class="text-[16px] font-bold text-on-surface">חום והיסטוריה מדויקת לרופא</h3>
+                  <p class="text-[14px] text-on-surface-variant">במקום לגמגם אצל הרופא, מציגים גרף מסודר עם חום מדויק, תרופות ושעות מדויקות.</p>
+                </div>
+              </div>
+              <div class="bg-surface-container-lowest rounded-3xl p-space-lg shadow-[0_4px_20px_rgba(15,118,110,0.06)] flex flex-col gap-space-md">
+                <div class="w-12 h-12 rounded-2xl bg-surface-container-low text-secondary flex items-center justify-center"><span class="material-symbols-outlined text-[28px]">timer</span></div>
+                <div class="flex flex-col gap-1 text-right">
+                  <h3 class="text-[16px] font-bold text-on-surface">מרווחי בטיחות ומניעת כפילויות</h3>
+                  <p class="text-[14px] text-on-surface-variant">חישוב חכם לפי סוג התרופה ומשקל הילד — מונע מנת יתר גם כשההורים מותשים.</p>
+                </div>
+              </div>
+              <div class="bg-surface-container-lowest rounded-3xl p-space-lg shadow-[0_4px_20px_rgba(15,118,110,0.06)] flex flex-col gap-space-md">
+                <div class="w-12 h-12 rounded-2xl bg-surface-container-low text-primary flex items-center justify-center"><span class="material-symbols-outlined text-[28px]">event_repeat</span></div>
+                <div class="flex flex-col gap-1 text-right">
+                  <h3 class="text-[16px] font-bold text-on-surface">ניהול קורסים ממושכים ותוספים</h3>
+                  <p class="text-[14px] text-on-surface-variant">ספירת ימי אנטיביוטיקה, טיפות ברזל וויטמין D בשגרה — סוף סוף לא שוכחים באמצע.</p>
+                </div>
+              </div>
+              <div class="bg-surface-container-lowest rounded-3xl p-space-lg shadow-[0_4px_20px_rgba(15,118,110,0.06)] flex flex-col gap-space-md">
+                <div class="w-12 h-12 rounded-2xl bg-surface-container-low text-secondary flex items-center justify-center"><span class="material-symbols-outlined text-[28px]">save_as</span></div>
+                <div class="flex flex-col gap-1 text-right">
+                  <h3 class="text-[16px] font-bold text-on-surface">סנכרון מיידי בין שני ההורים</h3>
+                  <p class="text-[14px] text-on-surface-variant">עדכון חי לשני הטלפונים ברגע שניתנה תרופה. אין יותר "נתת לו כבר?" ב-3 לפנות בוקר.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- BEFORE / AFTER -->
+          <section class="w-full px-margin-mobile py-space-xl bg-surface-container-low/50 flex flex-col items-center">
+            <div class="w-full max-w-sm text-center mb-space-lg">
+              <h2 class="text-[22px] leading-8 font-bold text-on-surface mb-2">ההבדל היומיומי</h2>
+              <p class="text-[14px] text-on-surface-variant">איך החיים נראים לפני ואחרי שעוברים למערכת אחת מסודרת.</p>
+            </div>
+            <div class="w-full max-w-sm flex flex-col gap-space-md">
+              <div class="bg-surface-container-lowest rounded-3xl p-space-md shadow-sm text-right opacity-90">
+                <div class="flex items-center gap-2 mb-space-sm">
+                  <span class="w-7 h-7 rounded-full bg-error-container text-on-error-container flex items-center justify-center"><span class="material-symbols-outlined text-[16px]">close</span></span>
+                  <span class="text-[16px] font-bold text-on-surface">לפני Medickids</span>
+                </div>
+                <ul class="flex flex-col gap-2 text-[14px] text-on-surface-variant pr-2">
+                  <li class="flex items-start gap-2"><span class="text-error font-bold">•</span><span>הודעות וואטסאפ אבודות שנעלמות בין עשרות קבוצות.</span></li>
+                  <li class="flex items-start gap-2"><span class="text-error font-bold">•</span><span>פתקים מטושטשים על המקרר.</span></li>
+                  <li class="flex items-start gap-2"><span class="text-error font-bold">•</span><span>חרדה ב-3 בלילה: "מותר כבר לתת עוד מנה?"</span></li>
+                </ul>
+              </div>
+              <div class="bg-surface-container-lowest rounded-3xl p-space-md shadow-[0_8px_24px_rgba(15,118,110,0.1)] text-right">
+                <div class="flex items-center gap-2 mb-space-sm">
+                  <span class="w-7 h-7 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center"><span class="material-symbols-outlined text-[16px]">check</span></span>
+                  <span class="text-[16px] font-bold text-primary">עם Medickids</span>
+                </div>
+                <ul class="flex flex-col gap-2 text-[14px] text-on-surface pr-2">
+                  <li class="flex items-start gap-2"><span class="text-primary font-bold">✓</span><span>תמונת מצב קריסטלית ברגע: מה ניתן ומתי.</span></li>
+                  <li class="flex items-start gap-2"><span class="text-primary font-bold">✓</span><span>טיימר בטיחות מדויק שלוקח בחשבון שילוב תרופות.</span></li>
+                  <li class="flex items-start gap-2"><span class="text-primary font-bold">✓</span><span>סנכרון ענן שקט שמגן על שני ההורים מטעויות.</span></li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          <!-- ADD TO HOME SCREEN — functional install step -->
+          <section id="landing-a2hs" class="w-full px-margin-mobile py-space-xl flex flex-col items-center">
+            <div class="w-full max-w-sm text-center mb-space-lg">
+              <div class="w-14 h-14 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto mb-space-sm"><span class="material-symbols-outlined text-[28px]">install_mobile</span></div>
+              <h2 class="text-[22px] leading-8 font-bold text-on-surface mb-2">כמעט מוכנים</h2>
+              <p class="text-[14px] text-on-surface-variant leading-relaxed">כדי שהאפליקציה תיפתח מהר, בלי דפדפן, ותוכל לשלוח לכם תזכורות — כדאי להוסיף אותה למסך הבית. לוקח 10 שניות.</p>
+            </div>
+            <div class="w-full max-w-sm bg-surface-container-lowest rounded-3xl p-space-lg shadow-[0_4px_20px_rgba(15,118,110,0.06)]">
+              <!-- iOS instructions -->
+              <div id="landing-ios" style="display:none;">
+                <div class="a2hs-step"><div class="a2hs-num">1</div><div>הקישו על כפתור השיתוף <span class="a2hs-ic">⬆️</span> בתחתית מסך ה־Safari</div></div>
+                <div class="a2hs-step"><div class="a2hs-num">2</div><div>גללו למטה ובחרו <b>"הוספה למסך הבית"</b> <span class="a2hs-ic">➕</span></div></div>
+                <div class="a2hs-step"><div class="a2hs-num">3</div><div>לחצו <b>"הוספה"</b> — והאייקון יופיע כמו כל אפליקציה אחרת 🎉</div></div>
+              </div>
+              <!-- Android / Chrome instructions -->
+              <div id="landing-android" style="display:none;">
+                <button class="btn-primary" id="btn-install" onclick="App.installNow()">📲 התקנה למסך הבית</button>
+                <div class="a2hs-step" style="margin-top:16px;"><div class="a2hs-num">i</div><div>אם הכפתור לא הופיע: פתחו את התפריט <b>⋮</b> בדפדפן ובחרו <b>"התקן אפליקציה"</b></div></div>
+              </div>
+              <!-- Desktop fallback -->
+              <div id="landing-desktop" style="display:none;">
+                <div class="a2hs-step"><div class="a2hs-num">i</div><div>מומלץ לפתוח את הקישור מהנייד כדי להוסיף למסך הבית. אפשר גם להמשיך כאן בדפדפן.</div></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- FINALE CTA -->
+          <section class="w-full px-margin-mobile pt-space-lg pb-space-xl flex flex-col items-center">
+            <div class="relative w-full max-w-sm rounded-3xl bg-primary text-on-primary p-space-xl flex flex-col items-center text-center shadow-[0_24px_48px_rgba(0,92,85,0.32)] overflow-hidden">
+              <div class="absolute -top-12 -right-12 w-44 h-44 bg-secondary-container/20 rounded-full blur-2xl pointer-events-none"></div>
+              <div class="absolute -bottom-12 -left-12 w-44 h-44 bg-primary-fixed/20 rounded-full blur-2xl pointer-events-none"></div>
+              <div class="w-14 h-14 rounded-full bg-on-primary/10 flex items-center justify-center mb-space-md"><span class="material-symbols-outlined text-[32px] text-on-primary">health_and_safety</span></div>
+              <h2 class="text-[22px] leading-8 font-bold tracking-tight mb-space-xs">תנו לעצמכם שקט נפשי כשהילד לא מרגיש טוב.</h2>
+              <p class="text-[14px] text-on-primary/90 max-w-xs mb-space-lg">הצטרפו להורים שמנהלים חום ותרופות בלי חרדה ובלי סימני שאלה.</p>
+              <button class="w-full h-[52px] rounded-full bg-surface-container-lowest text-primary text-[16px] font-bold flex items-center justify-center shadow-lg active:scale-95 transition-all mb-space-md" onclick="App.skipLanding()">
+                המשיכו בדפדפן בלי התקנה ←
+              </button>
+              <div class="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[11px] text-on-primary/80">
+                <span>התקנה מהירה</span><span>•</span><span>ללא הרשמה מסורבלת</span><span>•</span><span>סנכרון מיידי</span>
+              </div>
+            </div>
+          </section>
+
+          <div class="w-full px-margin-mobile pb-space-lg flex items-center justify-center gap-space-md text-on-surface-variant text-[11px]">
+            <div class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-primary">lock</span><span>אבטחת מידע רפואי מוצפן</span></div>
+            <span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+            <div class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-secondary">cloud_done</span><span>גיבוי ענן אוטומטי</span></div>
           </div>
-        </div>
 
-        <!-- iOS instructions -->
-        <div id="landing-ios" style="display:none;">
-          <div class="a2hs-step"><div class="a2hs-num">1</div><div>הקישו על כפתור השיתוף <span class="a2hs-ic">⬆️</span> בתחתית מסך ה־Safari</div></div>
-          <div class="a2hs-step"><div class="a2hs-num">2</div><div>גללו למטה ובחרו <b>"הוספה למסך הבית"</b> <span class="a2hs-ic">➕</span></div></div>
-          <div class="a2hs-step"><div class="a2hs-num">3</div><div>לחצו <b>"הוספה"</b> — והאייקון יופיע כמו כל אפליקציה אחרת 🎉</div></div>
         </div>
-
-        <!-- Android / Chrome instructions -->
-        <div id="landing-android" style="display:none;">
-          <button class="btn-primary" id="btn-install" onclick="App.installNow()">📲 התקנה למסך הבית</button>
-          <div class="a2hs-step" style="margin-top:16px;"><div class="a2hs-num">i</div><div>אם הכפתור לא הופיע: פתחו את התפריט <b>⋮</b> בדפדפן ובחרו <b>"התקן אפליקציה"</b></div></div>
-        </div>
-
-        <!-- Desktop fallback -->
-        <div id="landing-desktop" style="display:none;">
-          <div class="a2hs-step"><div class="a2hs-num">i</div><div>מומלץ לפתוח את הקישור מהנייד כדי להוסיף למסך הבית. אפשר גם להמשיך כאן בדפדפן.</div></div>
-        </div>
-
-        <div class="pick-both" style="margin-top:22px;" onclick="App.skipLanding()">להמשיך בדפדפן בלי התקנה</div>
       </div>
     </div>
 
