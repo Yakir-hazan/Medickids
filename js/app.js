@@ -822,9 +822,16 @@ const App = (() => {
       const isCalm = !vm.hasFever && !vm.courseState.hasActiveCourse;
 
       const ageText = c.birthDate ? (() => {
-        const diff = Date.now() - new Date(c.birthDate).getTime();
-        const years = Math.floor(diff / (365.25 * 24 * 3600 * 1000));
-        return years > 0 ? `${years} שנים` : 'פחות משנה';
+        const totalMonths = calcAgeMonths(c.birthDate);
+        if (totalMonths < 1)  return 'פחות מחודש';
+        if (totalMonths < 12) return `${totalMonths} חודשים`;
+        const years  = Math.floor(totalMonths / 12);
+        const months = totalMonths % 12;
+        if (months === 0) return years === 1 ? 'שנה' : `${years} שנים`;
+        if (months < 3)   return years === 1 ? 'שנה וקצת' : `${years} שנים וקצת`;
+        if (months < 6)   return years === 1 ? 'שנה ורבע' : `${years} שנים ורבע`;
+        if (months < 9)   return years === 1 ? 'שנה וחצי' : `${years} שנים וחצי`;
+        return years === 1 ? 'שנה ושלושה רבעים' : `${years} שנים ושלושה רבעים`;
       })() : '';
 
       // avatar ring — ירוק במצב calm
