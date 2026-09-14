@@ -58,11 +58,22 @@ const App = (() => {
 
   function renderLanding() {
     if (isStandalone()) { return; } // Auth routing handles navigation — no splash here
+    // A2HS section is hidden by default — shown only when user taps the install button
+    // (see showInstallGuide below)
+  }
+  function showInstallGuide() {
+    const section = document.getElementById('landing-a2hs');
+    if (!section) return;
+    // Show the section
+    section.style.display = 'flex';
+    // Detect platform and show the right instructions
     document.getElementById('landing-ios').style.display = isIOS() ? 'block' : 'none';
     document.getElementById('landing-android').style.display = (isAndroid() || (!isIOS() && deferredInstallPrompt)) ? 'block' : 'none';
     document.getElementById('landing-desktop').style.display = (!isIOS() && !isAndroid() && !deferredInstallPrompt) ? 'block' : 'none';
     const btn = document.getElementById('btn-install');
-    if (btn) btn.style.display = deferredInstallPrompt ? 'block' : (isAndroid() ? 'none' : 'none');
+    if (btn) btn.style.display = deferredInstallPrompt ? 'block' : 'none';
+    // Smooth scroll to the guide
+    setTimeout(() => section.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
   }
   function installNow() {
     if (!deferredInstallPrompt) { toast('פתחו את תפריט הדפדפן ובחרו "התקן אפליקציה"'); return; }
@@ -3589,7 +3600,7 @@ const App = (() => {
     openMedSheet, pickMedChild, pickMedMedicine, addCustomMedicine, saveMed, pickReminderMode, toggleDailyReminder,
     setHistFilter, setTempFilter, openTempSheet, pickTempChild, saveTemp,
     openEditKid, saveKid, toggleNotif, init, selectChild, closeChildDetail,
-    installNow, skipLanding,
+    installNow, skipLanding, showInstallGuide,
     obPickParent, obPickAv, obHandlePhoto, obValidate2, obBirthChange, obValidate3, obNext, obBack,
     obActivateSupplements, obSkipSupplements, startOnboarding, obGetReturnTo: () => _obReturnTo,
     openDoseSheet, pickDoseChild, pickDoseMed, pickDoseConc, calcDose,
