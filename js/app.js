@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.49 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.145';
+  const APP_VERSION = '1.0.0-beta.146';
   const SPLASH_DURATION_RETURNING = 600; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -3042,7 +3042,10 @@ const App = (() => {
 
   function renderSettings() {
     const on = DB.get().settings.notifications;
-    if (typeof toast === 'function') toast('[NS] on=' + on + ' uid=' + (DB.ownerUid()||'?') + ' perm=' + Notification.permission, 6000);
+    // Debug: persist to DevCenter log (📝 יומן ← חיפוש "[NS]") instead of a toast that
+    // disappears before it can be read/screenshotted. Notification.permission is native
+    // (not part of DB), so it's not already captured by DevCenter's DB call-wrapping.
+    if (window.DevCenter) DevCenter.log('INFO', '[NS] renderSettings', 'on=' + on + ' uid=' + (DB.ownerUid()||'?') + ' perm=' + Notification.permission);
     document.getElementById('toggle-notif').classList.toggle('on', on);
     _renderBellPill();
     document.getElementById('set-version-num').textContent = APP_VERSION;
@@ -3063,7 +3066,8 @@ const App = (() => {
   }
   function toggleNotif() {
     const on = !DB.get().settings.notifications;
-    toast('[TG] uid=' + (DB.ownerUid() || 'NULL') + ' on→' + on, 8000);
+    // Debug: persist to DevCenter log instead of a toast (see renderSettings above).
+    if (window.DevCenter) DevCenter.log('INFO', '[TG] toggleNotif', 'uid=' + (DB.ownerUid() || 'NULL') + ' on→' + on);
 
     // עדכן UI מיד — לפני כל async
     try {
