@@ -3402,9 +3402,15 @@ const App = (() => {
   }
 
   function obValidate3() {
-    const w   = parseFloat(document.getElementById('ob-weight')?.value);
-    const btn = document.getElementById('ob-next-3');
-    if (btn) btn.disabled = isNaN(w) || w <= 0;
+    const w    = parseFloat(document.getElementById('ob-weight')?.value);
+    const birth = (document.getElementById('ob-birth')?.value || '').trim();
+    const btn  = document.getElementById('ob-next-3');
+    const valid = !isNaN(w) && w > 0 && birth.length > 0;
+    if (btn) {
+      btn.disabled      = !valid;
+      btn.style.opacity = valid ? '1' : '0.5';
+      btn.style.cursor  = valid ? 'pointer' : 'not-allowed';
+    }
   }
 
   function obNext(fromStep) {
@@ -3733,6 +3739,7 @@ const App = (() => {
 })();
 
 document.addEventListener('DOMContentLoaded', App.init);
+
 
 
 
