@@ -75,13 +75,25 @@
     }, extra || {});
     events.push(ev);
     if (events.length > MAX_EVENTS) events.shift();
-    if (panelOpen) scheduleRender();
+    // BUGFIX (render feedback loop): panels like Health/Database/Storage call DB.get()
+    // (and other wrapped read methods) directly inside their own render function. DB.get()
+    // being wrapped means that call itself logs an event — which, without this guard, would
+    // call scheduleRender() again, re-running the same render, calling DB.get() again,
+    // forever. This pinned the main thread at 60fps and made every tap (tab switch, ✕,
+    // copy) silently fail, since the DOM was being torn down and rebuilt every frame.
+    // _rendering is true only while renderPanel()/renderPanelBody() are synchronously
+    // executing, so calls made BY the console's own render never re-trigger a render;
+    // real app/user-driven events (which happen outside that window) still do.
+    if (panelOpen && !_rendering) scheduleRender();
     return ev;
   }
 
   let renderScheduled = false;
   let _touchingPanel = false;
   let _renderPendingAfterTouch = false;
+  let _rendering = false;
+  let _lastRenderAt = 0;
+  const MIN_RENDER_INTERVAL_MS = 400; // second safety net: even legitimate rapid-fire events (e.g. Firestore Listen-channel traffic) can't re-render faster than this
   function scheduleRender() {
     if (renderScheduled) return;
     renderScheduled = true;
@@ -95,6 +107,9 @@
       // unresponsive. Deferring the render until the finger actually lifts fixes this
       // without giving up live updates.
       if (_touchingPanel) { _renderPendingAfterTouch = true; return; }
+      const sinceLast = performance.now() - _lastRenderAt;
+      if (sinceLast < MIN_RENDER_INTERVAL_MS) { setTimeout(scheduleRender, MIN_RENDER_INTERVAL_MS - sinceLast); return; }
+      _lastRenderAt = performance.now();
       renderPanelBody();
     });
   }
@@ -284,15 +299,24 @@
   function renderPanelBody() {
     const body = document.getElementById('devctr-body');
     if (!body) return;
-    if (currentTab === 'health') body.innerHTML = renderHealthTab();
-    else if (currentTab === 'timeline') body.innerHTML = renderTimelineTab();
-    else if (currentTab === 'logs') body.innerHTML = renderListTab(events.filter((e) => e.source === 'console' || e.source === 'window.onerror'));
-    else if (currentTab === 'errors') body.innerHTML = renderListTab(events.filter((e) => e.category === CATEGORY.ERROR));
-    else if (currentTab === 'network') body.innerHTML = renderListTab(events.filter((e) => e.category === CATEGORY.NETWORK));
-    else if (currentTab === 'database') body.innerHTML = renderDatabaseTab();
-    else if (currentTab === 'storage') body.innerHTML = renderStorageTab();
-    else if (currentTab === 'tools') body.innerHTML = renderToolsTab();
-    else if (currentTab === 'export') body.innerHTML = renderExportTab();
+    // Reentrancy guard lives here (not just in scheduleRender's callback) so it also covers
+    // direct callers like openPanel()/renderPanel()/setTab() — see logEvent() for why this
+    // is needed: the tabs below call DB.get(), which is wrapped and logs, which without this
+    // guard would call scheduleRender() again → infinite render loop → frozen UI.
+    _rendering = true;
+    try {
+      if (currentTab === 'health') body.innerHTML = renderHealthTab();
+      else if (currentTab === 'timeline') body.innerHTML = renderTimelineTab();
+      else if (currentTab === 'logs') body.innerHTML = renderListTab(events.filter((e) => e.source === 'console' || e.source === 'window.onerror'));
+      else if (currentTab === 'errors') body.innerHTML = renderListTab(events.filter((e) => e.category === CATEGORY.ERROR));
+      else if (currentTab === 'network') body.innerHTML = renderListTab(events.filter((e) => e.category === CATEGORY.NETWORK));
+      else if (currentTab === 'database') body.innerHTML = renderDatabaseTab();
+      else if (currentTab === 'storage') body.innerHTML = renderStorageTab();
+      else if (currentTab === 'tools') body.innerHTML = renderToolsTab();
+      else if (currentTab === 'export') body.innerHTML = renderExportTab();
+    } finally {
+      _rendering = false;
+    }
   }
 
   /* ---------- Timeline (default tab) ---------- */
