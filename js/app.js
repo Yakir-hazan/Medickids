@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.49 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.128';
+  const APP_VERSION = '1.0.0-beta.129';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -411,6 +411,7 @@ const App = (() => {
   }
 
   function renderDashboard() {
+    _renderBellPill();
     _ensureSupplementPrescriptions();
     // migration: הוסף createdAt לילדים — אם יש להם createdAt שנראה כמו birthDate, אפס להיום
     const _nowMs = Date.now();
@@ -2993,9 +2994,19 @@ const App = (() => {
   }
 
   /* ---------- settings ---------- */
+  function _renderBellPill() {
+    const on = DB.get().settings.notifications;
+    const btn = document.getElementById('dash-bell-btn');
+    const lbl = document.getElementById('dash-bell-label');
+    if (!btn) return;
+    btn.classList.toggle('off', !on);
+    if (lbl) lbl.textContent = on ? 'התראות' : 'התראות כבויות';
+  }
+
   function renderSettings() {
     const on = DB.get().settings.notifications;
     document.getElementById('toggle-notif').classList.toggle('on', on);
+    _renderBellPill();
     document.getElementById('set-version-num').textContent = APP_VERSION;
     const aboutV = document.getElementById('about-version-num');
     if (aboutV) aboutV.textContent = APP_VERSION;
