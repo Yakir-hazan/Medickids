@@ -1339,8 +1339,53 @@
   </div>
 </div>
 
+
+  <!-- Welcome popup — shown once after first onboarding -->
+  <div id="welcome-popup-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(11,28,48,0.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;" onclick="if(event.target===this)App.closeWelcomePopup()">
+    <div style="background:#fff;border-radius:24px;width:100%;max-width:360px;overflow:hidden;box-shadow:0 24px 60px rgba(11,28,48,0.18);animation:wpp-in 0.35s cubic-bezier(0.34,1.56,0.64,1) both;">
+      <!-- Green header -->
+      <div style="background:#0f766e;padding:28px 24px 24px;position:relative;overflow:hidden;text-align:right;">
+        <div style="position:absolute;left:-20px;bottom:-28px;width:100px;height:100px;border-radius:9999px;background:rgba(255,255,255,0.08);pointer-events:none;"></div>
+        <div style="position:absolute;right:-12px;top:-16px;width:70px;height:70px;border-radius:9999px;background:rgba(255,255,255,0.08);pointer-events:none;"></div>
+        <div style="font-size:40px;margin-bottom:12px;position:relative;z-index:1;">🎉</div>
+        <h2 style="font-size:22px;font-weight:700;color:#fff;margin:0 0 6px 0;font-family:'Rubik',sans-serif;position:relative;z-index:1;">ברוכים הבאים ל-Medickids!</h2>
+        <p style="font-size:13px;color:rgba(204,251,241,0.9);margin:0;font-family:'Rubik',sans-serif;line-height:1.5;position:relative;z-index:1;">הפרופיל נוצר בהצלחה. מהיום הכול מסודר במקום אחד.</p>
+      </div>
+      <!-- Body -->
+      <div style="padding:20px 24px;direction:rtl;font-family:'Rubik',sans-serif;">
+        <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:20px;">
+          <div style="display:flex;align-items:flex-start;gap:12px;">
+            <div style="width:36px;height:36px;border-radius:12px;background:#f0fdf4;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🌡️</div>
+            <div><div style="font-size:14px;font-weight:600;color:#0b1c30;">מעקב חום ותרופות</div><div style="font-size:12px;color:#6e7977;margin-top:2px;">רישום מהיר עם חישוב מינון אוטומטי</div></div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:12px;">
+            <div style="width:36px;height:36px;border-radius:12px;background:#f0fdf4;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">💊</div>
+            <div><div style="font-size:14px;font-weight:600;color:#0b1c30;">טיפולים ותוספים</div><div style="font-size:12px;color:#6e7977;margin-top:2px;">מעקב קורסי אנטיביוטיקה ותזכורות יומיות</div></div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:12px;">
+            <div style="width:36px;height:36px;border-radius:12px;background:#f0fdf4;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">📋</div>
+            <div><div style="font-size:14px;font-weight:600;color:#0b1c30;">היסטוריה מסודרת</div><div style="font-size:12px;color:#6e7977;margin-top:2px;">כל המידע נשמר ומאורגן לפי ילד</div></div>
+          </div>
+        </div>
+        <button onclick="App.closeWelcomePopup()"
+          style="width:100%;height:52px;border-radius:14px;background:#0f766e;border:none;color:#fff;font-size:15px;font-weight:600;font-family:'Rubik',sans-serif;cursor:pointer;box-shadow:0 4px 14px rgba(15,118,110,0.25);">
+          הבנתי, בואו נתחיל! →
+        </button>
+      </div>
+    </div>
+  </div>
+  <style>
+    @keyframes wpp-in {
+      from { opacity:0; transform:scale(0.88) translateY(20px); }
+      to   { opacity:1; transform:scale(1) translateY(0); }
+    }
+    #welcome-popup-overlay { display:none; }
+    #welcome-popup-overlay.active { display:flex !important; }
+  </style>
+
 </body>
 </html>
+
 
 
 
