@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.49 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.153';
+  const APP_VERSION = '1.0.0-beta.154';
   const SPLASH_DURATION_RETURNING = 600; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -3325,8 +3325,15 @@ const App = (() => {
 
   function obPickParent(type) {
     _obParent = type;
-    document.getElementById('ob-dad').classList.toggle('ob-sel', type === 'dad');
-    document.getElementById('ob-mom').classList.toggle('ob-sel', type === 'mom');
+    ['dad','mom'].forEach(id => {
+      const card  = document.getElementById('ob-' + id);
+      const check = card.querySelector('.ob-s1-card-check');
+      const badge = card.querySelector('.ob-s1-card-sel-badge');
+      const active = id === type;
+      card.classList.toggle('ob-s1-card--active', active);
+      if (check) { check.classList.toggle('ob-s1-card-check--on', active); check.textContent = active ? '✓' : '○'; }
+      if (badge) badge.style.display = active ? '' : 'none';
+    });
   }
 
   function obPickAv(el) {

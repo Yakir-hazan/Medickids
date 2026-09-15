@@ -688,26 +688,78 @@
 
         <!-- Step 1: Parent selection -->
         <div class="ob-step" id="ob-step-1">
-          <div class="ob-hero">
-            <div class="ob-app-name">💊 MEDICKIDS</div>
-            <div class="ob-back-btn" id="ob-step1-back" style="display:none;" onclick="App.goto(App.obGetReturnTo())">→ חזור</div>
-            <div class="ob-hero-circle">👨‍👩‍👧</div>
-            <h1 class="ob-hero-title">ברוכים הבאים!</h1>
-            <p class="ob-hero-sub">יומן חכם לתרופות וחום של הילדים שלכם</p>
-          </div>
-          <div class="ob-sheet">
-            <p class="ob-sheet-q">קודם כל — אתה מי?</p>
-            <div class="ob-parent-cards">
-              <div class="ob-parent-card" id="ob-dad" onclick="App.obPickParent('dad')">
-                <div class="ob-parent-ic">👨</div>
-                <div class="ob-parent-lbl">אבא</div>
+          <div class="ob-s1-scroll">
+
+            <!-- Hero card -->
+            <div class="ob-s1-hero">
+              <div class="ob-s1-blur ob-s1-blur-tl"></div>
+              <div class="ob-s1-blur ob-s1-blur-tr"></div>
+
+              <!-- back btn (returning user) -->
+              <div class="ob-back-btn" id="ob-step1-back" style="display:none;" onclick="App.goto(App.obGetReturnTo())">→ חזור</div>
+
+              <!-- brand badge -->
+              <div class="ob-s1-brand">
+                <div class="ob-s1-brand-icon">➕</div>
+                <div>
+                  <div class="ob-s1-brand-row">
+                    <span class="ob-s1-brand-name">MediKids</span>
+                    <span class="ob-s1-badge">בטוח ומוגן</span>
+                  </div>
+                  <div class="ob-s1-brand-sub">מעקב רפואי משפחתי חכם ופשוט</div>
+                </div>
               </div>
-              <div class="ob-parent-card" id="ob-mom" onclick="App.obPickParent('mom')">
-                <div class="ob-parent-ic">👩</div>
-                <div class="ob-parent-lbl">אמא</div>
+
+              <!-- headlines -->
+              <h1 class="ob-s1-title">ברוכים הבאים<br>ל-MediKids</h1>
+              <p class="ob-s1-sub">בואו נתחיל בהתאמה אישית של האפליקציה למשפחה שלכם. מי את/ה?</p>
+            </div>
+
+            <!-- parent cards -->
+            <div class="ob-s1-section-label">
+              <span>תפקיד הורי</span>
+            </div>
+
+            <div class="ob-s1-cards">
+
+              <button class="ob-s1-card ob-s1-card--active" id="ob-dad" onclick="App.obPickParent('dad')" type="button">
+                <div class="ob-s1-card-avatar">👨</div>
+                <div class="ob-s1-card-body">
+                  <div class="ob-s1-card-name-row">
+                    <span class="ob-s1-card-name">אבא</span>
+                    <span class="ob-s1-card-sel-badge">נבחר</span>
+                  </div>
+                  <p class="ob-s1-card-desc">הורה מנהל ומעדכן ראשי</p>
+                </div>
+                <div class="ob-s1-card-check ob-s1-card-check--on">✓</div>
+              </button>
+
+              <button class="ob-s1-card" id="ob-mom" onclick="App.obPickParent('mom')" type="button">
+                <div class="ob-s1-card-avatar">👩</div>
+                <div class="ob-s1-card-body">
+                  <div class="ob-s1-card-name-row">
+                    <span class="ob-s1-card-name">אמא</span>
+                    <span class="ob-s1-card-sel-badge" style="display:none;">נבחר</span>
+                  </div>
+                  <p class="ob-s1-card-desc">הורה מנהלת ומעדכנת ראשית</p>
+                </div>
+                <div class="ob-s1-card-check">○</div>
+              </button>
+
+            </div>
+
+            <!-- sync info -->
+            <div class="ob-s1-info">
+              <div class="ob-s1-info-icon">🔄</div>
+              <div>
+                <div class="ob-s1-info-title">סנכרון משפחתי מלא</div>
+                <div class="ob-s1-info-desc">תוכלו להזמין את בן/בת הזוג בכל שלב בהמשך, כך ששניכם תישארו מעודכנים בזמן אמת.</div>
               </div>
             </div>
-            <button class="ob-cta" onclick="App.obNext(1)">המשך ←</button>
+
+            <!-- CTA -->
+            <button class="ob-s1-cta" onclick="App.obNext(1)">המשך לשלב הבא ←</button>
+
           </div>
         </div>
 
