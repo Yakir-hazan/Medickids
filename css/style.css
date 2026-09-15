@@ -441,13 +441,18 @@ body{
 .hdr-top-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   margin-bottom: 18px;
   position: relative;
 }
+.hdr-top-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
 
-/* פעמון + נקודת סינכרון */
-.hdr-bell-btn {
+/* כפתור עגול אחיד — פעמון + עזרה */
+.hdr-top-btn {
   position: relative;
   background: rgba(255,255,255,0.18);
   border: none;
@@ -458,21 +463,23 @@ body{
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
   -webkit-tap-highlight-color: transparent;
   flex-shrink: 0;
 }
-.hdr-bell-emoji { font-size: 20px; line-height: 1; }
-.hdr-bell-btn.off .hdr-bell-emoji::after { content: '🔕'; }
-.hdr-bell-btn.off .hdr-bell-emoji         { font-size: 0; }
-.hdr-bell-btn.off .hdr-bell-emoji::after  { font-size: 20px; }
+.hdr-top-btn:active { background: rgba(255,255,255,0.28); }
 
-/* נקודה ירוקה/אפורה לסטטוס סינכרון */
+.hdr-bell-emoji { font-size: 20px; line-height: 1; }
+#dash-bell-btn.off .hdr-bell-emoji       { font-size: 0; }
+#dash-bell-btn.off .hdr-bell-emoji::after { content: '🔕'; font-size: 20px; }
+
+/* נקודת סינכרון */
 .hdr-sync-dot {
   position: absolute;
   bottom: 6px;
-  left: 6px;
-  width: 9px;
-  height: 9px;
+  right: 6px;
+  width: 9px; height: 9px;
   border-radius: 50%;
   background: #4ade80;
   border: 2px solid rgba(13,95,89,0.8);
@@ -481,38 +488,6 @@ body{
 .hdr-sync-dot.visible { display: block; }
 .hdr-sync-dot.pending { background: #facc15; }
 .hdr-sync-dot.failed  { background: #f87171; }
-
-/* לוגו מרכזי */
-.hdr-logo-block {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1px;
-}
-.hdr-logo-name {
-  color: #fff;
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 1.5px;
-}
-.hdr-logo-sub {
-  color: rgba(255,255,255,0.70);
-  font-size: 11px;
-  font-weight: 500;
-}
-
-/* אייקון עלה ימין */
-.hdr-leaf {
-  width: 42px;
-  height: 42px;
-  background: rgba(255,255,255,0.18);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  flex-shrink: 0;
-}
 
 /* body margin to offset new taller header */
 .dash-body-offset {
@@ -1507,3 +1482,79 @@ body { background: var(--bg); }
 }
 .v3-healthy-num  { font-size: 28px; font-weight: 900; color: #059669; line-height: 1; }
 .v3-healthy-lbl  { font-size: 10px; color: #aaa; margin-top: 2px; }
+
+/* ══ HELP OVERLAY ══ */
+#help-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 9000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.help-sheet {
+  background: #fff;
+  border-radius: 24px 24px 0 0;
+  width: 100%;
+  max-height: 82vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideUp 0.26s ease;
+}
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+.help-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 20px 14px;
+  border-bottom: 1px solid #f0f0f0;
+  flex-shrink: 0;
+}
+.help-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: #1a1a1a;
+}
+.help-close {
+  background: #f2f2f2;
+  border: none;
+  border-radius: 50%;
+  width: 32px; height: 32px;
+  font-size: 14px;
+  cursor: pointer;
+  color: #555;
+  display: flex; align-items: center; justify-content: center;
+}
+.help-body {
+  overflow-y: auto;
+  padding: 16px 20px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.help-section {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+.help-icon {
+  font-size: 26px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.help-h {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 4px;
+}
+.help-p {
+  font-size: 13px;
+  color: #555;
+  line-height: 1.55;
+}

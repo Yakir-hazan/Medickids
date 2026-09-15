@@ -485,17 +485,15 @@
           <div class="hdr-blob2"></div>
           <span id="dash-updated" style="display:none"></span>
 
-          <!-- שורה עליונה: פעמון | לוגו | אייקון -->
+          <!-- שורה עליונה: פעמון + עזרה -->
           <div class="hdr-top-bar">
-
-            <div class="hdr-logo-block">
-              <span class="hdr-logo-name">MEDICKIDS</span>
-              <span class="hdr-logo-sub">מעקב הורים חכם</span>
+            <div class="hdr-top-actions">
+              <button id="dash-bell-btn" class="hdr-top-btn" onclick="App.toggleNotif()" aria-label="התראות">
+                <span class="hdr-bell-emoji">🔔</span>
+                <span id="dash-sync-dot" class="hdr-sync-dot"></span>
+              </button>
+              <button class="hdr-top-btn" onclick="App.openHelp()" aria-label="עזרה">❓</button>
             </div>
-            <button id="dash-bell-btn" class="hdr-bell-btn" onclick="App.toggleNotif()" aria-label="התראות">
-              <span class="hdr-bell-emoji">🔔</span>
-              <span id="dash-sync-dot" class="hdr-sync-dot"></span>
-            </button>
           </div>
 
           <p class="hdr-greeting" id="dash-greeting">שלום 👋</p>
@@ -1033,6 +1031,60 @@
 <script src="js/db.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/app.js"></script>
+
+<!-- ══ מדריך משתמש ══ -->
+<div id="help-overlay" style="display:none" onclick="if(event.target===this)App.closeHelp()">
+  <div class="help-sheet">
+    <div class="help-header">
+      <span class="help-title">מדריך שימוש 📖</span>
+      <button class="help-close" onclick="App.closeHelp()">✕</button>
+    </div>
+    <div class="help-body">
+      <div class="help-section">
+        <div class="help-icon">🌡️</div>
+        <div>
+          <div class="help-h">תיעוד חום</div>
+          <div class="help-p">לחצו על "+ תיעוד חום" בכרטיס הילד. הזינו את הטמפרטורה ושמרו. ההיסטוריה תישמר אוטומטית.</div>
+        </div>
+      </div>
+      <div class="help-section">
+        <div class="help-icon">💊</div>
+        <div>
+          <div class="help-h">מתן תרופה</div>
+          <div class="help-p">לחצו על "+ מתן תרופה". בחרו תרופה, מינון ושעה. האפליקציה תחשב מתי אפשר לתת את המנה הבאה.</div>
+        </div>
+      </div>
+      <div class="help-section">
+        <div class="help-icon">🔁</div>
+        <div>
+          <div class="help-h">טיפולים קבועים</div>
+          <div class="help-p">לתוספים יומיים כמו ויטמין D וברזל — הוסיפו מהגדרות הילד. תקבלו תזכורת יומית בשעה קבועה.</div>
+        </div>
+      </div>
+      <div class="help-section">
+        <div class="help-icon">🔔</div>
+        <div>
+          <div class="help-h">התראות</div>
+          <div class="help-p">לחצו על הפעמון למעלה כדי להפעיל התראות. תקבלו תזכורות למנות ולתוספים יומיים.</div>
+        </div>
+      </div>
+      <div class="help-section">
+        <div class="help-icon">👨‍👩‍👧</div>
+        <div>
+          <div class="help-h">שיתוף משפחתי</div>
+          <div class="help-p">בהגדרות ← הגדרות משפחה תוכלו לשתף את האפליקציה עם בן/בת הזוג. שניכם תראו את אותו מידע בזמן אמת.</div>
+        </div>
+      </div>
+      <div class="help-section">
+        <div class="help-icon">📋</div>
+        <div>
+          <div class="help-h">היסטוריה</div>
+          <div class="help-p">לשונית "היסטוריה" בתחתית מציגה את כל האירועים — מדידות חום, תרופות וטיפולים — לפי תאריך.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>

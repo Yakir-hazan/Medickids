@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.49 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.134';
+  const APP_VERSION = '1.0.0-beta.135';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -3001,16 +3001,26 @@ const App = (() => {
     btn.classList.toggle('off', !on);
 
     // נקודת סינכרון
-    const dot   = document.getElementById('dash-sync-dot');
-    const sync  = DB.getSyncStatus();
-    const uid   = DB.get().auth && DB.get().auth.uid;
+    const dot  = document.getElementById('dash-sync-dot');
+    const sync = DB.getSyncStatus();
+    const uid  = DB.get().auth && DB.get().auth.uid;
     if (dot && uid) {
       dot.className = 'hdr-sync-dot visible';
       if (sync.state === 'pending') dot.classList.add('pending');
       else if (sync.state === 'failed') dot.classList.add('failed');
     } else if (dot) {
-      dot.className = 'hdr-sync-dot'; // מחובר בלי Firebase — מסתיר
+      dot.className = 'hdr-sync-dot';
     }
+  }
+
+  function openHelp() {
+    const el = document.getElementById('help-overlay');
+    if (el) el.style.display = 'flex';
+  }
+
+  function closeHelp() {
+    const el = document.getElementById('help-overlay');
+    if (el) el.style.display = 'none';
   }
 
   function renderSettings() {
@@ -3702,6 +3712,7 @@ const App = (() => {
 
   return {
     goto, tab, openSheet, closeSheet,
+    openHelp, closeHelp,
     openMedSheet, pickMedChild, pickMedMedicine, addCustomMedicine, saveMed, pickReminderMode, toggleDailyReminder,
     setHistFilter, setTempFilter, openTempSheet, pickTempChild, saveTemp,
     openEditKid, saveKid, toggleNotif, init, selectChild, closeChildDetail,
