@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.49 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.141';
+  const APP_VERSION = '1.0.0-beta.142';
   const SPLASH_DURATION_RETURNING = 600; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -3049,6 +3049,7 @@ const App = (() => {
 
   function renderSettings() {
     const on = DB.get().settings.notifications;
+    console.log('[NOTIF-DEBUG] renderSettings called, notifications=', on, 'permission=', Notification.permission, new Error().stack.split('\n')[2]?.trim());
     document.getElementById('toggle-notif').classList.toggle('on', on);
     _renderBellPill();
     document.getElementById('set-version-num').textContent = APP_VERSION;
@@ -3625,6 +3626,7 @@ const App = (() => {
 
     if (_authRouted) return;
     _authRouted = true;
+    console.log('[NOTIF-DEBUG] _continueAuthRouting — notifications in DB=', DB.get().settings.notifications);
 
     // Block unverified users — show verify panel, never touch DB or Family Sync.
     if (!user.emailVerified) {
