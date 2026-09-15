@@ -852,7 +852,7 @@
               <div style="position:relative;">
                 <div style="position:absolute;right:14px;top:50%;transform:translateY(-50%);color:#0f766e;pointer-events:none;font-size:20px;">🏷️</div>
                 <input id="ob-kid-name" type="text" placeholder="לדוגמה: אורי, נועה, איתמר..."
-                  oninput="App.obValidate2(); _obUpdateClearBtn(this)"
+                  oninput="App.obValidate2(); _obUpdateClearBtn(this); _obSyncNextBtn2()"
                   style="width:100%;height:52px;padding-right:44px;padding-left:40px;border-radius:12px;background:#eff4ff;border:1.5px solid transparent;font-size:16px;font-family:'Rubik',sans-serif;color:#0b1c30;outline:none;box-sizing:border-box;transition:border-color 0.15s,background 0.15s;"
                   onfocus="this.style.borderColor='#0f766e';this.style.background='#fff';"
                   onblur="this.style.borderColor='transparent';this.style.background='#eff4ff';">
@@ -915,6 +915,13 @@
             function _obUpdateClearBtn(inp) {
               var btn = document.getElementById('ob-name-clear');
               if (btn) btn.style.display = inp.value.trim().length > 0 ? 'flex' : 'none';
+            }
+            function _obSyncNextBtn2() {
+              var btn = document.getElementById('ob-next-2');
+              if (!btn) return;
+              var enabled = !btn.disabled;
+              btn.style.opacity = enabled ? '1' : '0.5';
+              btn.style.cursor  = enabled ? 'pointer' : 'not-allowed';
             }
           </script>
         </div>
@@ -1332,6 +1339,7 @@
 
 </body>
 </html>
+
 
 
 
