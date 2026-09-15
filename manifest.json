@@ -6,8 +6,8 @@
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#FDECEA",
-  "theme_color": "#D64545",
+  "background_color": "#0d5f59",
+  "theme_color": "#0d5f59",
   "dir": "rtl",
   "lang": "he",
   "icons": [
@@ -15,3 +15,4 @@
     { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ]
 }
+
