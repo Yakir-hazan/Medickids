@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.49 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.137';
+  const APP_VERSION = '1.0.0-beta.138';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -188,17 +188,26 @@ const App = (() => {
         // standalone כדי לכסות גם התקנות ותיקות (migration אוטומטי, בלי קוד נפרד).
         await OneSignal.login(DB.get().deviceId);
 
-        // סנכרן מצב subscription אמיתי מ-OneSignal חזרה ל-DB
+        // סנכרן מצב subscription מ-OneSignal חזרה ל-DB — בזהירות:
+        // אם המשתמש אישר ב-iOS (permission=granted) אבל OneSignal עוד לא opt-in
+        // (למשל אחרי cold start) — מפעילים optIn מחדש במקום לכבות את הטאגל.
         const isSubscribed = OneSignal.User.PushSubscription.optedIn === true;
         const savedOn = DB.get().settings.notifications;
-        if (savedOn !== isSubscribed) {
-          DB.setSetting('notifications', isSubscribed);
-          renderSettings();
-        }
+        const iosPerm = Notification.permission;
 
-        // בקש רשות רק אם המשתמש הפעיל ב-DB אבל עוד לא אישר ב-iOS
-        if (DB.get().settings.notifications && Notification.permission === 'default') {
+        if (!isSubscribed && savedOn && iosPerm === 'granted') {
+          // רשות קיימת + המשתמש רוצה התראות — מחברים מחדש
+          await OneSignal.User.PushSubscription.optIn();
+        } else if (!isSubscribed && savedOn && iosPerm === 'denied') {
+          // המשתמש חסם ב-iOS — מסנכרנים ל-false
+          DB.setSetting('notifications', false);
+          renderSettings();
+        } else if (!isSubscribed && savedOn && iosPerm === 'default') {
+          // עדיין לא שאלנו — נבקש רשות
           OneSignal.Notifications.requestPermission();
+        } else if (isSubscribed && !savedOn) {
+          // OneSignal opt-in אבל המשתמש כיבה — נוציא
+          await OneSignal.User.PushSubscription.optOut();
         }
       });
     }
