@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.49 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.136';
+  const APP_VERSION = '1.0.0-beta.137';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -187,7 +187,19 @@ const App = (() => {
         // למכשיר הזה (include_aliases/external_id בשרת) ולא לכל המנויים. רץ בכל פתיחה
         // standalone כדי לכסות גם התקנות ותיקות (migration אוטומטי, בלי קוד נפרד).
         await OneSignal.login(DB.get().deviceId);
-        OneSignal.Notifications.requestPermission();
+
+        // סנכרן מצב subscription אמיתי מ-OneSignal חזרה ל-DB
+        const isSubscribed = OneSignal.User.PushSubscription.optedIn === true;
+        const savedOn = DB.get().settings.notifications;
+        if (savedOn !== isSubscribed) {
+          DB.setSetting('notifications', isSubscribed);
+          renderSettings();
+        }
+
+        // בקש רשות רק אם המשתמש הפעיל ב-DB אבל עוד לא אישר ב-iOS
+        if (DB.get().settings.notifications && Notification.permission === 'default') {
+          OneSignal.Notifications.requestPermission();
+        }
       });
     }
   }
