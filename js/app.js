@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.49 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.151';
+  const APP_VERSION = '1.0.0-beta.152';
   const SPLASH_DURATION_RETURNING = 600; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -327,11 +327,19 @@ const App = (() => {
       }
     }
 
-    // 2) dose timing — reuses the same MEDICATION_CATALOG intervals as the dose calculator, so the two never contradict each other
+    // 2) dose timing — only when there is an active prescription for this drug
     const lastMed = DB.lastMedFor(c.id);
     if (lastMed) {
       const drugKey = Object.keys(MEDICATION_CATALOG).find((k) => _matchesDrug(lastMed.medicine, k));
-      const drug = drugKey ? MEDICATION_CATALOG[drugKey] : null;
+      if (!drugKey) return null; // unknown drug — no tip
+      // only show timing tip when there's an active prescription for this drug (or same ingredient)
+      const ingredient = MEDICATION_CATALOG[drugKey].activeIngredient;
+      const activeRx = DB.activePrescriptionsFor(c.id).find((rx) => {
+        const rk = Object.keys(MEDICATION_CATALOG).find((k) => _matchesDrug(rx.medicine || rx.productId || '', k));
+        return rk && (rk === drugKey || MEDICATION_CATALOG[rk].activeIngredient === ingredient);
+      });
+      if (!activeRx) return null;
+      const drug = MEDICATION_CATALOG[drugKey];
       if (drug && drug.protocol.intervalHours != null) {
         const hoursSince = (now - lastMed.time) / 3600000;
         const remain = drug.protocol.intervalHours - hoursSince;
