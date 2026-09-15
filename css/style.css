@@ -1206,3 +1206,227 @@ body { background: var(--bg); }
   text-align: center;
   max-width: 320px;
 }
+
+
+/* ═══════════════════════════════════════════════════════════════
+   CHILD CARD V3  —  עיצוב חדש (mockup ספטמבר 2026)
+   כל ה-class מתחיל ב-v3- כדי לא להתנגש עם הקיים
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Wrapper — מחליף את .card */
+.child-grid .v3-card {
+  border-radius: 24px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 8px 30px -4px rgba(15,118,110,0.08), 0 4px 12px -2px rgba(0,0,0,0.04);
+  overflow: hidden;
+  position: relative;
+}
+.child-grid .v3-card-full { grid-column: 1 / -1; }
+.child-grid .v3-card-selected { border-color: #0d9488; box-shadow: 0 0 0 2px #0d9488; }
+
+/* corner glow */
+.v3-card::before {
+  content: '';
+  position: absolute;
+  top: -40px; left: -40px;
+  width: 120px; height: 120px;
+  background: radial-gradient(circle, rgba(244,63,94,0.08), transparent 70%);
+  pointer-events: none;
+}
+
+/* ── Header ── */
+.v3-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.v3-header-left { display: flex; align-items: center; gap: 12px; }
+
+/* avatar */
+.v3-avatar-wrap { position: relative; flex-shrink: 0; }
+.v3-avatar {
+  width: 52px; height: 52px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #ffe4e6, #ccfbf1, #dbeafe);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px;
+  border: 1px solid rgba(255,255,255,0.8);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.07);
+}
+.v3-avatar-dot {
+  position: absolute;
+  bottom: -3px; right: -3px;
+  width: 14px; height: 14px;
+  background: #f43f5e;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+.v3-avatar-dot::after {
+  content: '';
+  width: 5px; height: 5px;
+  background: #fff;
+  border-radius: 50%;
+}
+/* calm state — ירוק */
+.v3-avatar-dot--calm { background: #22c55e; }
+
+/* שם + גיל + status label */
+.v3-name-row { display: flex; align-items: center; gap: 6px; }
+.v3-name { font-size: 18px; font-weight: 800; color: #0f172a; line-height: 1.2; }
+.v3-status-label {
+  font-size: 10px; font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  border: 1px solid;
+  white-space: nowrap;
+}
+.v3-status-label--sick   { background: #f0fdfa; color: #0f766e; border-color: #5eead4; }
+.v3-status-label--calm   { background: #f0fdf4; color: #166534; border-color: #86efac; }
+.v3-age { font-size: 11px; color: #94a3b8; font-weight: 500; margin-top: 2px; }
+
+/* ── Badges row ── */
+.v3-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 10px 16px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.v3-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px; font-weight: 700;
+  border: 1px solid;
+}
+.v3-pill--fever {
+  background: #fff1f2; color: #be123c; border-color: #fecdd3;
+  animation: v3PulseFever 2.5s cubic-bezier(0.4,0,0.6,1) infinite;
+}
+@keyframes v3PulseFever {
+  0%,100% { opacity:1; transform:scale(1); }
+  50%      { opacity:.85; transform:scale(1.03); }
+}
+.v3-pill--treatment { background: #f0f9ff; color: #0369a1; border-color: #bae6fd; }
+.v3-pill--supp      { background: #fffbeb; color: #92400e; border-color: #fde68a; }
+.v3-pill--ok        { background: #f0fdf4; color: #166534; border-color: #86efac; }
+.v3-pill-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.v3-pill--fever .v3-pill-dot     { background: #f43f5e; }
+.v3-pill--treatment .v3-pill-dot { background: #38bdf8; }
+.v3-pill--supp .v3-pill-dot      { background: #f59e0b; }
+.v3-pill--ok .v3-pill-dot        { background: #22c55e; }
+
+/* ── Vitals rows ── */
+.v3-rows { padding: 4px 8px; display: flex; flex-direction: column; gap: 0; }
+
+.v3-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 8px;
+  border-radius: 12px;
+  margin: 2px 0;
+  direction: rtl;
+}
+.v3-row--normal  { background: transparent; }
+.v3-row--fever   { background: rgba(255,241,242,0.6); border: 1px solid rgba(252,165,165,0.4); }
+.v3-row--warning { background: rgba(255,251,235,0.6); border: 1px solid rgba(253,230,138,0.5); }
+.v3-row:hover    { background: #f8fafc; }
+.v3-row--fever:hover  { background: rgba(255,241,242,0.8); }
+.v3-row--warning:hover { background: rgba(255,251,235,0.8); }
+
+/* icon box */
+.v3-ic-box {
+  width: 34px; height: 34px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+  border: 1px solid;
+}
+.v3-ic-box--purple { background: #eef2ff; border-color: #c7d2fe; }
+.v3-ic-box--red    { background: #fff1f2; border-color: #fecdd3; color: #be123c; }
+.v3-ic-box--amber  { background: #fffbeb; border-color: #fde68a; }
+.v3-ic-box--rose   { background: #fff1f2; border-color: #fecdd3; }
+.v3-ic-box--sun    { background: #fffbeb; border-color: #fde68a; }
+
+.v3-row-body { flex: 1; min-width: 0; }
+.v3-row-title { font-size: 12px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 6px; }
+.v3-row-sub   { font-size: 10px; margin-top: 1px; }
+.v3-row-sub--green  { color: #059669; font-weight: 600; }
+.v3-row-sub--rose   { color: #e11d48; font-weight: 600; }
+.v3-row-sub--amber  { color: #b45309; font-weight: 500; }
+.v3-row-sub--gray   { color: #94a3b8; }
+
+.v3-row-val { text-align: left; flex-shrink: 0; }
+.v3-row-val-main { font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.v3-row-val-sec  { font-size: 10px; margin-top: 1px; text-align: center; }
+.v3-val--blue  { color: #1e293b; }
+.v3-val--red   { color: #e11d48; }
+.v3-val--amber { color: #92400e; font-weight: 900; letter-spacing: 0.05em; }
+.v3-val--gray  { color: #64748b; }
+
+/* fever badge inside row */
+.v3-fever-badge {
+  font-size: 9px; font-weight: 800;
+  background: rgba(252,165,165,0.4);
+  color: #9f1239;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+/* supplement button */
+.v3-supp-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px; font-weight: 700;
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4; color: #166534;
+  cursor: pointer;
+  transition: background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.v3-supp-btn:active { background: #dcfce7; }
+.v3-supp-btn--done {
+  opacity: 0.75; cursor: default;
+  pointer-events: none;
+}
+
+/* ── Action buttons ── */
+.v3-actions {
+  display: flex; gap: 8px;
+  padding: 12px 16px 14px;
+  border-top: 1px solid #f1f5f9;
+  margin-top: 4px;
+}
+.v3-btn {
+  flex: 1;
+  padding: 10px 8px;
+  border-radius: 14px;
+  font-size: 12px; font-weight: 700;
+  border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+  transition: opacity 0.15s, transform 0.1s;
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+.v3-btn:active { transform: scale(0.97); opacity: 0.85; }
+.v3-btn--outline { background: #f0fdfa; color: #0f766e; }
+.v3-btn--solid   { background: #0f766e; color: #fff; box-shadow: 0 2px 8px rgba(15,118,110,0.25); }
+
+/* ── Healthy days (calm state) ── */
+.v3-healthy {
+  text-align: center;
+  padding: 10px 0 4px;
+  border-top: 1px solid #f1f5f9;
+  margin: 0 16px 4px;
+}
+.v3-healthy-num  { font-size: 28px; font-weight: 900; color: #059669; line-height: 1; }
+.v3-healthy-lbl  { font-size: 10px; color: #aaa; margin-top: 2px; }
