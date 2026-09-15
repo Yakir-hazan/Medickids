@@ -763,37 +763,160 @@
           </div>
         </div>
 
-        <!-- Step 2: Avatar + name -->
+        <!-- Step 2: Avatar + name — redesigned v2 (Stitch style) -->
         <div class="ob-step" id="ob-step-2" style="display:none;">
-          <div class="ob-bar">
-            <div class="ob-prog"><div class="ob-dot ob-on"></div><div class="ob-dot"></div><div class="ob-dot"></div></div>
-            <div class="ob-bar-step">שלב 1 מתוך 3</div>
-            <div class="ob-bar-title">👶 מי הילד/ה שלך?</div>
-          </div>
-          <div class="ob-body">
-            <div class="ob-lbl">בחר/י אווטאר</div>
-            <div class="ob-av-grid" id="ob-av-grid">
-              <div class="ob-av ob-av-sel" data-av="🧒" onclick="App.obPickAv(this)">🧒</div>
-              <div class="ob-av" data-av="👧" onclick="App.obPickAv(this)">👧</div>
-              <div class="ob-av" data-av="👦" onclick="App.obPickAv(this)">👦</div>
-              <div class="ob-av" data-av="👼" onclick="App.obPickAv(this)">👼</div>
-              <div class="ob-av" data-av="🐣" onclick="App.obPickAv(this)">🐣</div>
-              <div class="ob-av" data-av="⭐" onclick="App.obPickAv(this)">⭐</div>
-              <div class="ob-av" data-av="🌟" onclick="App.obPickAv(this)">🌟</div>
-              <div class="ob-av" data-av="🎀" onclick="App.obPickAv(this)">🎀</div>
+          <div style="font-family:'Rubik',sans-serif;display:flex;flex-direction:column;gap:20px;padding:16px 16px 100px;direction:rtl;">
+
+            <!-- Branded step card -->
+            <div style="background:#0f766e;border-radius:16px;padding:20px;position:relative;overflow:hidden;">
+              <div style="position:absolute;left:-24px;bottom:-32px;width:112px;height:112px;border-radius:9999px;background:rgba(255,255,255,0.08);pointer-events:none;"></div>
+              <div style="position:absolute;right:-16px;top:-24px;width:80px;height:80px;border-radius:9999px;background:rgba(255,255,255,0.08);pointer-events:none;"></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;position:relative;z-index:1;">
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <div style="height:6px;width:32px;border-radius:9999px;background:#34d399;"></div>
+                  <div style="height:6px;width:12px;border-radius:9999px;background:rgba(255,255,255,0.3);"></div>
+                  <div style="height:6px;width:12px;border-radius:9999px;background:rgba(255,255,255,0.3);"></div>
+                </div>
+                <span style="font-size:11px;font-weight:600;letter-spacing:0.04em;color:#fff;background:rgba(255,255,255,0.2);padding:2px 10px;border-radius:9999px;">שלב 1 מתוך 3</span>
+              </div>
+              <div style="position:relative;z-index:1;">
+                <h2 style="font-size:24px;line-height:32px;font-weight:700;color:#fff;margin:0 0 4px 0;letter-spacing:-0.01em;">מי הילד/ה שנטפל בו?</h2>
+                <p style="font-size:12px;line-height:16px;color:rgba(204,251,241,0.9);margin:0;">נוסיף פרופיל ראשון. תוכלו להוסיף עוד אחים ואחיות בכל שלב בהמשך.</p>
+              </div>
             </div>
-            <label class="ob-photo-btn" for="ob-photo-input" style="display:none;">
-              <span class="ob-photo-ic">📷</span>
-              <span class="ob-photo-txt" id="ob-photo-txt">העלו תמונת פרופיל</span>
-            </label>
-            <input type="file" id="ob-photo-input" accept="image/*" style="display:none" onchange="App.obHandlePhoto(this)">
-            <div class="ob-lbl" style="margin-top:14px;">שם הילד/ה</div>
-            <input class="ob-input" id="ob-kid-name" type="text" placeholder="לדוגמה: נועה" oninput="App.obValidate2()">
+
+            <!-- Avatar selection card -->
+            <div style="background:#fff;border-radius:16px;padding:16px;border:1px solid rgba(189,201,198,0.3);">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                <label style="font-size:17px;font-weight:600;color:#0b1c30;display:flex;align-items:center;gap:6px;">
+                  <span>בחרו אווטאר</span>
+                  <span style="font-size:14px;font-weight:400;color:#6e7977;">(אמוג'י אהוב)</span>
+                </label>
+                <span id="ob-av-label-tag" style="font-size:11px;font-weight:600;color:#0f766e;background:#f0fdf4;border:1px solid #bbf7d0;padding:2px 10px;border-radius:9999px;display:flex;align-items:center;gap:4px;">
+                  <span>👤</span><span id="ob-av-label-text">ילד/ה</span>
+                </span>
+              </div>
+              <!-- 4x2 avatar grid -->
+              <div id="ob-av-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
+                <div class="ob-av ob-av-sel" data-av="👧" onclick="App.obPickAv(this);_obPickAvNew(this);" data-label="ילדה"
+                  style="aspect-ratio:1;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:32px;cursor:pointer;background:#f0fdf4;border:2px solid #0f766e;position:relative;transition:all 0.15s;">
+                  👧
+                  <div class="ob-av-check" style="position:absolute;top:-4px;right:-4px;width:20px;height:20px;border-radius:9999px;background:#0f766e;color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;">✓</div>
+                </div>
+                <div class="ob-av" data-av="👦" onclick="App.obPickAv(this);_obPickAvNew(this);" data-label="ילד"
+                  style="aspect-ratio:1;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:32px;cursor:pointer;background:#eff4ff;border:2px solid transparent;position:relative;transition:all 0.15s;">
+                  👦
+                  <div class="ob-av-check" style="display:none;position:absolute;top:-4px;right:-4px;width:20px;height:20px;border-radius:9999px;background:#0f766e;color:#fff;font-size:12px;align-items:center;justify-content:center;">✓</div>
+                </div>
+                <div class="ob-av" data-av="👶" onclick="App.obPickAv(this);_obPickAvNew(this);" data-label="תינוק/ת"
+                  style="aspect-ratio:1;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:32px;cursor:pointer;background:#eff4ff;border:2px solid transparent;position:relative;transition:all 0.15s;">
+                  👶
+                  <div class="ob-av-check" style="display:none;position:absolute;top:-4px;right:-4px;width:20px;height:20px;border-radius:9999px;background:#0f766e;color:#fff;font-size:12px;align-items:center;justify-content:center;">✓</div>
+                </div>
+                <div class="ob-av" data-av="🧒" onclick="App.obPickAv(this);_obPickAvNew(this);" data-label="מתולתל/ת"
+                  style="aspect-ratio:1;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:32px;cursor:pointer;background:#eff4ff;border:2px solid transparent;position:relative;transition:all 0.15s;">
+                  🧒
+                  <div class="ob-av-check" style="display:none;position:absolute;top:-4px;right:-4px;width:20px;height:20px;border-radius:9999px;background:#0f766e;color:#fff;font-size:12px;align-items:center;justify-content:center;">✓</div>
+                </div>
+                <div class="ob-av" data-av="👱‍♂️" onclick="App.obPickAv(this);_obPickAvNew(this);" data-label="בלונדיני"
+                  style="aspect-ratio:1;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:32px;cursor:pointer;background:#eff4ff;border:2px solid transparent;position:relative;transition:all 0.15s;">
+                  👱‍♂️
+                  <div class="ob-av-check" style="display:none;position:absolute;top:-4px;right:-4px;width:20px;height:20px;border-radius:9999px;background:#0f766e;color:#fff;font-size:12px;align-items:center;justify-content:center;">✓</div>
+                </div>
+                <div class="ob-av" data-av="👱‍♀️" onclick="App.obPickAv(this);_obPickAvNew(this);" data-label="בלונדינית"
+                  style="aspect-ratio:1;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:32px;cursor:pointer;background:#eff4ff;border:2px solid transparent;position:relative;transition:all 0.15s;">
+                  👱‍♀️
+                  <div class="ob-av-check" style="display:none;position:absolute;top:-4px;right:-4px;width:20px;height:20px;border-radius:9999px;background:#0f766e;color:#fff;font-size:12px;align-items:center;justify-content:center;">✓</div>
+                </div>
+                <div class="ob-av" data-av="🧑‍🦱" onclick="App.obPickAv(this);_obPickAvNew(this);" data-label="שיער גלי"
+                  style="aspect-ratio:1;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:32px;cursor:pointer;background:#eff4ff;border:2px solid transparent;position:relative;transition:all 0.15s;">
+                  🧑‍🦱
+                  <div class="ob-av-check" style="display:none;position:absolute;top:-4px;right:-4px;width:20px;height:20px;border-radius:9999px;background:#0f766e;color:#fff;font-size:12px;align-items:center;justify-content:center;">✓</div>
+                </div>
+                <div class="ob-av" data-av="🐣" onclick="App.obPickAv(this);_obPickAvNew(this);" data-label="אפרוח קטן"
+                  style="aspect-ratio:1;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:32px;cursor:pointer;background:#eff4ff;border:2px solid transparent;position:relative;transition:all 0.15s;">
+                  🐣
+                  <div class="ob-av-check" style="display:none;position:absolute;top:-4px;right:-4px;width:20px;height:20px;border-radius:9999px;background:#0f766e;color:#fff;font-size:12px;align-items:center;justify-content:center;">✓</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Name input card -->
+            <div style="background:#fff;border-radius:16px;padding:16px;border:1px solid rgba(189,201,198,0.3);">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                <label style="font-size:17px;font-weight:600;color:#0b1c30;" for="ob-kid-name">
+                  שם הילד או הילדה <span style="color:#ba1a1a;font-weight:700;">*</span>
+                </label>
+                <span style="font-size:11px;font-weight:600;color:#0f766e;background:#f0fdf4;border:1px solid #bbf7d0;padding:2px 10px;border-radius:9999px;">שם רשמי או כינוי</span>
+              </div>
+              <div style="position:relative;">
+                <div style="position:absolute;right:14px;top:50%;transform:translateY(-50%);color:#0f766e;pointer-events:none;font-size:20px;">🏷️</div>
+                <input id="ob-kid-name" type="text" placeholder="לדוגמה: אורי, נועה, איתמר..."
+                  oninput="App.obValidate2(); _obUpdateClearBtn(this)"
+                  style="width:100%;height:52px;padding-right:44px;padding-left:40px;border-radius:12px;background:#eff4ff;border:1.5px solid transparent;font-size:16px;font-family:'Rubik',sans-serif;color:#0b1c30;outline:none;box-sizing:border-box;transition:border-color 0.15s,background 0.15s;"
+                  onfocus="this.style.borderColor='#0f766e';this.style.background='#fff';"
+                  onblur="this.style.borderColor='transparent';this.style.background='#eff4ff';">
+                <button id="ob-name-clear" onclick="_obClearName()" type="button"
+                  style="display:none;position:absolute;left:10px;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:9999px;background:#e5eeff;border:none;cursor:pointer;font-size:14px;color:#3e4947;align-items:center;justify-content:center;">✕</button>
+              </div>
+              <div style="display:flex;align-items:flex-start;gap:6px;margin-top:8px;">
+                <span style="font-size:17px;flex-shrink:0;margin-top:1px;">ℹ️</span>
+                <p style="font-size:12px;line-height:16px;color:#3e4947;margin:0;">השם יופיע על גבי הכרטיסים הרפואיים ותזכורות המעקב האישיות.</p>
+              </div>
+            </div>
+
+            <!-- Privacy banner -->
+            <div style="background:#eff4ff;border-radius:12px;padding:14px;display:flex;align-items:center;gap:12px;border:1px solid rgba(189,201,198,0.3);">
+              <div style="width:36px;height:36px;border-radius:9999px;background:#d1fae5;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px;">🔒</div>
+              <div style="text-align:right;">
+                <div style="font-size:12px;font-weight:600;color:#0b1c30;">פרטיות רפואית מוגנת</div>
+                <div style="font-size:12px;color:#3e4947;">המידע מאובטח ומיועד לשימושכם בלבד</div>
+              </div>
+            </div>
+
+            <!-- Nav buttons -->
+            <div style="display:flex;align-items:center;gap:12px;padding-top:8px;">
+              <button onclick="App.obBack(2)" type="button"
+                style="height:52px;padding:0 20px;border-radius:14px;background:#e5eeff;border:none;color:#0b1c30;font-size:14px;font-weight:500;font-family:'Rubik',sans-serif;cursor:pointer;display:flex;align-items:center;gap:6px;flex-shrink:0;">
+                <span style="display:inline-block;transform:scaleX(-1);">←</span> חזור
+              </button>
+              <button id="ob-next-2" onclick="App.obNext(2)" disabled type="button"
+                style="flex:1;height:52px;border-radius:14px;background:#0f766e;border:none;color:#fff;font-size:14px;font-weight:500;font-family:'Rubik',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 14px rgba(15,118,110,0.25);opacity:0.5;">
+                המשך לשלב הבא →
+              </button>
+            </div>
           </div>
-          <div class="ob-nav">
-            <button class="ob-back" onclick="App.obBack(2)">→ חזור</button>
-            <button class="ob-next" id="ob-next-2" onclick="App.obNext(2)" disabled>המשך ←</button>
-          </div>
+
+          <!-- hidden file input — kept for App.obHandlePhoto compatibility -->
+          <input type="file" id="ob-photo-input" accept="image/*" style="display:none" onchange="App.obHandlePhoto(this)">
+
+          <script>
+            function _obPickAvNew(el) {
+              document.querySelectorAll('#ob-av-grid .ob-av').forEach(function(a) {
+                a.style.background = '#eff4ff';
+                a.style.border = '2px solid transparent';
+                var ch = a.querySelector('.ob-av-check');
+                if (ch) ch.style.display = 'none';
+              });
+              el.style.background = '#f0fdf4';
+              el.style.border = '2px solid #0f766e';
+              var ch = el.querySelector('.ob-av-check');
+              if (ch) { ch.style.display = 'flex'; }
+              var label = el.getAttribute('data-label') || el.getAttribute('data-av');
+              var lt = document.getElementById('ob-av-label-text');
+              if (lt) lt.textContent = label;
+            }
+            function _obClearName() {
+              var inp = document.getElementById('ob-kid-name');
+              if (inp) { inp.value = ''; inp.focus(); App.obValidate2(); }
+              var btn = document.getElementById('ob-name-clear');
+              if (btn) btn.style.display = 'none';
+            }
+            function _obUpdateClearBtn(inp) {
+              var btn = document.getElementById('ob-name-clear');
+              if (btn) btn.style.display = inp.value.trim().length > 0 ? 'flex' : 'none';
+            }
+          </script>
         </div>
 
         <!-- Step 3: Birth date + weight — redesigned v2 -->
@@ -1209,6 +1332,7 @@
 
 </body>
 </html>
+
 
 
 
