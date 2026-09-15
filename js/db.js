@@ -19,10 +19,9 @@ const DB = (() => {
       family: '',
       children: [],
       medicines: [
-        { id: uid(), name: 'אקמול ילדים', createdAt: Date.now(), updatedAt: Date.now() },
-        { id: uid(), name: 'נורופן',       createdAt: Date.now(), updatedAt: Date.now() },
-        { id: uid(), name: 'נובימול',      createdAt: Date.now(), updatedAt: Date.now() },
-        { id: uid(), name: 'ויטמין D',     createdAt: Date.now(), updatedAt: Date.now() },
+        { id: uid(), name: 'נורופן',  createdAt: Date.now(), updatedAt: Date.now() },
+        { id: uid(), name: 'נובימול', createdAt: Date.now(), updatedAt: Date.now() },
+        { id: uid(), name: 'אקמול',   createdAt: Date.now(), updatedAt: Date.now() },
       ],
       medEntries: [],
       tempEntries: [],
@@ -484,7 +483,15 @@ const DB = (() => {
     /* Returns visible (non-deleted) medicine names as a string[] — backward-compatible
        with all existing app.js code that reads state.medicines as strings. */
     medicineNames() {
-      return state.medicines.filter((m) => !m.deletedAt).map((m) => m.name);
+      const SUPP_NAMES = ['ויטמין D', 'vitamin d', 'ברזל', 'iron'];
+      const LEGACY_NAMES = ['אקמול ילדים', 'נורופן ילדים']; // שמות ישנים שהוחלפו
+      const seen = new Set();
+      return state.medicines
+        .filter((m) => !m.deletedAt)
+        .filter((m) => !SUPP_NAMES.some(s => m.name.toLowerCase().includes(s.toLowerCase())))
+        .filter((m) => !LEGACY_NAMES.includes(m.name))
+        .filter((m) => { if (seen.has(m.name)) return false; seen.add(m.name); return true; })
+        .map((m) => m.name);
     },
 
     /* --- prescriptions: an active/past treatment for a specific child ---
@@ -622,5 +629,6 @@ const DB = (() => {
     },
   };
 })();
+
 
 
