@@ -3534,24 +3534,8 @@ const App = (() => {
     _sendWelcomePushIfNeeded();
   }
 
-  /* Send a warm welcome push once — only after the very first onboarding.
-     Guarded by settings.welcomePushSent so it never fires twice. */
+  /* Welcome push — disabled. Was replaced by in-app banner on dashboard. */
   async function _sendWelcomePushIfNeeded() {
-    const s = DB.get().settings;
-    if (s.welcomePushSent) return;
-    const deviceId = DB.get().deviceId;
-    if (!deviceId) return;
-    try {
-      await fetch('/api/notify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: 'ברוכים הבאים ל־Medickids 💜',
-          message: 'מהיום, לא צריך לזכור הכול לבד. Medickids עוזרת לכם לעקוב אחרי החום, התרופות, הטיפולים והתוספים של הילדים — ולדעת בכל רגע מה כבר ניתן ומה צריך לעשות. הכול מסודר במקום אחד, גם כשעייפים וגם באמצע הלילה. בואו נתחיל 👋',
-          targetDeviceId: deviceId,
-        }),
-      });
-    } catch (e) { /* best-effort */ }
     DB.setSetting('welcomePushSent', true);
   }
 
@@ -3739,6 +3723,7 @@ const App = (() => {
 })();
 
 document.addEventListener('DOMContentLoaded', App.init);
+
 
 
 
