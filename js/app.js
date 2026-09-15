@@ -557,10 +557,10 @@ const App = (() => {
       if (!calmMsg) {
         calmMsg = document.createElement('div');
         calmMsg.id = 'dash-calm-msg';
-        calmMsg.style.cssText = 'margin-top:10px;font-size:13px;font-weight:700;color:rgba(255,255,255,0.95);position:relative;';
+        calmMsg.className = 'hdr-family-status';
         dashHeader.appendChild(calmMsg);
       }
-      calmMsg.textContent = '🌟 הכל תקין במשפחה';
+      calmMsg.innerHTML = '<span>הכל תקין במשפחה</span><span>🌟</span>';
       calmMsg.style.display = '';
     } else {
       dashHeader.style.background = 'linear-gradient(150deg, #0d5f59 0%, #0f766e 100%)';
