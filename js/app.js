@@ -889,14 +889,10 @@ const App = (() => {
         ? 'outline:3px solid #22c55e;outline-offset:2px;'
         : '';
 
-      // ימים בריא — רק במצב calm
-      let healthyRowHtml = '';
+      // ימים בריא — badge קומפקטי ליד האווטאר (רק במצב calm)
+      let daysBadgeHtml = '';
       if (isCalm && vm.healthyDays !== null && vm.healthyDays >= 0) {
-        const gender = c.gender === 'male' ? 'בריא' : 'בריאה';
-        healthyRowHtml = `<div class="v3-healthy">
-          <div class="v3-healthy-num">${vm.healthyDays}</div>
-          <div class="v3-healthy-lbl">ימים ${gender}</div>
-        </div>`;
+        daysBadgeHtml = `<div class="v3-days-badge"><span>ימים:</span><span>${vm.healthyDays}</span></div>`;
       }
 
       // ── V3 card HTML ──
@@ -905,9 +901,12 @@ const App = (() => {
       const statusLabelClass = isCalm ? 'v3-status-label v3-status-label--calm' : 'v3-status-label v3-status-label--sick';
       const statusLabelText = isCalm ? 'בסדר גמור' : 'חולה פעיל/ה';
 
-
+      // תיבת "אין תרופות היום" — רק כשאין שום שורת מידע להציג ואין תוספים
+      const noMedHtml = (isCalm && !hasRows && !activeSupps.length)
+        ? `<div class="v3-no-med">אין תרופות להיום</div>` : '';
 
       const cardInner = `
+        <div class="v3-topbar ${isCalm ? 'v3-topbar--calm' : 'v3-topbar--alert'}"></div>
         <div class="v3-header">
           <div class="v3-header-left">
             <div class="v3-avatar-wrap">
@@ -922,10 +921,11 @@ const App = (() => {
               ${ageText ? `<div class="v3-age">${ageText}</div>` : ''}
             </div>
           </div>
+          ${daysBadgeHtml}
         </div>
         ${badgesHtml ? `<div class="v3-badges">${badgesHtml}</div>` : ''}
         ${hasRows ? `<div class="v3-rows">${medRowHtml}${tempRowHtml}${nextDoseRowHtml}${suppRowHtml}</div>` : ''}
-        ${healthyRowHtml}`;
+        ${noMedHtml}`;
 
       const isSelected = c.id === selectedChildId;
 
