@@ -305,15 +305,29 @@
     // guard would call scheduleRender() again → infinite render loop → frozen UI.
     _rendering = true;
     try {
-      if (currentTab === 'health') body.innerHTML = renderHealthTab();
-      else if (currentTab === 'timeline') body.innerHTML = renderTimelineTab();
-      else if (currentTab === 'logs') body.innerHTML = renderListTab(events.filter((e) => e.source === 'console' || e.source === 'window.onerror'));
-      else if (currentTab === 'errors') body.innerHTML = renderListTab(events.filter((e) => e.category === CATEGORY.ERROR));
-      else if (currentTab === 'network') body.innerHTML = renderListTab(events.filter((e) => e.category === CATEGORY.NETWORK));
-      else if (currentTab === 'database') body.innerHTML = renderDatabaseTab();
-      else if (currentTab === 'storage') body.innerHTML = renderStorageTab();
-      else if (currentTab === 'tools') body.innerHTML = renderToolsTab();
-      else if (currentTab === 'export') body.innerHTML = renderExportTab();
+      try {
+        if (currentTab === 'health') body.innerHTML = renderHealthTab();
+        else if (currentTab === 'timeline') body.innerHTML = renderTimelineTab();
+        else if (currentTab === 'logs') body.innerHTML = renderListTab(events.filter((e) => e.source === 'console' || e.source === 'window.onerror'));
+        else if (currentTab === 'errors') body.innerHTML = renderListTab(events.filter((e) => e.category === CATEGORY.ERROR));
+        else if (currentTab === 'network') body.innerHTML = renderListTab(events.filter((e) => e.category === CATEGORY.NETWORK));
+        else if (currentTab === 'database') body.innerHTML = renderDatabaseTab();
+        else if (currentTab === 'storage') body.innerHTML = renderStorageTab();
+        else if (currentTab === 'tools') body.innerHTML = renderToolsTab();
+        else if (currentTab === 'export') body.innerHTML = renderExportTab();
+      } catch (renderErr) {
+        // A bug in a single tab's render function must never crash out of this function:
+        // if it escaped to window.onerror AFTER _rendering resets below, that error gets
+        // logged, which (now outside the guard) would call scheduleRender() again → the
+        // same tab throws again → logs again → forever. Catching it here, while still
+        // inside the guarded region, means the error IS still logged (for visibility) but
+        // can't restart the loop. Shows an inline, tappable-away message instead of a blank/frozen panel.
+        try { logEvent(CATEGORY.ERROR, 'devconsole', 'Tab render failed: ' + currentTab, (renderErr && renderErr.message) || String(renderErr)); } catch (e2) {}
+        body.innerHTML = `<div style="padding:16px;background:#3a1a1a;border-radius:8px;font-size:13px;">
+          ⚠️ שגיאה בטעינת הטאב "${escapeHtml(currentTab)}": ${escapeHtml((renderErr && renderErr.message) || String(renderErr))}
+          <div style="margin-top:8px;opacity:.7;">נסה טאב אחר, או לחץ ✕ ופתח שוב.</div>
+        </div>`;
+      }
     } finally {
       _rendering = false;
     }
