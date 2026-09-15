@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.49 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.129';
+  const APP_VERSION = '1.0.0-beta.130';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -2997,10 +2997,8 @@ const App = (() => {
   function _renderBellPill() {
     const on = DB.get().settings.notifications;
     const btn = document.getElementById('dash-bell-btn');
-    const lbl = document.getElementById('dash-bell-label');
     if (!btn) return;
     btn.classList.toggle('off', !on);
-    if (lbl) lbl.textContent = on ? 'התראות' : 'התראות כבויות';
   }
 
   function renderSettings() {
