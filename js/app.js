@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.49 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.150';
+  const APP_VERSION = '1.0.0-beta.151';
   const SPLASH_DURATION_RETURNING = 600; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -3625,7 +3625,7 @@ const App = (() => {
 
     if (_authRouted) return;
     _authRouted = true;
-    if (typeof toast === 'function') toast('[AUTH] notif=' + DB.get().settings.notifications, 3000);
+
 
     // Block unverified users — show verify panel, never touch DB or Family Sync.
     if (!user.emailVerified) {
