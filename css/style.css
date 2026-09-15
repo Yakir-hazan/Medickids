@@ -441,7 +441,7 @@ body{
 .hdr-top-bar {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: flex-end;
   margin-bottom: 18px;
   position: relative;
 }
