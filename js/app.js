@@ -3529,14 +3529,31 @@ const App = (() => {
   function _obComplete() {
     renderDashboard();
     renderKids();
-    toast('נשמר בהצלחה ✓');
     goto(_obReturnTo);
-    _sendWelcomePushIfNeeded();
+    _showWelcomePopupIfNeeded();
   }
 
-  /* Welcome push — disabled. Was replaced by in-app banner on dashboard. */
-  async function _sendWelcomePushIfNeeded() {
+  /* Welcome popup — shown once after first onboarding. */
+  function _showWelcomePopupIfNeeded() {
+    const s = DB.get().settings;
+    if (s.welcomePushSent) return;
     DB.setSetting('welcomePushSent', true);
+    setTimeout(function() {
+      const el = document.getElementById('welcome-popup-overlay');
+      if (el) el.classList.add('active');
+    }, 400);
+  }
+
+  function closeWelcomePopup() {
+    const el = document.getElementById('welcome-popup-overlay');
+    if (!el) return;
+    el.style.transition = 'opacity 0.2s';
+    el.style.opacity = '0';
+    setTimeout(function() {
+      el.classList.remove('active');
+      el.style.opacity = '';
+      el.style.transition = '';
+    }, 200);
   }
 
   function startOnboarding(returnTo) {
@@ -3705,7 +3722,7 @@ const App = (() => {
     openHelp, closeHelp,
     openMedSheet, pickMedChild, pickMedMedicine, addCustomMedicine, saveMed, pickReminderMode, toggleDailyReminder,
     setHistFilter, setTempFilter, openTempSheet, pickTempChild, saveTemp,
-    openEditKid, saveKid, toggleNotif, init, selectChild, closeChildDetail,
+    openEditKid, saveKid, toggleNotif, init, selectChild, closeChildDetail, closeWelcomePopup,
     installNow, skipLanding, showInstallGuide,
     obPickParent, obPickAv, obHandlePhoto, obValidate2, obBirthChange, obValidate3, obNext, obBack,
     obActivateSupplements, obSkipSupplements, startOnboarding, obGetReturnTo: () => _obReturnTo,
@@ -3723,6 +3740,7 @@ const App = (() => {
 })();
 
 document.addEventListener('DOMContentLoaded', App.init);
+
 
 
 
