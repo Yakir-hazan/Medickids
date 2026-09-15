@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.49 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.138';
+  const APP_VERSION = '1.0.0-beta.139';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -188,25 +188,24 @@ const App = (() => {
         // standalone כדי לכסות גם התקנות ותיקות (migration אוטומטי, בלי קוד נפרד).
         await OneSignal.login(DB.get().deviceId);
 
-        // סנכרן מצב subscription מ-OneSignal חזרה ל-DB — בזהירות:
-        // אם המשתמש אישר ב-iOS (permission=granted) אבל OneSignal עוד לא opt-in
-        // (למשל אחרי cold start) — מפעילים optIn מחדש במקום לכבות את הטאגל.
-        const isSubscribed = OneSignal.User.PushSubscription.optedIn === true;
+        // ה-DB הוא מקור האמת — לא OneSignal.
+        // OneSignal יכול לחזור עם optedIn=false אחרי cold start גם כשהמשתמש הפעיל,
+        // לכן לא סומכים עליו. רק מקרה אחד מאפשר כיבוי אוטומטי: המשתמש חסם ב-iOS.
         const savedOn = DB.get().settings.notifications;
         const iosPerm = Notification.permission;
 
-        if (!isSubscribed && savedOn && iosPerm === 'granted') {
-          // רשות קיימת + המשתמש רוצה התראות — מחברים מחדש
-          await OneSignal.User.PushSubscription.optIn();
-        } else if (!isSubscribed && savedOn && iosPerm === 'denied') {
-          // המשתמש חסם ב-iOS — מסנכרנים ל-false
+        if (iosPerm === 'denied' && savedOn) {
+          // iOS חסם — מסנכרנים ל-false (המשתמש ביטל ידנית בהגדרות הטלפון)
           DB.setSetting('notifications', false);
           renderSettings();
-        } else if (!isSubscribed && savedOn && iosPerm === 'default') {
+        } else if (savedOn && iosPerm === 'granted') {
+          // המשתמש רוצה התראות ויש רשות — מוודאים opt-in פעיל
+          await OneSignal.User.PushSubscription.optIn();
+        } else if (savedOn && iosPerm === 'default') {
           // עדיין לא שאלנו — נבקש רשות
           OneSignal.Notifications.requestPermission();
-        } else if (isSubscribed && !savedOn) {
-          // OneSignal opt-in אבל המשתמש כיבה — נוציא
+        } else if (!savedOn) {
+          // המשתמש כיבה — מוודאים opt-out
           await OneSignal.User.PushSubscription.optOut();
         }
       });
