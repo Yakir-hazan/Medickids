@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.49 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.123';
+  const APP_VERSION = '1.0.0-beta.124';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -3063,47 +3063,64 @@ const App = (() => {
   /* ---------- version / updates ---------- */
   function checkForUpdate() {
     if (!('serviceWorker' in navigator)) { toast('הדפדפן לא תומך בבדיקת עדכונים'); return; }
+    toast('מנקה cache ומעדכן…');
+
+    // iOS-safe force update:
+    // 1. מחק את כל ה-caches מה-client
+    // 2. בטל רישום SW
+    // 3. reload — הדפדפן יוריד הכל מחדש
+    const doForceUpdate = async () => {
+      try {
+        // מחיקת כל ה-caches
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map(n => caches.delete(n)));
+
+        // ביטול רישום SW
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map(r => r.unregister()));
+      } catch(e) {
+        console.warn('[update] cleanup error:', e);
+      }
+      // reload קשה — מביא הכל מהשרת
+      window.location.reload(true);
+    };
+
+    // נסה קודם update() רגיל — אם לא עוזר תוך 3 שניות, force
     navigator.serviceWorker.getRegistration().then((reg) => {
-      if (!reg) { toast('לא נמצא Service Worker פעיל'); return; }
-      toast('בודק עדכונים…');
+      if (!reg) { doForceUpdate(); return; }
 
+      let updated = false;
       const doReload = () => {
+        if (updated) return;
+        updated = true;
         toast('נמצא עדכון — טוען מחדש…');
-        setTimeout(() => window.location.reload(), 600);
+        setTimeout(() => window.location.reload(true), 600);
       };
-
-      // listen for controller swap (fires when new SW takes over)
       navigator.serviceWorker.addEventListener('controllerchange', doReload, { once: true });
 
       reg.update().then(() => {
-        // iOS fix: after update(), check if a SW is already waiting
-        // (controllerchange may not fire on its own on iOS)
-        if (reg.waiting) {
-          reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-          return; // doReload fires via controllerchange
-        }
-        // watch for a new SW installing then waiting
-        const onUpdateFound = () => {
-          const newWorker = reg.installing;
-          if (!newWorker) return;
-          newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed' && reg.waiting) {
-              reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-            }
+        if (reg.waiting) { reg.waiting.postMessage({ type: 'SKIP_WAITING' }); return; }
+        const onFound = () => {
+          const nw = reg.installing;
+          if (!nw) return;
+          nw.addEventListener('statechange', () => {
+            if (nw.state === 'installed' && reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
           });
         };
-        reg.addEventListener('updatefound', onUpdateFound, { once: true });
-        // fallback timeout — no update found
+        reg.addEventListener('updatefound', onFound, { once: true });
+        // fallback — אחרי 3 שניות force update
         setTimeout(() => {
-          reg.removeEventListener('updatefound', onUpdateFound);
+          if (updated) return;
+          updated = true;
+          reg.removeEventListener('updatefound', onFound);
           navigator.serviceWorker.removeEventListener('controllerchange', doReload);
-          toast(`אתה כבר בגרסה העדכנית (${APP_VERSION}) ✓`);
-        }, 5000);
+          doForceUpdate();
+        }, 3000);
       }).catch(() => {
         navigator.serviceWorker.removeEventListener('controllerchange', doReload);
-        toast('לא הצלחנו לבדוק עדכונים — בדוק חיבור');
+        doForceUpdate();
       });
-    });
+    }).catch(() => doForceUpdate());
   }
 
   /* ---------- danger zone — Full Reset ----------
