@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.49 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.152';
+  const APP_VERSION = '1.0.0-beta.153';
   const SPLASH_DURATION_RETURNING = 600; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -817,8 +817,8 @@ const App = (() => {
           const today = new Date(); today.setHours(0,0,0,0);
           const givenToday = lastGiven && lastGiven.time >= today.getTime();
           const statusHtml = givenToday
-            ? `<button class="v3-supp-btn v3-supp-btn--done">✓ ניתן</button>`
-            : `<button onclick="App.markSupplementGiven('${rx.id}',this);event.stopPropagation()" class="v3-supp-btn">תן ✓</button>`;
+            ? `<button class="v3-supp-btn v3-supp-btn--done">✓ קיבל</button>`
+            : `<button onclick="App.markSupplementGiven('${rx.id}',this);event.stopPropagation()" class="v3-supp-btn">אפשר לתת</button>`;
           return `<div class="v3-row v3-row--normal">
             <div class="v3-ic-box v3-ic-box--sun">${lbl.emoji}</div>
             <div class="v3-row-body">
