@@ -1331,15 +1331,29 @@ body { background: var(--bg); }
 .child-grid .v3-card-full { grid-column: 1 / -1; }
 .child-grid .v3-card-selected { border-color: #0d9488; box-shadow: 0 0 0 2px #0d9488; }
 
+/* colored top accent bar (calm=green, alert=amber/rose) */
+.v3-topbar { height: 4px; width: 100%; }
+.v3-topbar--calm  { background: linear-gradient(to left, #34d399, #0d9488, #14b8a6); }
+.v3-topbar--alert { background: linear-gradient(to left, #fb7185, #f43f5e, #e11d48); }
+
 /* ── Header ── */
 .v3-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   padding: 14px 14px 10px;
-  border-bottom: 1px solid #f1f5f9;
 }
 .v3-header-left { display: flex; align-items: center; gap: 10px; }
+
+/* days badge — ליד האווטאר */
+.v3-days-badge {
+  display: flex; align-items: center; gap: 3px;
+  font-size: 11px; color: #94a3b8;
+  background: #f8fafc; border: 1px solid #f1f5f9;
+  padding: 3px 7px; border-radius: 6px; font-weight: 600;
+  flex-shrink: 0;
+}
+.v3-days-badge span:last-child { font-weight: 800; color: #22c55e; font-family: monospace; }
 
 /* avatar */
 .v3-avatar-wrap { position: relative; flex-shrink: 0; }
@@ -1391,7 +1405,6 @@ body { background: var(--bg); }
   flex-wrap: wrap;
   gap: 5px;
   padding: 8px 14px;
-  border-bottom: 1px solid #f1f5f9;
 }
 .v3-pill {
   display: inline-flex; align-items: center; gap: 5px;
@@ -1410,7 +1423,7 @@ body { background: var(--bg); }
 }
 .v3-pill--treatment { background: #f0f9ff; color: #0369a1; border-color: #bae6fd; }
 .v3-pill--supp      { background: #fffbeb; color: #92400e; border-color: #fde68a; }
-.v3-pill--ok        { background: #f0fdf4; color: #166534; border-color: #86efac; }
+.v3-pill--ok        { background: #22c55e; color: #fff; border-color: #22c55e; font-weight: 800; }
 .v3-pill-dot {
   width: 6px; height: 6px;
   border-radius: 50%;
@@ -1419,7 +1432,7 @@ body { background: var(--bg); }
 .v3-pill--fever .v3-pill-dot     { background: #f43f5e; }
 .v3-pill--treatment .v3-pill-dot { background: #38bdf8; }
 .v3-pill--supp .v3-pill-dot      { background: #f59e0b; }
-.v3-pill--ok .v3-pill-dot        { background: #22c55e; }
+.v3-pill--ok .v3-pill-dot        { background: #fff; }
 
 /* ── Vitals rows ── */
 .v3-rows { padding: 4px 6px; display: flex; flex-direction: column; gap: 0; }
@@ -1527,6 +1540,19 @@ body { background: var(--bg); }
 }
 .v3-healthy-num  { font-size: 28px; font-weight: 900; color: #059669; line-height: 1; }
 .v3-healthy-lbl  { font-size: 10px; color: #aaa; margin-top: 2px; }
+
+/* ── empty-state box: no meds/supplements today ── */
+.v3-no-med {
+  background: #f8fafc;
+  border: 1px solid #f1f5f9;
+  border-radius: 10px;
+  padding: 8px 10px;
+  margin: 4px 14px 10px;
+  text-align: center;
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 500;
+}
 
 /* ── Card footer (stage 2) ── */
 .v3-footer {
