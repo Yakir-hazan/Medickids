@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.49 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.140';
+  const APP_VERSION = '1.0.0-beta.141';
   const SPLASH_DURATION_RETURNING = 600; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -183,33 +183,41 @@ const App = (() => {
     if (isStandalone()) {
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       OneSignalDeferred.push(async function(OneSignal) {
-        // מזהה את ההתקנה הזו אצל OneSignal לפי deviceId יציב, כדי שתזכורות ישלחו רק
-        // למכשיר הזה (include_aliases/external_id בשרת) ולא לכל המנויים. רץ בכל פתיחה
-        // standalone כדי לכסות גם התקנות ותיקות (migration אוטומטי, בלי קוד נפרד).
+        // מזהה את ההתקנה הזו אצל OneSignal לפי deviceId יציב.
+        // רץ בכל פתיחה standalone — migration אוטומטי לכל התקנות.
         await OneSignal.login(DB.get().deviceId);
 
-        // ה-DB הוא מקור האמת — לא OneSignal.
-        // OneSignal יכול לחזור עם optedIn=false אחרי cold start גם כשהמשתמש הפעיל,
-        // לכן לא סומכים עליו. רק מקרה אחד מאפשר כיבוי אוטומטי: המשתמש חסם ב-iOS.
-        const savedOn = DB.get().settings.notifications;
+        // ⚠️ כאן DB.get().settings.notifications לא אמין —
+        // ה-callback הזה רץ לפני שsetAuth() מעלה את ה-state האמיתי של המשתמש
+        // מ-localStorage (per-uid key). אז DB.get() מחזיר את ה-seed עם notifications=false.
+        //
+        // לכן: מסתמכים אך ורק על Notification.permission (ערך native של iOS/הדפדפן)
+        // כמקור האמת לגבי רצון המשתמש בשלב הזה.
         const iosPerm = Notification.permission;
 
-        if (iosPerm === 'denied' && savedOn) {
-          // iOS חסם — מסנכרנים ל-false (המשתמש ביטל ידנית בהגדרות הטלפון)
-          DB.setSetting('notifications', false);
-          renderSettings();
-        } else if (savedOn && iosPerm === 'granted') {
-          // המשתמש רוצה התראות ויש רשות — optIn רק אם לא כבר subscribed
+        if (iosPerm === 'granted') {
+          // יש רשות → מוודאים שה-subscription פעיל ב-OneSignal
           if (!OneSignal.User.PushSubscription.optedIn) {
             await OneSignal.User.PushSubscription.optIn();
           }
-        } else if (savedOn && iosPerm === 'default') {
-          // עדיין לא שאלנו — נבקש רשות
-          OneSignal.Notifications.requestPermission();
-        } else if (!savedOn) {
-          // המשתמש כיבה — מוודאים opt-out
-          await OneSignal.User.PushSubscription.optOut();
+          // מסנכרנים ל-DB רק אחרי שה-state האמיתי כבר טעון (post-setAuth)
+          // עושים זאת ב-setTimeout כדי לתת ל-setAuth() להספיק לרוץ
+          setTimeout(() => {
+            if (!DB.get().settings.notifications) {
+              DB.setSetting('notifications', true);
+              renderSettings();
+            }
+          }, 1000);
+        } else if (iosPerm === 'denied') {
+          // המשתמש חסם ב-iOS — כיבוי (גם זה post-setAuth)
+          setTimeout(() => {
+            if (DB.get().settings.notifications) {
+              DB.setSetting('notifications', false);
+              renderSettings();
+            }
+          }, 1000);
         }
+        // iosPerm === 'default' → לא שאלנו עדיין, לא עושים כלום בפתיחה
       });
     }
   }
