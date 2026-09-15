@@ -928,8 +928,27 @@ const App = (() => {
         ${healthyRowHtml}`;
 
       const isSelected = c.id === selectedChildId;
+
+      // ── footer: last event time (or "שגרה"), visual link — reuses existing card onclick, no new handler ──
+      let footerTimeText = 'שגרה';
+      const _footerTimes = [];
+      if (vm.lastMed && vm.lastMed.time) _footerTimes.push(vm.lastMed.time);
+      if (vm.lastTemp && vm.lastTemp.time) _footerTimes.push(vm.lastTemp.time);
+      if (_footerTimes.length) {
+        const _mostRecent = Math.max(..._footerTimes);
+        const _todayStart = new Date(); _todayStart.setHours(0, 0, 0, 0);
+        if (_mostRecent >= _todayStart.getTime()) footerTimeText = formatClock(_mostRecent);
+      }
+      const footerHtml = `<div class="v3-footer">
+        <span class="v3-footer-time">${footerTimeText}</span>
+        <span class="v3-footer-link">לפרטים מלאים
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+      </div>`;
+
       return `<div class="v3-card${isLastOdd ? ' v3-card-full' : ''}${isSelected ? ' v3-card-selected' : ''}" onclick="App.selectChild('${c.id}')">
         ${cardInner}
+        ${footerHtml}
       </div>`;
     }).join('');
 
