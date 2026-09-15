@@ -478,7 +478,6 @@
     },
     exportPackage: exportDebugPackage,
     runCleanup: runCleanup,
-    toggleCleanupConfirm: toggleCleanupConfirm,
     shareReport: shareReport,
     copyReport: copyReport,
     copyAllLogs: copyAllLogs,
