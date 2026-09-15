@@ -1320,54 +1320,46 @@ body { background: var(--bg); }
 
 /* Wrapper — מחליף את .card */
 .child-grid .v3-card {
-  border-radius: 24px;
+  border-radius: 20px;
   background: #fff;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 8px 30px -4px rgba(15,118,110,0.08), 0 4px 12px -2px rgba(0,0,0,0.04);
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 4px 20px -2px rgba(15,118,110,0.08), 0 2px 6px -1px rgba(0,0,0,0.04);
   overflow: hidden;
   position: relative;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 .child-grid .v3-card-full { grid-column: 1 / -1; }
 .child-grid .v3-card-selected { border-color: #0d9488; box-shadow: 0 0 0 2px #0d9488; }
-
-/* corner glow */
-.v3-card::before {
-  content: '';
-  position: absolute;
-  top: -40px; left: -40px;
-  width: 120px; height: 120px;
-  background: radial-gradient(circle, rgba(244,63,94,0.08), transparent 70%);
-  pointer-events: none;
-}
 
 /* ── Header ── */
 .v3-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  padding: 16px 16px 12px;
+  padding: 14px 14px 10px;
   border-bottom: 1px solid #f1f5f9;
 }
-.v3-header-left { display: flex; align-items: center; gap: 12px; }
+.v3-header-left { display: flex; align-items: center; gap: 10px; }
 
 /* avatar */
 .v3-avatar-wrap { position: relative; flex-shrink: 0; }
 .v3-avatar {
-  width: 52px; height: 52px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #ffe4e6, #ccfbf1, #dbeafe);
+  width: 48px; height: 48px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #f0fdfa, #dcfce7);
   display: flex; align-items: center; justify-content: center;
-  font-size: 26px;
-  border: 1px solid rgba(255,255,255,0.8);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.07);
+  font-size: 24px;
+  border: 1px solid #d1fae5;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
 }
 .v3-avatar-dot {
   position: absolute;
-  bottom: -3px; right: -3px;
-  width: 14px; height: 14px;
+  bottom: -3px; left: -3px;
+  width: 13px; height: 13px;
   background: #f43f5e;
   border: 2px solid #fff;
   border-radius: 50%;
+  box-shadow: 0 0 0 1px #fecdd3;
   display: flex; align-items: center; justify-content: center;
 }
 .v3-avatar-dot::after {
@@ -1377,11 +1369,11 @@ body { background: var(--bg); }
   border-radius: 50%;
 }
 /* calm state — ירוק */
-.v3-avatar-dot--calm { background: #22c55e; }
+.v3-avatar-dot--calm { background: #22c55e; box-shadow: 0 0 0 1px #bbf7d0; }
 
 /* שם + גיל + status label */
 .v3-name-row { display: flex; align-items: center; gap: 6px; }
-.v3-name { font-size: 18px; font-weight: 800; color: #0f172a; line-height: 1.2; }
+.v3-name { font-size: 16px; font-weight: 800; color: #0f172a; line-height: 1.2; letter-spacing: -0.01em; }
 .v3-status-label {
   font-size: 10px; font-weight: 700;
   padding: 2px 8px;
@@ -1398,7 +1390,7 @@ body { background: var(--bg); }
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
-  padding: 10px 16px;
+  padding: 8px 14px;
   border-bottom: 1px solid #f1f5f9;
 }
 .v3-pill {
@@ -1430,7 +1422,7 @@ body { background: var(--bg); }
 .v3-pill--ok .v3-pill-dot        { background: #22c55e; }
 
 /* ── Vitals rows ── */
-.v3-rows { padding: 4px 8px; display: flex; flex-direction: column; gap: 0; }
+.v3-rows { padding: 4px 6px; display: flex; flex-direction: column; gap: 0; }
 
 .v3-row {
   display: flex; align-items: center; gap: 10px;
@@ -1535,6 +1527,26 @@ body { background: var(--bg); }
 }
 .v3-healthy-num  { font-size: 28px; font-weight: 900; color: #059669; line-height: 1; }
 .v3-healthy-lbl  { font-size: 10px; color: #aaa; margin-top: 2px; }
+
+/* ── Card footer (stage 2) ── */
+.v3-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px 10px;
+  border-top: 1px solid #f1f5f9;
+  font-size: 11px;
+}
+.v3-footer-time { color: #94a3b8; }
+.v3-footer-link {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: #0f766e;
+  font-weight: 700;
+  font-size: 11px;
+}
+.v3-footer-link svg { flex-shrink: 0; transform: rotate(180deg); }
 
 /* ══ HELP OVERLAY ══ */
 #help-overlay {
