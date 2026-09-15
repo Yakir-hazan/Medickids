@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.49 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.124';
+  const APP_VERSION = '1.0.0-beta.125';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -500,9 +500,9 @@ const App = (() => {
     // ---------- header color — ירוק כשכולם בריאים ----------
     const dashHeader = document.querySelector('.dash-header-new');
     const themeColorMeta = document.querySelector('meta[name="theme-color"]');
-    // צבע דינמי — ירוק=בריא / אדום=חום|טיפול
-    const THEME_CALM  = { main: '#059669', light: '#10b981', tint: 'rgba(5,150,105,0.10)',   dark: '#047857' };
-    const THEME_ALERT = { main: '#D64545', light: '#E06060', tint: 'rgba(214,69,69,0.10)',   dark: '#B03535' };
+    // צבע דינמי — ירוק כהה=בריא / כתום-אדום=חום|טיפול
+    const THEME_CALM  = { main: '#0f766e', light: '#0d9488', tint: 'rgba(15,118,110,0.10)', dark: '#0d5f59' };
+    const THEME_ALERT = { main: '#b45309', light: '#d97706', tint: 'rgba(180,83,9,0.10)',   dark: '#92400e' };
     const theme = allCalm ? THEME_CALM : THEME_ALERT;
 
     // עדכן CSS variables גלובלי — כל האלמנטים שמשתמשים ב-var(--purple)/var(--gold) יתעדכנו
@@ -517,8 +517,8 @@ const App = (() => {
     root.style.setProperty('--lav-soft',    theme.tint);
 
     if (allCalm) {
-      dashHeader.style.background = 'linear-gradient(150deg, #059669 0%, #10b981 100%)';
-      if (themeColorMeta) themeColorMeta.setAttribute('content', '#059669');
+      dashHeader.style.background = 'linear-gradient(150deg, #0d5f59 0%, #0f766e 100%)';
+      if (themeColorMeta) themeColorMeta.setAttribute('content', '#0d5f59');
       // calm sub-message
       let calmMsg = document.getElementById('dash-calm-msg');
       if (!calmMsg) {
@@ -530,8 +530,8 @@ const App = (() => {
       calmMsg.textContent = '🌟 הכל תקין במשפחה';
       calmMsg.style.display = '';
     } else {
-      dashHeader.style.background = 'linear-gradient(150deg, #D64545 0%, #E06060 100%)';
-      if (themeColorMeta) themeColorMeta.setAttribute('content', '#D64545');
+      dashHeader.style.background = 'linear-gradient(150deg, #0d5f59 0%, #0f766e 100%)';
+      if (themeColorMeta) themeColorMeta.setAttribute('content', '#0d5f59');
       const calmMsg = document.getElementById('dash-calm-msg');
       if (calmMsg) calmMsg.style.display = 'none';
     }
