@@ -1611,3 +1611,364 @@ body { background: var(--bg); }
   color: #555;
   line-height: 1.55;
 }
+
+/* ═══════════════════════════════════════════
+   DASHBOARD REDESIGN — Step 1 CSS
+   mockup-v3: header + child cards + quick actions
+═══════════════════════════════════════════ */
+
+/* ── Header: rounded bottom + stronger shadow ── */
+.dash-header-new {
+  border-radius: 0 0 2.5rem 2.5rem;
+  box-shadow: 0 8px 32px rgba(13,95,89,0.18);
+  padding-bottom: 48px;
+}
+
+/* ── Header top bar: כפתורים בשני קצוות ── */
+.hdr-top-bar {
+  justify-content: space-between;
+}
+
+/* ── Header buttons: border + backdrop ── */
+.hdr-top-btn {
+  background: rgba(0,0,0,0.25);
+  border: 1px solid rgba(255,255,255,0.18) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* ── Family-status badge (new element below date pill) ── */
+.hdr-family-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(34,197,94,0.22);
+  border: 1px solid rgba(74,222,128,0.35);
+  border-radius: 50px;
+  padding: 6px 14px;
+  color: #d1fae5;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 8px;
+  position: relative;
+}
+
+/* ── Section header row ── */
+.section-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  margin-top: 22px;
+}
+.section-header-row .section-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-header-row .section-bar-accent {
+  width: 4px;
+  height: 20px;
+  background: #0f766e;
+  border-radius: 9999px;
+}
+.section-header-row h2 {
+  font-size: 18px;
+  font-weight: 800;
+  color: #1e293b;
+  letter-spacing: -0.01em;
+}
+.section-header-row .section-count-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: #0f766e;
+  background: #f0fdfa;
+  border: 1px solid #99f6e4;
+  padding: 3px 10px;
+  border-radius: 9999px;
+}
+
+/* ── Child card v3 redesign ── */
+.child-grid .v3-card {
+  border-radius: 18px;
+  padding: 0;
+  overflow: hidden;
+  box-shadow: 0 4px 20px -2px rgba(15,118,110,0.08), 0 2px 6px -1px rgba(0,0,0,0.04);
+  border: 1px solid #f1f5f9;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: border-color 0.15s;
+}
+.child-grid .v3-card-full { grid-column: 1 / -1; }
+.child-grid .v3-card-selected { border-color: #0d9488; box-shadow: 0 0 0 2px #0d9488; }
+
+/* colored top bar */
+.v3-card-topbar {
+  height: 4px;
+  background: linear-gradient(to left, #34d399, #0d9488, #14b8a6);
+  flex-shrink: 0;
+}
+.v3-card-topbar.amber {
+  background: linear-gradient(to left, #fbbf24, #0d9488, #34d399);
+}
+.v3-card-topbar.rose {
+  background: linear-gradient(to left, #fb7185, #f43f5e, #e11d48);
+}
+
+/* card body */
+.v3-card-body {
+  padding: 14px 14px 10px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* avatar row */
+.v3-avatar-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.v3-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+.v3-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #f0fdfa, #dcfce7);
+  border: 1px solid #d1fae5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.v3-avatar-dot {
+  position: absolute;
+  bottom: -3px;
+  left: -3px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #22c55e;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px #bbf7d0;
+}
+.v3-avatar-dot.fever { background: #f87171; box-shadow: 0 0 0 1px #fecaca; }
+
+/* days badge */
+.v3-days-badge {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  color: #94a3b8;
+  background: #f8fafc;
+  border: 1px solid #f1f5f9;
+  padding: 3px 7px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+.v3-days-badge span { font-weight: 800; color: #22c55e; font-family: monospace; }
+
+/* child name + age */
+.v3-child-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+.v3-child-age {
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+/* status badges */
+.v3-status-ok {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+  background: #22c55e;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 8px;
+  margin-top: 8px;
+  margin-bottom: 5px;
+}
+.v3-status-sub {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 9999px;
+  margin-bottom: 8px;
+}
+.v3-status-sub .v3-pulse {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+  animation: pulse-ring 1.6s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+/* no-med info box */
+.v3-no-med {
+  background: #f8fafc;
+  border: 1px solid #f1f5f9;
+  border-radius: 10px;
+  padding: 7px 10px;
+  text-align: center;
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 500;
+  margin-top: auto;
+  margin-bottom: 8px;
+}
+
+/* supplement rows */
+.v3-suppl-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  background: #f8fafc;
+  border: 1px solid #f1f5f9;
+  border-radius: 10px;
+  padding: 7px 8px;
+  margin-bottom: 6px;
+}
+.v3-suppl-icon {
+  width: 24px; height: 24px;
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.v3-suppl-icon.iron   { background: #fff1f2; }
+.v3-suppl-icon.vitd   { background: #fffbeb; }
+.v3-suppl-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: #1e293b;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.v3-suppl-btn {
+  background: #fff;
+  border: 1px solid #86efac;
+  color: #16a34a;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.v3-suppl-btn:active { background: #f0fdf4; }
+
+/* card footer */
+.v3-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px 10px;
+  border-top: 1px solid #f1f5f9;
+  font-size: 11px;
+}
+.v3-footer-time { color: #94a3b8; }
+.v3-footer-link {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: #0f766e;
+  font-weight: 700;
+  font-size: 11px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Quick Actions v3: 3 buttons, colored icon circles ── */
+.qa-grid-v3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.qa-btn-v3 {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 14px 8px;
+  text-align: center;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(15,118,110,0.05);
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color 0.15s;
+}
+.qa-btn-v3:active { transform: scale(0.97); background: #f8fafc; }
+.qa-btn-v3:hover  { border-color: #99f6e4; }
+
+.qa-icon-circle {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.qa-icon-circle.teal  { background: #f0fdfa; }
+.qa-icon-circle.rose  { background: #fff1f2; }
+.qa-icon-circle.indigo { background: #eef2ff; }
+
+.qa-lbl-v3 {
+  font-size: 11px;
+  font-weight: 700;
+  color: #334155;
+  line-height: 1.25;
+}
+
+/* ── Quick Actions section header ── */
+.qa-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  margin-top: 22px;
+}
+.qa-section-header h3 {
+  font-size: 13px;
+  font-weight: 700;
+  color: #475569;
+}
