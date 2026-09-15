@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.49 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.130';
+  const APP_VERSION = '1.0.0-beta.131';
   const SPLASH_DURATION_RETURNING = 1500; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -2995,10 +2995,22 @@ const App = (() => {
 
   /* ---------- settings ---------- */
   function _renderBellPill() {
-    const on = DB.get().settings.notifications;
+    const on  = DB.get().settings.notifications;
     const btn = document.getElementById('dash-bell-btn');
     if (!btn) return;
     btn.classList.toggle('off', !on);
+
+    // נקודת סינכרון
+    const dot   = document.getElementById('dash-sync-dot');
+    const sync  = DB.getSyncStatus();
+    const uid   = DB.get().auth && DB.get().auth.uid;
+    if (dot && uid) {
+      dot.className = 'hdr-sync-dot visible';
+      if (sync.state === 'pending') dot.classList.add('pending');
+      else if (sync.state === 'failed') dot.classList.add('failed');
+    } else if (dot) {
+      dot.className = 'hdr-sync-dot'; // מחובר בלי Firebase — מסתיר
+    }
   }
 
   function renderSettings() {

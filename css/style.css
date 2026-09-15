@@ -437,30 +437,81 @@ body{
   flex-shrink: 0;
 }
 
-/* פעמון — פינה שמאלית עליונה של ה-header */
-.hdr-bell-icon-btn {
-  position: absolute;
-  top: 52px;
-  left: 20px;
-  width: 36px;
-  height: 36px;
+/* ── HEADER TOP BAR ── */
+.hdr-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  position: relative;
+}
+
+/* פעמון + נקודת סינכרון */
+.hdr-bell-btn {
+  position: relative;
+  background: rgba(255,255,255,0.18);
   border: none;
-  background: none;
-  cursor: pointer;
-  padding: 0;
+  border-radius: 50%;
+  width: 42px;
+  height: 42px;
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
 }
-.hdr-bell-icon-btn::before {
-  content: '🔔';
-  font-size: 22px;
-  line-height: 1;
+.hdr-bell-emoji { font-size: 20px; line-height: 1; }
+.hdr-bell-btn.off .hdr-bell-emoji::after { content: '🔕'; }
+.hdr-bell-btn.off .hdr-bell-emoji         { font-size: 0; }
+.hdr-bell-btn.off .hdr-bell-emoji::after  { font-size: 20px; }
+
+/* נקודה ירוקה/אפורה לסטטוס סינכרון */
+.hdr-sync-dot {
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #4ade80;
+  border: 2px solid rgba(13,95,89,0.8);
+  display: none;
 }
-/* כבוי — פעמון מוצלב */
-.hdr-bell-icon-btn.off::before {
-  content: '🔕';
+.hdr-sync-dot.visible { display: block; }
+.hdr-sync-dot.pending { background: #facc15; }
+.hdr-sync-dot.failed  { background: #f87171; }
+
+/* לוגו מרכזי */
+.hdr-logo-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+.hdr-logo-name {
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+.hdr-logo-sub {
+  color: rgba(255,255,255,0.70);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* אייקון עלה ימין */
+.hdr-leaf {
+  width: 42px;
+  height: 42px;
+  background: rgba(255,255,255,0.18);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
 }
 
 /* body margin to offset new taller header */

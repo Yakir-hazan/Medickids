@@ -484,13 +484,26 @@
           <div class="hdr-blob1"></div>
           <div class="hdr-blob2"></div>
           <span id="dash-updated" style="display:none"></span>
+
+          <!-- שורה עליונה: פעמון | לוגו | אייקון -->
+          <div class="hdr-top-bar">
+            <button id="dash-bell-btn" class="hdr-bell-btn" onclick="App.toggleNotif()" aria-label="התראות">
+              <span class="hdr-bell-emoji">🔔</span>
+              <span id="dash-sync-dot" class="hdr-sync-dot"></span>
+            </button>
+            <div class="hdr-logo-block">
+              <span class="hdr-logo-name">MEDICKIDS</span>
+              <span class="hdr-logo-sub">מעקב הורים חכם</span>
+            </div>
+            <div class="hdr-leaf">🌿</div>
+          </div>
+
           <p class="hdr-greeting" id="dash-greeting">שלום 👋</p>
           <p class="hdr-name" id="dash-title">מה קורה עכשיו?</p>
           <div class="hdr-date-pill">
             <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             <span id="dash-date-text"></span>
           </div>
-          <button id="dash-bell-btn" class="hdr-bell-icon-btn" onclick="App.toggleNotif()" aria-label="התראות"></button>
         </div>
         <div class="dash-body-offset">
 
