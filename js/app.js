@@ -885,12 +885,7 @@ const App = (() => {
       const statusLabelClass = isCalm ? 'v3-status-label v3-status-label--calm' : 'v3-status-label v3-status-label--sick';
       const statusLabelText = isCalm ? 'בסדר גמור' : 'חולה פעיל/ה';
 
-      // action buttons — תיעוד חום ומתן תרופה
-      const actionsHtml = `
-        <div class="v3-actions">
-          <button class="v3-btn v3-btn--outline" onclick="App.selectChild('${c.id}');App.goto('screen-temp');event.stopPropagation()">+ תיעוד חום</button>
-          <button class="v3-btn v3-btn--solid"   onclick="App.selectChild('${c.id}');App.goto('screen-med');event.stopPropagation()">+ מתן תרופה</button>
-        </div>`;
+
 
       const cardInner = `
         <div class="v3-header">
@@ -910,8 +905,7 @@ const App = (() => {
         </div>
         ${badgesHtml ? `<div class="v3-badges">${badgesHtml}</div>` : ''}
         ${hasRows ? `<div class="v3-rows">${medRowHtml}${tempRowHtml}${nextDoseRowHtml}${suppRowHtml}</div>` : ''}
-        ${healthyRowHtml}
-        ${actionsHtml}`;
+        ${healthyRowHtml}`;
 
       const isSelected = c.id === selectedChildId;
       return `<div class="v3-card${isLastOdd ? ' v3-card-full' : ''}${isSelected ? ' v3-card-selected' : ''}" onclick="App.selectChild('${c.id}')">
