@@ -726,27 +726,33 @@ const App = (() => {
       if (vm.tags.length) {
         badgesHtml = vm.tags.map(t =>
           t.type === 'fever'
-            ? `<div class="status-pill fever"><div class="status-dot-sm"></div><span class="status-pill-text">• חום</span></div>`
-            : `<div class="status-pill treatment"><div class="status-dot-sm"></div><span class="status-pill-text">• טיפול</span></div>`
+            ? `<div class="v3-pill v3-pill--fever"><span class="v3-pill-dot"></span>חום פעיל</div>`
+            : `<div class="v3-pill v3-pill--treatment"><span class="v3-pill-dot"></span>בטיפול תרופתי</div>`
         ).join('');
       } else {
-        badgesHtml = `<div class="status-pill ok"><div class="status-dot-sm"></div><span class="status-pill-text">• הכל תקין</span></div>`;
+        badgesHtml = `<div class="v3-pill v3-pill--ok"><span class="v3-pill-dot"></span>הכל תקין</div>`;
       }
       // תג supplement — ☀️ / 🩸
       if (activeSupps.length) {
         badgesHtml += activeSupps.map(rx => {
           const lbl = suppLabels[rx.productId] || { emoji: '💊', name: '' };
-          return `<div class="status-pill supplement"><div class="status-dot-sm"></div><span class="status-pill-text">${lbl.emoji} ${lbl.name}</span></div>`;
+          return `<div class="v3-pill v3-pill--supp"><span class="v3-pill-dot"></span>${lbl.emoji} ${lbl.name}</div>`;
         }).join('');
       }
 
       // ── שורת תרופה ──
       let medRowHtml = '';
       if (vm.lastMed && (vm.prnActive || vm.courseState.hasActiveCourse)) {
-        medRowHtml = `<div class="cc-row">
-          <span class="cc-ic">💊</span>
-          <span class="cc-lbl">${vm.lastMed.medicine || 'תרופה'}</span>
-          <span class="cc-val cc-val-blue">${formatClock(vm.lastMed.time)}</span>
+        medRowHtml = `<div class="v3-row v3-row--normal">
+          <div class="v3-ic-box v3-ic-box--purple">💊</div>
+          <div class="v3-row-body">
+            <div class="v3-row-title">${vm.lastMed.medicine || 'תרופה'}</div>
+            <div class="v3-row-sub v3-row-sub--green">ניתן בזמן</div>
+          </div>
+          <div class="v3-row-val">
+            <div class="v3-row-val-main v3-val--blue">${formatClock(vm.lastMed.time)}</div>
+            <div class="v3-row-val-sec" style="color:#94a3b8">היום</div>
+          </div>
         </div>`;
       }
 
@@ -754,10 +760,16 @@ const App = (() => {
       let tempRowHtml = '';
       if (vm.hasFever) {
         const elapsed = elapsedString(vm.lastTemp.time);
-        tempRowHtml = `<div class="cc-row">
-          <span class="cc-ic">🌡️</span>
-          <span class="cc-lbl">חום · לפני ${elapsed}</span>
-          <span class="cc-val cc-val-red">${vm.lastTemp.value}°</span>
+        tempRowHtml = `<div class="v3-row v3-row--fever">
+          <div class="v3-ic-box v3-ic-box--red">🌡️</div>
+          <div class="v3-row-body">
+            <div class="v3-row-title">מדידת חום <span class="v3-fever-badge">חום גבוה</span></div>
+            <div class="v3-row-sub v3-row-sub--rose">לפני ${elapsed}</div>
+          </div>
+          <div class="v3-row-val">
+            <div class="v3-row-val-main v3-val--red">${vm.lastTemp.value}°</div>
+            <div class="v3-row-val-sec" style="color:#f43f5e">בדיקה אחרונה</div>
+          </div>
         </div>`;
       }
 
@@ -772,11 +784,13 @@ const App = (() => {
           const today = new Date(); today.setHours(0,0,0,0);
           const givenToday = lastGiven && lastGiven.time >= today.getTime();
           const statusHtml = givenToday
-            ? `<button class="cc-supp-btn cc-supp-btn--done">✓ ניתן</button>`
-            : `<button onclick="App.markSupplementGiven('${rx.id}',this);event.stopPropagation()" class="cc-supp-btn">תן ✓</button>`;
-          return `<div class="cc-row">
-            <span class="cc-ic">${lbl.emoji}</span>
-            <span class="cc-lbl">${lbl.name}</span>
+            ? `<button class="v3-supp-btn v3-supp-btn--done">✓ ניתן</button>`
+            : `<button onclick="App.markSupplementGiven('${rx.id}',this);event.stopPropagation()" class="v3-supp-btn">תן ✓</button>`;
+          return `<div class="v3-row v3-row--normal">
+            <div class="v3-ic-box v3-ic-box--sun">${lbl.emoji}</div>
+            <div class="v3-row-body">
+              <div class="v3-row-title">${lbl.name}</div>
+            </div>
             ${statusHtml}
           </div>`;
         }).join('');
@@ -802,16 +816,19 @@ const App = (() => {
           const remaining = nextAtMs - Date.now();
           let valHtml;
           if (remaining <= 0) {
-            valHtml = `<span class="cc-val cc-val-green">עכשיו</span>`;
+            valHtml = `<div class="v3-row-val"><div class="v3-row-val-main v3-val--gray">עכשיו</div></div>`;
           } else {
             const h = Math.floor(remaining / 3600000);
             const m = Math.floor((remaining % 3600000) / 60000);
             const label = h > 0 ? `${h}:${String(m).padStart(2,'0')}` : `${m} דק'`;
-            valHtml = `<span class="cc-val cc-val-normal">${label}</span>`;
+            valHtml = `<div class="v3-row-val"><div class="v3-row-val-main v3-val--amber">${label}</div></div>`;
           }
-          nextDoseRowHtml = `<div class="cc-row">
-            <span class="cc-ic">⏰</span>
-            <span class="cc-lbl">מנה הבאה</span>
+          nextDoseRowHtml = `<div class="v3-row v3-row--warning">
+            <div class="v3-ic-box v3-ic-box--amber">⏰</div>
+            <div class="v3-row-body">
+              <div class="v3-row-title">מנה הבאה מותרת</div>
+              <div class="v3-row-sub v3-row-sub--amber">מרווח בטיחות מינימלי</div>
+            </div>
             ${valHtml}
           </div>`;
         }
@@ -843,27 +860,48 @@ const App = (() => {
       let healthyRowHtml = '';
       if (isCalm && vm.healthyDays !== null && vm.healthyDays >= 0) {
         const gender = c.gender === 'male' ? 'בריא' : 'בריאה';
-        healthyRowHtml = `<div class="cc-healthy">
-          <div class="cc-healthy-num">${vm.healthyDays}</div>
-          <div class="cc-healthy-lbl">ימים ${gender}</div>
+        healthyRowHtml = `<div class="v3-healthy">
+          <div class="v3-healthy-num">${vm.healthyDays}</div>
+          <div class="v3-healthy-lbl">ימים ${gender}</div>
         </div>`;
       }
 
+      // ── V3 card HTML ──
       const hasRows = medRowHtml || tempRowHtml || nextDoseRowHtml || suppRowHtml;
+      const dotClass = isCalm ? 'v3-avatar-dot v3-avatar-dot--calm' : 'v3-avatar-dot';
+      const statusLabelClass = isCalm ? 'v3-status-label v3-status-label--calm' : 'v3-status-label v3-status-label--sick';
+      const statusLabelText = isCalm ? 'בסדר גמור' : 'חולה פעיל/ה';
+
+      // action buttons — תיעוד חום ומתן תרופה
+      const actionsHtml = `
+        <div class="v3-actions">
+          <button class="v3-btn v3-btn--outline" onclick="App.selectChild('${c.id}');App.goto('screen-temp');event.stopPropagation()">+ תיעוד חום</button>
+          <button class="v3-btn v3-btn--solid"   onclick="App.selectChild('${c.id}');App.goto('screen-med');event.stopPropagation()">+ מתן תרופה</button>
+        </div>`;
+
       const cardInner = `
-        <div class="cc-top">
-          <div class="avatar-lg ${avatarClass}" style="${avatarStyle}">${c.emoji}</div>
-          <div class="cc-top-info">
-            <div class="child-name">${c.name}</div>
-            ${ageText ? `<div class="child-age">${ageText}</div>` : ''}
-            <div class="cc-badges">${badgesHtml}</div>
+        <div class="v3-header">
+          <div class="v3-header-left">
+            <div class="v3-avatar-wrap">
+              <div class="v3-avatar">${c.emoji}</div>
+              <div class="${dotClass}"></div>
+            </div>
+            <div>
+              <div class="v3-name-row">
+                <span class="v3-name">${c.name}</span>
+                <span class="${statusLabelClass}">${statusLabelText}</span>
+              </div>
+              ${ageText ? `<div class="v3-age">${ageText}</div>` : ''}
+            </div>
           </div>
         </div>
-        ${hasRows ? `<div class="cc-rows">${medRowHtml}${tempRowHtml}${nextDoseRowHtml}${suppRowHtml}</div>` : ''}
-        ${healthyRowHtml}`;
+        ${badgesHtml ? `<div class="v3-badges">${badgesHtml}</div>` : ''}
+        ${hasRows ? `<div class="v3-rows">${medRowHtml}${tempRowHtml}${nextDoseRowHtml}${suppRowHtml}</div>` : ''}
+        ${healthyRowHtml}
+        ${actionsHtml}`;
 
       const isSelected = c.id === selectedChildId;
-      return `<div class="card${isLastOdd ? ' card-full' : ''}${isSelected ? ' card-selected' : ''}" onclick="App.selectChild('${c.id}')">
+      return `<div class="v3-card${isLastOdd ? ' v3-card-full' : ''}${isSelected ? ' v3-card-selected' : ''}" onclick="App.selectChild('${c.id}')">
         ${cardInner}
       </div>`;
     }).join('');
@@ -3624,6 +3662,7 @@ const App = (() => {
 })();
 
 document.addEventListener('DOMContentLoaded', App.init);
+
 
 
 
