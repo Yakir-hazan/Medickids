@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.49 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.158';
+  const APP_VERSION = '1.0.0-beta.159';
   const SPLASH_DURATION_RETURNING = 600; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -767,10 +767,13 @@ const App = (() => {
       }
       // (הוסר לפי בקשה: תג supplement כפול למעלה — המידע עדיין מוצג בשורות התוספים למטה)
 
-      // ── שורת תרופה ──
+      // ── שורות תרופות ──
       let medRowHtml = '';
-      if (vm.lastMed && (vm.prnActive || vm.courseState.hasActiveCourse)) {
-        medRowHtml = `<div class="v3-row v3-row--normal">
+      const _medRows = [];
+
+      // שורת PRN — התרופה האחרונה שניתנה (אם פעילה)
+      if (vm.lastMed && vm.prnActive) {
+        _medRows.push(`<div class="v3-row v3-row--normal">
           <div class="v3-ic-box v3-ic-box--purple">💊</div>
           <div class="v3-row-body">
             <div class="v3-row-title">${vm.lastMed.medicine || 'תרופה'}</div>
@@ -780,8 +783,41 @@ const App = (() => {
             <div class="v3-row-val-main v3-val--blue">${formatClock(vm.lastMed.time)}</div>
             <div class="v3-row-val-sec" style="color:#94a3b8">היום</div>
           </div>
-        </div>`;
+        </div>`);
       }
+
+      // שורה לכל course פעיל בנפרד
+      if (vm.courseState.hasActiveCourse && vm.courseState.activeCourses) {
+        vm.courseState.activeCourses.forEach(rx => {
+          const entry = _catalogEntryById ? _catalogEntryById(rx.productId) : null;
+          const drugName = entry ? entry.key : (rx.productId || 'תרופה');
+          const doneCount = (rx.doses || []).filter(d => d.givenAt).length;
+          const totalDoses = rx.totalDoses || 0;
+          const canNow = _canMarkDoseNow(rx);
+          const isOverdue = _courseIsDoseOverdue ? _courseIsDoseOverdue(rx) : false;
+          const subColor = isOverdue ? 'v3-row-sub--rose' : (canNow ? 'v3-row-sub--green' : 'v3-row-sub--blue');
+          const subText  = isOverdue ? 'באיחור ⚠️' : (canNow ? 'זמין עכשיו' : 'בטיפול');
+          const valText  = totalDoses > 0 ? `${doneCount}/${totalDoses}` : 'פעיל';
+          _medRows.push(`<div class="v3-row v3-row--normal">
+            <div class="v3-ic-box v3-ic-box--teal">💊</div>
+            <div class="v3-row-body">
+              <div class="v3-row-title">${drugName}</div>
+              <div class="v3-row-sub ${subColor}">${subText}</div>
+            </div>
+            <div class="v3-row-val">
+              <div class="v3-row-val-main v3-val--blue">${valText}</div>
+              <div class="v3-row-val-sec" style="color:#94a3b8">מנות</div>
+            </div>
+          </div>`);
+        });
+      }
+
+      // גם אם lastMed הוא course (ניתנה מנה) — מציג זמן מנה אחרונה
+      if (vm.lastMed && !vm.prnActive && vm.courseState.hasActiveCourse) {
+        // כבר מוצג בשורות ה-course למעלה — לא מוסיפים כפול
+      }
+
+      medRowHtml = _medRows.join('');
 
       // ── שורת חום ──
       let tempRowHtml = '';
