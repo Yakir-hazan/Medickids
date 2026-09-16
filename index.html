@@ -1125,6 +1125,20 @@
   </div>
 
   <!-- SHEET: dose calculator -->
+
+  <!-- FEEDBACK SHEET -->
+  <div class="sheet-overlay" id="sheet-feedback" onclick="if(event.target===this)App.closeSheet('sheet-feedback')">
+    <div class="sheet">
+      <button class="close-sheet" onclick="App.closeSheet('sheet-feedback')">סגור ✕</button>
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">📣 שלח משוב</div>
+      <p style="font-size:13px;color:var(--ink-soft);margin:0 0 20px;">מה תרצה לשתף איתנו?</p>
+      <button class="sheet-cta" onclick="App.sendFeedback('bug')">🐛 דיווח על באג</button>
+      <button class="sheet-cta" style="margin-top:10px;" onclick="App.sendFeedback('improve')">💡 הצעה לשיפור</button>
+      <button class="sheet-delete" onclick="App.sendFeedback('other')">💬 פנייה כללית</button>
+    </div>
+  </div>
+
   <div class="sheet-overlay" id="sheet-dose" onclick="if(event.target===this)App.closeSheet('sheet-dose')">
     <div class="sheet">
       <button class="close-sheet" onclick="App.closeSheet('sheet-dose')">סגור ✕</button>
@@ -1413,20 +1427,6 @@
     #welcome-popup-overlay { display:none; }
     #welcome-popup-overlay.active { display:flex !important; }
   </style>
-
-
-    <!-- FEEDBACK SHEET -->
-    <div class="sheet-overlay" id="sheet-feedback" onclick="if(event.target===this)closeSheet('sheet-feedback')">
-      <div class="sheet">
-        <button class="close-sheet" onclick="closeSheet('sheet-feedback')">סגור ✕</button>
-        <div class="sheet-handle"></div>
-        <div class="sheet-title">📣 שלח משוב</div>
-        <p style="font-size:13px;color:var(--ink-soft);margin:0 0 20px;">מה תרצה לשתף איתנו?</p>
-        <button class="sheet-cta" onclick="App.sendFeedback('bug')">🐛 דיווח על באג</button>
-        <button class="sheet-cta" style="margin-top:10px;" onclick="App.sendFeedback('improve')">💡 הצעה לשיפור</button>
-        <button class="sheet-delete" onclick="App.sendFeedback('other')">💬 פנייה כללית</button>
-      </div>
-    </div>
 
 </body>
 </html>
