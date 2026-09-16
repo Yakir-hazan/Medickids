@@ -2158,7 +2158,7 @@ const App = (() => {
     'נורופן': {
       id: 'nurofen_syrup',
       activeIngredient: 'ibuprofen',
-      protocol: { version: 1, type: TREATMENT_TYPES.PRN, interval: '6–8 שעות (מרווח מינימלי 4 שעות)', intervalHours: 4, maxDosesPerDay: 4 },
+      protocol: { version: 1, type: TREATMENT_TYPES.PRN, interval: '6–8 שעות', intervalHours: 6, maxDosesPerDay: 4 },
       matchNames: ['נורופן', 'איבופרופן', 'אדוויל'],
       concentrations: [
         {
