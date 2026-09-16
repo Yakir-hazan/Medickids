@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="css/style.css">
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script id="tailwind-config">
   tailwind.config = {
     corePlugins: { preflight: false }, // don't reset global styles — this app already has its own CSS
@@ -1132,10 +1133,21 @@
       <button class="close-sheet" onclick="App.closeSheet('sheet-feedback')">סגור ✕</button>
       <div class="sheet-handle"></div>
       <div class="sheet-title">📣 שלח משוב</div>
-      <p style="font-size:13px;color:var(--ink-soft);margin:0 0 20px;">מה תרצה לשתף איתנו?</p>
-      <button class="sheet-cta" onclick="App.sendFeedback('bug')">🐛 דיווח על באג</button>
-      <button class="sheet-cta" style="margin-top:10px;" onclick="App.sendFeedback('improve')">💡 הצעה לשיפור</button>
-      <button class="sheet-delete" onclick="App.sendFeedback('other')">💬 פנייה כללית</button>
+      <p style="font-size:13px;color:var(--ink-soft);margin:0 0 16px;">מה תרצה לשתף איתנו?</p>
+      <div class="chip-row" id="feedback-chips" style="margin-bottom:16px;">
+        <button class="chip sel" id="chip-bug"     onclick="App.pickFeedbackType('bug')">🐛 באג</button>
+        <button class="chip"     id="chip-improve" onclick="App.pickFeedbackType('improve')">💡 שיפור</button>
+        <button class="chip"     id="chip-other"   onclick="App.pickFeedbackType('other')">💬 אחר</button>
+      </div>
+      <div class="field-label">תיאור</div>
+      <textarea id="feedback-text"
+        placeholder="ספר לנו מה קרה..."
+        style="width:100%;min-height:110px;border-radius:14px;border:1.5px solid var(--line);
+               background:var(--tint);color:var(--ink);font-family:inherit;font-size:14px;
+               padding:12px;resize:none;box-sizing:border-box;margin-top:4px;direction:rtl;"></textarea>
+      <div class="field-error" id="feedback-error">נא לכתוב תיאור קצר לפני השליחה</div>
+      <button class="sheet-cta" id="feedback-send-btn" onclick="App.submitFeedback()" style="margin-top:16px;">שלח 📨</button>
+      <div id="feedback-success" style="display:none;text-align:center;padding:18px 0 4px;font-size:15px;font-weight:700;color:#0f766e;">✅ המשוב נשלח! תודה 🙏</div>
     </div>
   </div>
 
