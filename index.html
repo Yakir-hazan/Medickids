@@ -657,6 +657,9 @@
           <button class="set-row" onclick="App.goto('screen-about')">ℹ️ אודות האפליקציה<span class="chev">‹</span></button>
         </div>
         <div class="set-group">
+          <button class="set-row" onclick="App.openFeedback()">📣 שלח משוב<span class="chev">‹</span></button>
+        </div>
+        <div class="set-group">
           <button class="set-row danger" onclick="App.confirmReset()">🗑️ איפוס נתונים<span class="chev">‹</span></button>
         </div>
       </div>
@@ -1411,8 +1414,23 @@
     #welcome-popup-overlay.active { display:flex !important; }
   </style>
 
+
+    <!-- FEEDBACK SHEET -->
+    <div class="sheet-overlay" id="sheet-feedback" onclick="if(event.target===this)closeSheet('sheet-feedback')">
+      <div class="sheet">
+        <button class="close-sheet" onclick="closeSheet('sheet-feedback')">סגור ✕</button>
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">📣 שלח משוב</div>
+        <p style="font-size:13px;color:var(--ink-soft);margin:0 0 20px;">מה תרצה לשתף איתנו?</p>
+        <button class="sheet-cta" onclick="App.sendFeedback('bug')">🐛 דיווח על באג</button>
+        <button class="sheet-cta" style="margin-top:10px;" onclick="App.sendFeedback('improve')">💡 הצעה לשיפור</button>
+        <button class="sheet-delete" onclick="App.sendFeedback('other')">💬 פנייה כללית</button>
+      </div>
+    </div>
+
 </body>
 </html>
+
 
 
 
