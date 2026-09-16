@@ -773,17 +773,36 @@ const App = (() => {
 
       // שורת PRN — התרופה האחרונה שניתנה (אם פעילה)
       if (vm.lastMed && vm.prnActive) {
-        _medRows.push(`<div class="v3-row v3-row--normal">
-          <div class="v3-ic-box v3-ic-box--purple">💊</div>
-          <div class="v3-row-body">
-            <div class="v3-row-title">${vm.lastMed.medicine || 'תרופה'}</div>
-            <div class="v3-row-sub v3-row-sub--green">ניתן בזמן</div>
-          </div>
-          <div class="v3-row-val">
-            <div class="v3-row-val-main v3-val--blue">${formatClock(vm.lastMed.time)}</div>
-            <div class="v3-row-val-sec" style="color:#94a3b8">היום</div>
-          </div>
-        </div>`);
+        const _prnMed = vm.lastMed.medicine || 'תרופה';
+        const _prnDose = vm.lastMed.dose || '';
+        const _prnCid = c.id;
+        if (vm.canGivePRN) {
+          // המרווח עבר — מציג כפתור סימון מנה + אפשרות לpsheet מלא
+          _medRows.push(`<div class="v3-row v3-row--normal">
+            <div class="v3-ic-box v3-ic-box--purple">💊</div>
+            <div class="v3-row-body">
+              <div class="v3-row-title">${_prnMed}</div>
+              <div class="v3-row-sub v3-row-sub--green">מוכן למנה הבאה</div>
+            </div>
+            <div class="v3-row-val" style="display:flex;gap:6px;align-items:center">
+              <button class="btn-done" onclick="App.quickLogPRN('${_prnCid}','${_prnMed}','${_prnDose}');event.stopPropagation()">סמן ✓</button>
+              <button class="btn-ghost-sm" onclick="App.openMedSheet();event.stopPropagation()" title="פתח sheet מלא">⟩</button>
+            </div>
+          </div>`);
+        } else {
+          // ממתין למרווח — מציג שעה ניתנה בלבד
+          _medRows.push(`<div class="v3-row v3-row--normal">
+            <div class="v3-ic-box v3-ic-box--purple">💊</div>
+            <div class="v3-row-body">
+              <div class="v3-row-title">${_prnMed}</div>
+              <div class="v3-row-sub v3-row-sub--green">ניתן בזמן</div>
+            </div>
+            <div class="v3-row-val">
+              <div class="v3-row-val-main v3-val--blue">${formatClock(vm.lastMed.time)}</div>
+              <div class="v3-row-val-sec" style="color:#94a3b8">היום</div>
+            </div>
+          </div>`);
+        }
       }
 
       // שורה לכל course פעיל בנפרד
@@ -798,15 +817,21 @@ const App = (() => {
           const subColor = isOverdue ? 'v3-row-sub--rose' : (canNow ? 'v3-row-sub--green' : 'v3-row-sub--blue');
           const subText  = isOverdue ? 'באיחור ⚠️' : (canNow ? 'זמין עכשיו' : 'בטיפול');
           const valText  = totalDoses > 0 ? `${doneCount}/${totalDoses}` : 'פעיל';
+          const _courseBtn = canNow
+            ? `<button class="btn-done" onclick="App.markCourseDose('${rx.id}');event.stopPropagation()">סמן ✓</button>`
+            : '';
           _medRows.push(`<div class="v3-row v3-row--normal">
             <div class="v3-ic-box v3-ic-box--teal">💊</div>
             <div class="v3-row-body">
               <div class="v3-row-title">${drugName}</div>
               <div class="v3-row-sub ${subColor}">${subText}</div>
             </div>
-            <div class="v3-row-val">
-              <div class="v3-row-val-main v3-val--blue">${valText}</div>
-              <div class="v3-row-val-sec" style="color:#94a3b8">מנות</div>
+            <div class="v3-row-val" style="display:flex;gap:6px;align-items:center">
+              ${_courseBtn}
+              <div style="text-align:right">
+                <div class="v3-row-val-main v3-val--blue">${valText}</div>
+                <div class="v3-row-val-sec" style="color:#94a3b8">מנות</div>
+              </div>
             </div>
           </div>`);
         });
@@ -1356,22 +1381,51 @@ const App = (() => {
     } catch (e) { /* best-effort — never block the UI on a failed schedule call */ }
   }
 
-  async function saveMed() {
-    if (!medChildSel) { toast('אין ילד לבחור — הוסיפו ילד/ה קודם'); return; }
-    const catalogEntry = _catalogEntryFor(medMedicineSel);
+  /* _coreSaveMed: ליבת שמירת PRN — משותפת ל-saveMed ול-quickLogPRN */
+  async function _coreSaveMed(patch, customReminderVal) {
+    const medicine = patch.medicine || 'תרופה';
+    const catalogEntry = _catalogEntryFor(medicine);
     const protocolType = catalogEntry ? catalogEntry.protocol.type : null;
-    const drugKey = Object.keys(MEDICATION_CATALOG).find((k) => _matchesDrug(medMedicineSel, k));
-
-    // warn (not block) if a dose of the same substance was already given too recently / already
-    // given today (for daily meds) — same check the dose calculator uses, now applied here too
-    if (!editMedEntryId && drugKey) {
-      const warning = _doseHistoryWarning(medChildSel, drugKey);
+    const drugKey = Object.keys(MEDICATION_CATALOG).find((k) => _matchesDrug(medicine, k));
+    if (drugKey) {
+      const warning = _doseHistoryWarning(patch.childId, drugKey);
       if (warning && warning.level === 'alert') {
         const plain = warning.text.replace(/^[⏱️⚠️☀️]\s*/, '');
-        if (!confirm(`${plain}\n\nלהמשיך בכל זאת ולרשום את המנה?`)) return;
+        if (!confirm(plain + '\n\nלהמשיך בכל זאת ולרשום את המנה?')) return false;
       }
     }
+    try {
+      if (protocolType === TREATMENT_TYPES.DAILY && catalogEntry) {
+        const existingRx = DB.get().prescriptions.find((p) => p.childId === patch.childId && p.productId === catalogEntry.id && p.status === 'active');
+        if (existingRx) {
+          DB.updatePrescription(existingRx.id, { reminder: { on: dailyReminderOn } });
+          patch.prescriptionId = existingRx.id;
+        } else {
+          const rx = DB.addPrescription({
+            childId: patch.childId,
+            productId: catalogEntry.id,
+            ingredientId: catalogEntry.activeIngredient,
+            protocolType: TREATMENT_TYPES.DAILY,
+            reminder: { on: dailyReminderOn },
+          });
+          patch.prescriptionId = rx.id;
+        }
+      }
+      const entry = DB.addMedEntry(patch);
+      let customReadyAt = null;
+      if (customReminderVal) customReadyAt = new Date(customReminderVal).getTime();
+      const shouldSchedule = protocolType === TREATMENT_TYPES.DAILY ? dailyReminderOn : true;
+      if (shouldSchedule) scheduleDoseReminder(entry, customReadyAt);
+      toast('התרופה נשמרה ✓');
+      return true;
+    } catch (e) {
+      toast('⚠️ השמירה נכשלה — בדקו מקום פנוי במכשיר ונסו שוב');
+      return false;
+    }
+  }
 
+  async function saveMed() {
+    if (!medChildSel) { toast('אין ילד לבחור — הוסיפו ילד/ה קודם'); return; }
     const patch = {
       childId: medChildSel,
       medicine: medMedicineSel || 'תרופה',
@@ -1379,51 +1433,31 @@ const App = (() => {
       note: document.getElementById('med-note').value.trim(),
       time: timeToToday(document.getElementById('med-time').value || nowHHMM()),
     };
-    try {
-      if (editMedEntryId) {
+    if (editMedEntryId) {
+      try {
         DB.updateMedEntry(editMedEntryId, patch);
         toast('התרופה עודכנה ✓');
-      } else {
-        // DAILY-protocol meds: upsert a Prescription representing "ongoing daily treatment" for this
-        // child+medicine, so future work (dashboard list, etc.) has a real place to read it from.
-        // References the catalog by stable productId, never copies its protocol values.
-        if (protocolType === TREATMENT_TYPES.DAILY && catalogEntry) {
-          const existingRx = DB.get().prescriptions.find((p) => p.childId === medChildSel && p.productId === catalogEntry.id && p.status === 'active');
-          if (existingRx) {
-            DB.updatePrescription(existingRx.id, { reminder: { on: dailyReminderOn } });
-            patch.prescriptionId = existingRx.id;
-          } else {
-            const rx = DB.addPrescription({
-              childId: medChildSel,
-              productId: catalogEntry.id,
-              ingredientId: catalogEntry.activeIngredient,
-              protocolType: TREATMENT_TYPES.DAILY,
-              reminder: { on: dailyReminderOn },
-            });
-            patch.prescriptionId = rx.id;
-          }
-        }
-
-        const entry = DB.addMedEntry(patch);
-        let customReadyAt = null;
-        if (doseReminderMode === 'custom') {
-          const val = document.getElementById('med-reminder-custom').value;
-          if (val) customReadyAt = new Date(val).getTime(); // parsed as local time, as entered
-        }
-        const shouldSchedule = protocolType === TREATMENT_TYPES.DAILY ? dailyReminderOn : true;
-        if (shouldSchedule) scheduleDoseReminder(entry, customReadyAt); // falls back to automatic timing if no custom time was set
-        toast('התרופה נשמרה ✓');
+      } catch (e) {
+        toast('⚠️ השמירה נכשלה — בדקו מקום פנוי במכשיר ונסו שוב');
+        return;
       }
-    } catch (e) {
-      // localStorage write failed (quota exceeded, private browsing, etc.) — don't claim success,
-      // don't close the sheet, so the user doesn't lose what they just filled in
-      toast('⚠️ השמירה נכשלה — בדקו מקום פנוי במכשיר ונסו שוב');
+      editMedEntryId = null;
+      closeSheet('sheet-med');
+      renderDashboard();
+      renderHistory();
       return;
     }
-    editMedEntryId = null;
-    closeSheet('sheet-med');
-    renderDashboard();
-    renderHistory();
+    const customVal = doseReminderMode === 'custom'
+      ? document.getElementById('med-reminder-custom').value : null;
+    const ok = await _coreSaveMed(patch, customVal);
+    if (ok) { editMedEntryId = null; closeSheet('sheet-med'); renderDashboard(); renderHistory(); }
+  }
+
+  /* סימון מנת PRN מהיר מהכרטיס — אותה לוגיקה כמו saveMed, בלי sheet */
+  async function quickLogPRN(childId, medicine, dose) {
+    const patch = { childId, medicine: medicine || 'תרופה', dose: dose || '', note: '', time: Date.now() };
+    const ok = await _coreSaveMed(patch, null);
+    if (ok) { renderDashboard(); renderHistory(); }
   }
   function deleteMedEntry() {
     if (!editMedEntryId) return;
@@ -3841,7 +3875,7 @@ const App = (() => {
     obActivateSupplements, obSkipSupplements, startOnboarding, obGetReturnTo: () => _obReturnTo,
     openDoseSheet, pickDoseChild, pickDoseMed, pickDoseConc, calcDose,
     openCourseSheet, pickCourseChild, pickCourseDrug, saveCourse,
-    markCourseDose, deleteCourse, doneWithPRN, doneWithCourse,
+    markCourseDose, deleteCourse, doneWithPRN, doneWithCourse, quickLogPRN,
     markSupplementGiven,
     heroClick, quickWeightUpdate,
     deleteMedEntry, deleteTempEntry, confirmReset,
