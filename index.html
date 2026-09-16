@@ -182,9 +182,9 @@
               תרופות, חום, טיפולים, תוספים ותזכורות — <span class="font-semibold text-primary">Medickids</span> זוכרת בשבילכם.
             </p>
             <div class="relative w-full max-w-xs mb-space-md">
-              <button class="group relative flex items-center justify-center gap-space-sm w-full h-[52px] rounded-full bg-primary text-on-primary text-[14px] font-medium shadow-[0_12px_28px_rgba(0,92,85,0.28)] active:scale-[0.98] transition-all overflow-hidden" onclick="App.showInstallGuide()">
-                <span class="font-bold">התחילו עכשיו — ללא עלות</span>
-                <span class="material-symbols-outlined text-[20px]">arrow_back</span>
+              <button id="btn-main-cta" class="group relative flex items-center justify-center gap-space-sm w-full h-[52px] rounded-full bg-primary text-on-primary text-[14px] font-medium shadow-[0_12px_28px_rgba(0,92,85,0.28)] active:scale-[0.98] transition-all overflow-hidden" onclick="App.handleLandingCTA()">
+                <span class="material-symbols-outlined text-[20px]" id="btn-main-cta-icon">download</span>
+                <span class="font-bold" id="btn-main-cta-text">הורדה חינם</span>
               </button>
             </div>
             <div class="relative flex items-center justify-center gap-1.5 px-space-md py-1 rounded-full bg-surface-container-high/60 text-on-surface-variant text-[11px] mb-space-xl">

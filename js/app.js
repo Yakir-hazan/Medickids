@@ -57,9 +57,26 @@ const App = (() => {
   });
 
   function renderLanding() {
-    if (isStandalone()) { return; } // Auth routing handles navigation — no splash here
-    // A2HS section is hidden by default — shown only when user taps the install button
-    // (see showInstallGuide below)
+    if (isStandalone()) { return; }
+    // Set CTA button text + icon by platform
+    const btnText = document.getElementById('btn-main-cta-text');
+    const btnIcon = document.getElementById('btn-main-cta-icon');
+    if (btnText && btnIcon) {
+      if (isIOS()) {
+        btnText.textContent = 'הוספה למסך הבית — חינם';
+        btnIcon.textContent = 'add_to_home_screen';
+      } else {
+        btnText.textContent = 'הורדה חינם';
+        btnIcon.textContent = 'download';
+      }
+    }
+  }
+  function handleLandingCTA() {
+    if (isAndroid() && deferredInstallPrompt) {
+      installNow(); // Android + prompt ready → install directly
+    } else {
+      showInstallGuide(); // iOS or Android without prompt → show guide
+    }
   }
   function showInstallGuide() {
     const section = document.getElementById('landing-a2hs');
@@ -3870,7 +3887,7 @@ const App = (() => {
     openMedSheet, pickMedChild, pickMedMedicine, addCustomMedicine, saveMed, pickReminderMode, toggleDailyReminder,
     setHistFilter, setTempFilter, openTempSheet, pickTempChild, saveTemp,
     openEditKid, saveKid, toggleNotif, init, selectChild, closeChildDetail, closeWelcomePopup,
-    installNow, skipLanding, showInstallGuide,
+    installNow, skipLanding, showInstallGuide, handleLandingCTA,
     obPickParent, obPickAv, obHandlePhoto, obValidate2, obBirthChange, obValidate3, obNext, obBack,
     obActivateSupplements, obSkipSupplements, startOnboarding, obGetReturnTo: () => _obReturnTo,
     openDoseSheet, pickDoseChild, pickDoseMed, pickDoseConc, calcDose,
