@@ -607,7 +607,7 @@ body { background: var(--bg); }
 .urgent-name { font-size: 15px; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
 .urgent-sub  { font-size: 13px; color: var(--ink-soft); }
 .btn-done {
-  background: linear-gradient(135deg, var(--purple), var(--purple-2));
+  background: linear-gradient(135deg, #0d9488, #14b8a6);
   color: #fff;
   border: none;
   border-radius: 50px;
@@ -618,6 +618,7 @@ body { background: var(--bg); }
   cursor: pointer;
   white-space: nowrap;
   flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(13,148,136,0.25);
 }
 
 /* child grid */
@@ -1499,18 +1500,20 @@ body { background: var(--bg); }
 /* supplement button */
 .v3-supp-btn {
   display: inline-flex; align-items: center; gap: 5px;
-  padding: 4px 10px;
+  padding: 5px 12px;
   border-radius: 20px;
   font-size: 11px; font-weight: 700;
-  border: 1px solid #bbf7d0;
-  background: #f0fdf4; color: #166534;
+  border: none;
+  background: linear-gradient(135deg, #0d9488, #14b8a6);
+  color: #fff;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: opacity 0.15s;
   -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 2px 6px rgba(13,148,136,0.22);
 }
-.v3-supp-btn:active { background: #dcfce7; }
+.v3-supp-btn:active { opacity: 0.8; }
 .v3-supp-btn--done {
-  opacity: 0.75; cursor: default;
+  opacity: 0.55; cursor: default;
   pointer-events: none;
 }
 
