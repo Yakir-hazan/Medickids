@@ -765,13 +765,7 @@ const App = (() => {
       } else {
         badgesHtml = `<div class="v3-pill v3-pill--ok"><span class="v3-pill-dot"></span>הכל תקין</div>`;
       }
-      // תג supplement — ☀️ / 🩸
-      if (activeSupps.length) {
-        badgesHtml += activeSupps.map(rx => {
-          const lbl = suppLabels[rx.productId] || { emoji: '💊', name: '' };
-          return `<div class="v3-pill v3-pill--supp"><span class="v3-pill-dot"></span>${lbl.emoji} ${lbl.name}</div>`;
-        }).join('');
-      }
+      // (הוסר לפי בקשה: תג supplement כפול למעלה — המידע עדיין מוצג בשורות התוספים למטה)
 
       // ── שורת תרופה ──
       let medRowHtml = '';
