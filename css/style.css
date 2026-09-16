@@ -215,7 +215,7 @@ body{
 
 .fab{position:absolute;bottom:96px;left:20px;right:20px;border-radius:20px;padding:16px;text-align:center;
   font-weight:700;font-size:14.5px;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;
-  border:none;background:linear-gradient(135deg,var(--gold),var(--gold-deep));color:#fff;
+  border:none;background:linear-gradient(135deg,#0f766e,#0d5f59);color:#fff;
   box-shadow:0 10px 24px rgba(124,111,240,.35);z-index:3;font-family:inherit;}
 
 .navbar{position:absolute;bottom:0;left:0;right:0;height:calc(66px + env(safe-area-inset-bottom,0px));display:flex;align-items:flex-start;
@@ -238,11 +238,11 @@ body{
 .field-label{font-size:11.5px;color:var(--ink-soft);margin-bottom:6px;margin-top:13px;font-weight:600;}
 .chip-row{display:flex;gap:8px;flex-wrap:wrap;}
 .chip{padding:9px 14px;border-radius:14px;font-size:12.5px;font-weight:600;background:var(--tint);color:var(--ink);cursor:pointer;border:none;font-family:inherit;}
-.chip.sel{background:var(--gold-deep);color:#fff;}
+.chip.sel{background:#0d5f59;color:#fff;}
 .field-input{width:100%;border-radius:14px;padding:12px 14px;font-size:13.5px;font-family:inherit;border:1px solid var(--line);background:var(--tint);color:var(--ink);}
 .field-error{font-size:11.5px;color:#E0603F;margin-top:5px;display:none;}
 .sheet-cta{width:100%;padding:15px;border-radius:16px;border:none;font-weight:700;font-size:14.5px;margin-top:18px;
-  background:linear-gradient(135deg,var(--gold),var(--gold-deep));color:#fff;font-family:inherit;cursor:pointer;}
+  background:linear-gradient(135deg,#0f766e,#0d5f59);color:#fff;font-family:inherit;cursor:pointer;}
 .sheet-cta:disabled{opacity:.5;cursor:not-allowed;}
 .sheet-delete{width:100%;padding:13px;border-radius:16px;border:none;font-weight:700;font-size:13.5px;margin-top:10px;
   background:var(--coral-soft);color:#E0603F;font-family:inherit;cursor:pointer;}
