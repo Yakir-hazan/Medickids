@@ -1408,14 +1408,14 @@ body { background: var(--bg); }
 .v3-badges {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
-  padding: 8px 14px;
+  gap: 4px;
+  padding: 6px 14px;
 }
 .v3-pill {
-  display: inline-flex; align-items: center; gap: 5px;
-  padding: 4px 10px;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px;
   border-radius: 20px;
-  font-size: 11px; font-weight: 700;
+  font-size: 10px; font-weight: 700;
   border: 1px solid;
 }
 .v3-pill--fever {
@@ -1443,9 +1443,9 @@ body { background: var(--bg); }
 .v3-rows { padding: 4px 6px; display: flex; flex-direction: column; gap: 0; }
 
 .v3-row {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 8px;
-  border-radius: 12px;
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px;
+  border-radius: 10px;
   margin: 2px 0;
   direction: rtl;
 }
@@ -1458,10 +1458,10 @@ body { background: var(--bg); }
 
 /* icon box */
 .v3-ic-box {
-  width: 34px; height: 34px;
-  border-radius: 10px;
+  width: 30px; height: 30px;
+  border-radius: 9px;
   display: flex; align-items: center; justify-content: center;
-  font-size: 15px;
+  font-size: 14px;
   flex-shrink: 0;
   border: 1px solid;
 }
