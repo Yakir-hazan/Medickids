@@ -791,8 +791,8 @@ const App = (() => {
         vm.courseState.activeCourses.forEach(rx => {
           const entry = _catalogEntryById ? _catalogEntryById(rx.productId) : null;
           const drugName = entry ? entry.key : (rx.productId || 'תרופה');
-          const doneCount = (rx.doses || []).filter(d => d.givenAt).length;
-          const totalDoses = rx.totalDoses || 0;
+          const doneCount = (rx.doseLog || []).length;
+          const totalDoses = (rx.totalDays || 0) * (rx.dosesPerDay || 1);
           const canNow = _canMarkDoseNow(rx);
           const isOverdue = _courseIsDoseOverdue ? _courseIsDoseOverdue(rx) : false;
           const subColor = isOverdue ? 'v3-row-sub--rose' : (canNow ? 'v3-row-sub--green' : 'v3-row-sub--blue');
