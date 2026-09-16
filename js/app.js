@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.49 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.157';
+  const APP_VERSION = '1.0.0-beta.158';
   const SPLASH_DURATION_RETURNING = 600; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -3731,25 +3731,67 @@ const App = (() => {
   }
 
 
-  /* ─── Feedback ─────────────────────────────────── */
+  /* ─── Feedback (EmailJS) ──────────────────────────── */
+  const _EJS_PUBLIC  = 'DYd6XyPvdfv186k2b';
+  const _EJS_SERVICE = 'service_s501ypk';
+  const _EJS_TMPL    = 'template_hckpoqv';
+  let   _fbType      = 'bug';
+
   function openFeedback() {
+    // reset state
+    _fbType = 'bug';
+    const ta  = document.getElementById('feedback-text');
+    const err = document.getElementById('feedback-error');
+    const ok  = document.getElementById('feedback-success');
+    const btn = document.getElementById('feedback-send-btn');
+    if (ta)  ta.value = '';
+    if (err) err.style.display = 'none';
+    if (ok)  ok.style.display  = 'none';
+    if (btn) { btn.style.display = ''; btn.disabled = false; btn.textContent = 'שלח 📨'; }
+    ['bug','improve','other'].forEach(t => {
+      const c = document.getElementById('chip-' + t);
+      if (c) c.className = t === 'bug' ? 'chip sel' : 'chip';
+    });
     openSheet('sheet-feedback');
   }
 
-  function sendFeedback(type) {
-    const labels = { bug: '🐛 דיווח על באג', improve: '💡 הצעה לשיפור', other: '💬 פנייה כללית' };
-    const label  = labels[type] || 'משוב';
-    const ver    = typeof APP_VERSION !== 'undefined' ? APP_VERSION : '—';
-    const ua     = navigator.userAgent;
-    const body   = encodeURIComponent(
-      `סוג פנייה: ${label}\n` +
-      `גרסה: ${ver}\n` +
-      `מכשיר: ${ua}\n\n` +
-      `תיאור:\n`
-    );
-    const subject = encodeURIComponent(`[MedikKids] ${label}`);
-    closeSheet('sheet-feedback');
-    window.location.href = `mailto:Mydevelop1@gmail.com?subject=${subject}&body=${body}`;
+  function pickFeedbackType(type) {
+    _fbType = type;
+    ['bug','improve','other'].forEach(t => {
+      const c = document.getElementById('chip-' + t);
+      if (c) c.className = t === type ? 'chip sel' : 'chip';
+    });
+  }
+
+  function submitFeedback() {
+    const ta  = document.getElementById('feedback-text');
+    const err = document.getElementById('feedback-error');
+    const ok  = document.getElementById('feedback-success');
+    const btn = document.getElementById('feedback-send-btn');
+    if (!ta || !ta.value.trim()) {
+      if (err) err.style.display = 'block';
+      return;
+    }
+    if (err) err.style.display = 'none';
+    btn.disabled = true;
+    btn.textContent = 'שולח...';
+    const labels = { bug: '🐛 באג', improve: '💡 שיפור', other: '💬 אחר' };
+    const ver = typeof APP_VERSION !== 'undefined' ? APP_VERSION : '—';
+    emailjs.init(_EJS_PUBLIC);
+    emailjs.send(_EJS_SERVICE, _EJS_TMPL, {
+      title:   `[Medickids ${ver}] ${labels[_fbType] || _fbType}`,
+      name:    'Medickids User',
+      message: ta.value.trim() + '\n\nמכשיר: ' + navigator.userAgent,
+      email:   'noreply@medickids.app',
+    }).then(function() {
+      btn.style.display = 'none';
+      if (ok) ok.style.display = 'block';
+      setTimeout(function() { closeSheet('sheet-feedback'); }, 2000);
+    }).catch(function(err) {
+      btn.disabled = false;
+      btn.textContent = 'שלח 📨';
+      alert('שגיאה בשליחה, נסה שוב (קוד: ' + JSON.stringify(err) + ')');
+    });
   }
 
   return {
@@ -3771,7 +3813,7 @@ const App = (() => {
     stub,
     authTab, authLogin, authSignup, authLogout,
     authShowForgot, authBackToLogin, authCheckVerified, authResendVerification, authForgotPassword,
-    openFeedback, sendFeedback,
+    openFeedback, pickFeedbackType, submitFeedback,
   };
 })();
 
