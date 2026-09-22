@@ -26,6 +26,10 @@ const DB = (() => {
       medEntries: [],
       tempEntries: [],
       prescriptions: [], // active/past treatments (e.g. "daily vitamin D reminder", future: antibiotic courses)
+      // vaccineRecords — one entry per vaccine actually GIVEN to a child (status:'done').
+      // A vaccine with no record here is simply "not done yet" — no record is ever
+      // pre-created for the whole schedule. See js/vaccine-schedule.js for VACCINE_SCHEDULE.
+      vaccineRecords: [],
       settings: { notifications: false },
       // stable per-installation id used to target push notifications to THIS device only
       // (via OneSignal external_id / login) instead of broadcasting to all subscribers.
@@ -69,6 +73,8 @@ const DB = (() => {
       // C1: migrate medEntries / tempEntries — ensure updatedAt
       merged.medEntries   = merged.medEntries.map(migrateTsEntry);
       merged.tempEntries  = merged.tempEntries.map(migrateTsEntry);
+      // vaccine records — ensure createdAt/updatedAt (mirrors migrateTsEntry's shape)
+      merged.vaccineRecords = (merged.vaccineRecords || []).map(migrateVaccineRecord);
       // C1: migrate settings — ensure updatedAt
       if (!merged.settings.updatedAt) merged.settings.updatedAt = Date.now();
       return merged;
@@ -139,6 +145,16 @@ const DB = (() => {
     };
   }
 
+  /* Ensure a vaccineRecord has id/createdAt/updatedAt. Safe to run repeatedly. */
+  function migrateVaccineRecord(v) {
+    return {
+      id:        v.id        || uid(),
+      createdAt: v.createdAt || v.actualDate || Date.now(),
+      updatedAt: v.updatedAt || v.createdAt  || v.actualDate || Date.now(),
+      ...v,
+    };
+  }
+
   /* Ensure a prescription record has all COURSE fields.
      Safe to run on old records — leaves non-course prescriptions intact (isCourse stays false). */
   function migrateRx(rx) {
@@ -163,7 +179,7 @@ const DB = (() => {
   // flow above. Nothing above this line changes behaviour when sync is not
   // initialised (_fsFamilyId stays null) — the app works exactly as it did
   // before this stage, purely local, until initSync() is explicitly called.
-  const SYNCED_COLLECTIONS = ['children', 'medicines', 'medEntries', 'tempEntries', 'prescriptions'];
+  const SYNCED_COLLECTIONS = ['children', 'medicines', 'medEntries', 'tempEntries', 'prescriptions', 'vaccineRecords'];
   let _fsFamilyId = null;              // familyId currently being synced, or null
   let _fsUnsubscribers = [];           // onSnapshot() unsubscribe functions
   let _syncStatus = { state: 'idle', error: null }; // 'idle' | 'pending' | 'synced' | 'failed'
@@ -536,6 +552,56 @@ const DB = (() => {
       if (p) { p.deletedAt = Date.now(); p.updatedAt = Date.now(); }
       save(state);
       if (p) _pushToFirestore('prescriptions', p);
+    },
+
+    // ── vaccineRecords CRUD (פנקס חיסונים) ──────────────────────────────────
+    // Mirrors the prescriptions pattern above: a global array with childId on each
+    // record, synced via the generic SYNCED_COLLECTIONS mechanism. A vaccine that
+    // hasn't been given yet simply has NO record here — callers check for absence,
+    // nothing is pre-created for the full VACCINE_SCHEDULE.
+
+    /* Mark a scheduled vaccine as given for a child. No-op-safe to call again for the
+       same (childId, scheduleId) — updates the existing record instead of duplicating. */
+    addVaccineRecord({ childId, scheduleId, actualDate }) {
+      const existing = state.vaccineRecords.find(
+        (v) => !v.deletedAt && v.childId === childId && v.scheduleId === scheduleId
+      );
+      if (existing) {
+        existing.actualDate = actualDate || Date.now();
+        existing.status = 'done';
+        existing.updatedAt = Date.now();
+        save(state);
+        _pushToFirestore('vaccineRecords', existing);
+        return existing;
+      }
+      const _t = Date.now();
+      const rec = {
+        id: uid(), childId, scheduleId,
+        status: 'done',
+        actualDate: actualDate || _t,
+        createdAt: _t, updatedAt: _t,
+      };
+      state.vaccineRecords.push(rec);
+      save(state);
+      _pushToFirestore('vaccineRecords', rec);
+      return rec;
+    },
+    updateVaccineRecord(id, patch) {
+      const v = state.vaccineRecords.find((x) => x.id === id);
+      if (v) { Object.assign(v, patch); v.updatedAt = Date.now(); }
+      save(state);
+      if (v) _pushToFirestore('vaccineRecords', v);
+      return v || null;
+    },
+    /* All (non-deleted) vaccine records for a child. */
+    vaccineRecordsFor(childId) {
+      return state.vaccineRecords.filter((v) => !v.deletedAt && v.childId === childId);
+    },
+    /* The record for one specific schedule item for a child, or null if not given yet. */
+    vaccineRecordFor(childId, scheduleId) {
+      return state.vaccineRecords.find(
+        (v) => !v.deletedAt && v.childId === childId && v.scheduleId === scheduleId
+      ) || null;
     },
 
     /* Log a single dose for a COURSE prescription.
