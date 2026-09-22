@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.49 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.160';
+  const APP_VERSION = '1.0.0-beta.161';
   const SPLASH_DURATION_RETURNING = 600; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -1696,6 +1696,95 @@ const App = (() => {
         <button class="kid-edit" onclick="App.openEditKid('${c.id}')">עריכה</button>
       </div>`).join('') || `<div class="empty-state"><div class="ic">👶</div><div class="t">עדיין אין ילדים</div></div>`;
   }
+  /* ── פנקס חיסונים (שלב 1) ────────────────────────────────────────────────
+     מסך נפרד per-child, נפתח מתוך sheet-child-detail. לא בניווט התחתון (tab),
+     ולכן — כמו מסך ה-onboarding — שומר "לאן לחזור" בעצמו. */
+  let _vaccinesChildId = null;
+  let _vaccinesReturnTo = 'screen-dash';
+
+  /* גיל היעד (ms epoch) לפריט לו"ז נתון, לפי birthDate של הילד. null אם ageMonths
+     של הפריט הוא null (חיסון גיל בית-ספר — לא נכלל בחישוב תאריך בשלב 1). */
+  function vaccineTargetDate(child, item) {
+    if (!child || !child.birthDate || item.ageMonths === null || item.ageMonths === undefined) return null;
+    const d = new Date(child.birthDate);
+    d.setMonth(d.getMonth() + item.ageMonths);
+    return d.getTime();
+  }
+
+  /* האם פריט לו"ז רלוונטי לילד הזה, לפי cohort (הבחנת משרד הבריאות לפי 1.1.2025). */
+  function _vaccineAppliesTo(child, item) {
+    if (item.cohort === 'all' || !item.cohort) return true;
+    if (!child.birthDate) return true; // אין תאריך לידה — לא מסננים, נציג הכול
+    const cutoff = new Date('2025-01-01').getTime();
+    const born = new Date(child.birthDate).getTime();
+    if (item.cohort === 'born-after-2025-01-01')  return born >= cutoff;
+    if (item.cohort === 'born-before-2025-01-01') return born <  cutoff;
+    return true;
+  }
+
+  function openVaccines(childId, returnTo) {
+    _vaccinesChildId = childId;
+    _vaccinesReturnTo = returnTo || document.querySelector('.screen.active')?.id || 'screen-dash';
+    goto('screen-vaccines');
+    renderVaccines();
+  }
+  function closeVaccines() {
+    goto(_vaccinesReturnTo);
+    _vaccinesChildId = null;
+  }
+
+  function renderVaccines() {
+    const titleEl = document.getElementById('vax-child-name');
+    const listEl  = document.getElementById('vax-list');
+    if (!listEl || !_vaccinesChildId) return;
+    const child = childById(_vaccinesChildId);
+    if (!child) return;
+    if (titleEl) titleEl.textContent = `פנקס חיסונים — ${child.name}`;
+
+    const items = VACCINE_SCHEDULE.filter((item) => _vaccineAppliesTo(child, item));
+    const now = Date.now();
+
+    const rows = items.map((item) => {
+      const rec = DB.vaccineRecordFor(_vaccinesChildId, item.id);
+      const targetAt = vaccineTargetDate(child, item);
+      let statusHtml, actionHtml;
+
+      if (rec) {
+        const when = new Date(rec.actualDate).toLocaleDateString('he-IL');
+        statusHtml = `<span class="scp-row-val scp-val-green">✓ ניתן ב-${when}</span>`;
+        actionHtml = '';
+      } else if (targetAt === null) {
+        statusHtml = `<span class="scp-row-val">${item.gradeLabel || 'עתידי'}</span>`;
+        actionHtml = `<button onclick="App.markVaccineDone('${item.id}')" class="scp-btn scp-btn-secondary" style="width:100%;margin-top:6px;">✓ סמן כבוצע</button>`;
+      } else {
+        const dateStr = new Date(targetAt).toLocaleDateString('he-IL');
+        const isDue = targetAt <= now;
+        statusHtml = isDue
+          ? `<span class="scp-row-val" style="color:var(--coral,#e57373);">יעד: ${dateStr}</span>`
+          : `<span class="scp-row-val">יעד: ${dateStr}</span>`;
+        actionHtml = `<button onclick="App.markVaccineDone('${item.id}')" class="scp-btn scp-btn-secondary" style="width:100%;margin-top:6px;">✓ סמן כבוצע</button>`;
+      }
+
+      return `<div class="scp-row scp-row-normal" style="flex-direction:column;align-items:stretch;gap:4px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+          <span class="scp-row-lbl" style="flex:1;">💉 ${item.name}<br><span style="font-size:12px;color:var(--ink-soft);font-weight:400;">${item.doseLabel}</span></span>
+          ${statusHtml}
+        </div>
+        ${actionHtml}
+      </div>`;
+    }).join('');
+
+    listEl.innerHTML = rows || `<div class="empty-state"><div class="ic">💉</div><div class="t">אין נתוני חיסונים</div></div>`;
+  }
+
+  /* סימון חיסון כבוצע — actualDate = עכשיו. שומר ב-DB (localStorage + sync ל-Firestore
+     דרך אותו מנגנון גנרי של prescriptions/children וכו') ומרנדר מיד מחדש. */
+  function markVaccineDone(scheduleId) {
+    if (!_vaccinesChildId) return;
+    DB.addVaccineRecord({ childId: _vaccinesChildId, scheduleId, actualDate: Date.now() });
+    renderVaccines();
+  }
+
   /* ── שלב 3: Selected Child Panel — Bottom Sheet ─────────────────────────── */
   function selectChild(id) {
     console.log('[DEBUG] selectChild called:', id);
@@ -1895,6 +1984,7 @@ const App = (() => {
       <div class="scp-actions">
         <button class="scp-btn scp-btn-primary" onclick="App.openMedSheet()">💊 נתתי תרופה</button>
         <button class="scp-btn scp-btn-secondary" onclick="App.openTempSheet()">🌡️ מדדתי חום</button>
+        <button class="scp-btn scp-btn-secondary" onclick="App.openVaccines('${c.id}')">💉 פנקס חיסונים</button>
         <button class="scp-btn scp-btn-ghost" onclick="App.openEditKid('${c.id}')">✏️ עריכה</button>
       </div>`;
   }
@@ -3888,6 +3978,7 @@ const App = (() => {
     setHistFilter, setTempFilter, openTempSheet, pickTempChild, saveTemp,
     openEditKid, saveKid, toggleNotif, init, selectChild, closeChildDetail, closeWelcomePopup,
     installNow, skipLanding, showInstallGuide, handleLandingCTA,
+    openVaccines, closeVaccines, markVaccineDone,
     obPickParent, obPickAv, obHandlePhoto, obValidate2, obBirthChange, obValidate3, obNext, obBack,
     obActivateSupplements, obSkipSupplements, startOnboarding, obGetReturnTo: () => _obReturnTo,
     openDoseSheet, pickDoseChild, pickDoseMed, pickDoseConc, calcDose,
