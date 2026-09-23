@@ -383,7 +383,7 @@ body{
 /* ── DASH HEADER (replaces old .dash-header) ── */
 .dash-header-new {
   background: linear-gradient(150deg, #0d5f59 0%, #0f766e 100%);
-  padding: 16px 24px 110px;
+  padding: 16px 24px 130px;
   margin: -6px -18px 0;
   position: relative;
   overflow: hidden;
