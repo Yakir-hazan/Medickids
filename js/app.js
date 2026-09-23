@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.49 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.162';
+  const APP_VERSION = '1.0.0-beta.163';
   const SPLASH_DURATION_RETURNING = 600; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -1735,8 +1735,11 @@ const App = (() => {
 
   /* ── שלב 2: UI בהשראת Stitch (רפרנס עיצובי בלבד — הנתונים למטה מגיעים כולם
      מ-VACCINE_SCHEDULE / DB.vaccineRecords* / vaccineTargetDate שכבר קיימים). */
-  let _vaxFilter = 'all'; // 'all' | 'done' | 'due' | 'future'
-  const DUE_SOON_MS = 45 * 24 * 60 * 60 * 1000; // "קרוב" = עד 45 יום מהיום (לכל כיוון)
+  /* ── שלב 2ב: תיקון — הפרדת "באיחור" מ"קרובים" ─────────────────────────────
+     4 מצבים סופיים: done | overdue | due | future. חיסון שתאריך היעד שלו כבר
+     עבר ולא בוצע = overdue, ולעולם לא נספר תחת due. */
+  let _vaxFilter = 'all'; // 'all' | 'done' | 'overdue' | 'due' | 'future'
+  const DUE_SOON_MS = 45 * 24 * 60 * 60 * 1000; // "קרוב" = עד 45 יום קדימה (לא כולל עבר)
 
   /* מחלץ, עבור כל פריט לו"ז רלוונטי לילד, את הסטטוס האמיתי שלו מה-DB. */
   function _vaxItemsWithStatus(child) {
@@ -1747,7 +1750,9 @@ const App = (() => {
       let bucket;
       if (rec) bucket = 'done';
       else if (targetAt === null) bucket = 'future';
-      else bucket = Math.abs(targetAt - now) <= DUE_SOON_MS || targetAt <= now ? 'due' : 'future';
+      else if (targetAt <= now) bucket = 'overdue';
+      else if (targetAt - now <= DUE_SOON_MS) bucket = 'due';
+      else bucket = 'future';
       return { item, rec, targetAt, bucket };
     });
   }
@@ -1776,9 +1781,10 @@ const App = (() => {
     if (subEl)  subEl.textContent = `${child.name} • ${calcAgeMonths(child.birthDate)} חודשים`;
 
     const rows = _vaxItemsWithStatus(child);
-    const doneCount  = rows.filter((r) => r.bucket === 'done').length;
-    const dueCount   = rows.filter((r) => r.bucket === 'due').length;
-    const futureCount = rows.filter((r) => r.bucket === 'future').length;
+    const doneCount    = rows.filter((r) => r.bucket === 'done').length;
+    const overdueCount = rows.filter((r) => r.bucket === 'overdue').length;
+    const dueCount      = rows.filter((r) => r.bucket === 'due').length;
+    const futureCount  = rows.filter((r) => r.bucket === 'future').length;
     const total = rows.length;
     const pct = total ? Math.round((doneCount / total) * 100) : 0;
 
@@ -1800,18 +1806,21 @@ const App = (() => {
         <div class="vax-stat-grid">
           <div class="vax-stat"><b>${doneCount}</b><span>בוצעו</span></div>
           <div class="vax-stat due"><b>${dueCount}</b><span>קרובים</span></div>
+          <div class="vax-stat overdue"><b>${overdueCount}</b><span>באיחור</span></div>
           <div class="vax-stat"><b>${futureCount}</b><span>בעתיד</span></div>
         </div>`;
     }
 
-    // ── כרטיס "החיסון הקרוב" — הפריט ה-due הכי קרוב לתאריך יעד (או overdue) ──
+    // ── כרטיס "החיסון הקרוב/דחוף" — overdue קודם (הכי דחוף), אח"כ due, ממוין לפי תאריך יעד ──
     const nextEl = document.getElementById('vax-next');
-    const dueSorted = rows.filter((r) => r.bucket === 'due').sort((a, b) => (a.targetAt || 0) - (b.targetAt || 0));
+    const urgentSorted = rows
+      .filter((r) => r.bucket === 'overdue' || r.bucket === 'due')
+      .sort((a, b) => (a.targetAt || 0) - (b.targetAt || 0));
     if (nextEl) {
-      if (dueSorted.length) {
-        const r = dueSorted[0];
+      if (urgentSorted.length) {
+        const r = urgentSorted[0];
         const dateStr = new Date(r.targetAt).toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' });
-        const overdue = r.targetAt <= Date.now();
+        const overdue = r.bucket === 'overdue';
         nextEl.style.display = '';
         nextEl.innerHTML = `
           <div class="vax-next-top">
@@ -1838,7 +1847,13 @@ const App = (() => {
     // ── פילטרים ──
     const filtersEl = document.getElementById('vax-filters');
     if (filtersEl) {
-      const defs = [['all', `הכל (${total})`], ['done', `בוצעו (${doneCount})`], ['due', `קרובים (${dueCount})`], ['future', `בעתיד (${futureCount})`]];
+      const defs = [
+        ['all', `הכל (${total})`],
+        ['done', `בוצעו (${doneCount})`],
+        ['due', `קרובים (${dueCount})`],
+        ['overdue', `באיחור (${overdueCount})`],
+        ['future', `בעתיד (${futureCount})`],
+      ];
       filtersEl.innerHTML = defs.map(([key, label]) =>
         `<button class="vax-filter-chip${_vaxFilter === key ? ' active' : ''}" onclick="App.setVaxFilter('${key}')">${label}</button>`
       ).join('');
@@ -1855,13 +1870,17 @@ const App = (() => {
     });
 
     const bucketMeta = {
-      done:  { cls: 'done',  chip: '✅ בוצע' },
-      due:   { cls: 'due',   chip: '🟡 קרוב' },
-      future:{ cls: 'future',chip: '⚪ בעתיד' },
+      done:    { cls: 'done',    chip: '✅ בוצע' },
+      due:     { cls: 'due',     chip: '🟡 קרוב' },
+      overdue: { cls: 'overdue', chip: '🔴 באיחור' },
+      future:  { cls: 'future',  chip: '⚪ בעתיד' },
     };
 
     listEl.innerHTML = groups.map((g) => {
-      const stageStatus = g.rows.every((r) => r.bucket === 'done') ? 'done' : g.rows.some((r) => r.bucket === 'due') ? 'due' : 'future';
+      const stageStatus = g.rows.every((r) => r.bucket === 'done') ? 'done'
+        : g.rows.some((r) => r.bucket === 'overdue') ? 'overdue'
+        : g.rows.some((r) => r.bucket === 'due') ? 'due'
+        : 'future';
       const stageMeta = bucketMeta[stageStatus];
       const cards = g.rows.map((r) => {
         const meta = bucketMeta[r.bucket];
