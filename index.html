@@ -645,13 +645,29 @@
     <div class="screen" id="screen-vaccines">
       <div class="scr-head">
         <button class="back-btn" onclick="App.closeVaccines()">→</button>
-        <h2 id="vax-child-name">פנקס חיסונים</h2>
+        <div><h2 id="vax-child-name">פנקס חיסונים</h2><div id="vax-child-sub" style="font-size:11.5px;color:var(--ink-soft);font-weight:600;"></div></div>
       </div>
       <div class="scroll" style="padding-top:6px;">
-        <div class="info-note" style="margin:0 0 12px;">
-          הלו"ז מבוסס על תוכנית חיסוני השגרה של משרד הבריאות. סימון "בוצע" נשמר במכשיר ומסתנכרן בין ההורים, בדיוק כמו יתר נתוני הילד/ה.
-        </div>
+        <div class="vax-summary" id="vax-summary"></div>
+        <div class="vax-next-card" id="vax-next" style="display:none;"></div>
+        <div class="vax-filters" id="vax-filters"></div>
         <div id="vax-list"></div>
+        <div class="info-note" style="text-align:center;padding:10px 6px 20px;">
+          מקור: טבלת חיסוני השגרה, אתר משרד הבריאות.
+        </div>
+      </div>
+    </div>
+
+    <!-- VACCINE DETAIL — Bottom Sheet -->
+    <div class="sheet-overlay" id="sheet-vax-detail" onclick="if(event.target===this)App.closeSheet('sheet-vax-detail')">
+      <div class="sheet">
+        <div class="sheet-handle"></div>
+        <div class="vax-detail-icon">💉</div>
+        <div class="sheet-title" id="vax-detail-title">חיסון</div>
+        <div class="vax-detail-row"><b>מטרת החיסון</b><span id="vax-detail-purpose"></span></div>
+        <div class="vax-detail-row"><b>תאריך</b><span id="vax-detail-date"></span></div>
+        <div class="vax-detail-row"><b>שלב גיל</b><span id="vax-detail-age"></span></div>
+        <button class="sheet-cta" id="vax-detail-action" style="background:var(--mint);color:#fff;">✓ סמן כבוצע</button>
       </div>
     </div>
 
