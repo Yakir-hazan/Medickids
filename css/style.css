@@ -383,7 +383,7 @@ body{
 /* ── DASH HEADER (replaces old .dash-header) ── */
 .dash-header-new {
   background: linear-gradient(150deg, #0d5f59 0%, #0f766e 100%);
-  padding: 16px 24px 180px;
+  padding: 16px 24px 110px;
   margin: -6px -18px 0;
   position: relative;
   overflow: hidden;
@@ -502,8 +502,8 @@ body{
   padding: 20px 18px 20px;
   position: relative;
   z-index: 1;
-  transform: translateY(-60px);
-  margin-bottom: -60px;
+  transform: translateY(-20px);
+  margin-bottom: -20px;
 }
 
 /* ── BOTTOM NAV (mockup style, overrides .navbar) ── */
