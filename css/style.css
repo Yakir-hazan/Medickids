@@ -621,10 +621,10 @@ body { background: var(--bg); }
   box-shadow: 0 2px 8px rgba(13,148,136,0.25);
 }
 
-/* child grid */
+/* child grid — כרטיס אחד בטור (לא 2 עמודות), הילד/ה שדורש/ת הכי הרבה תשומת לב למעלה */
 .child-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 12px;
   margin-bottom: 4px;
 }
