@@ -497,7 +497,7 @@ body{
   border-radius: 28px 28px 0 0;
   margin-left: -18px;
   margin-right: -18px;
-  padding: 20px 18px 0;
+  padding: 20px 18px 20px;
   position: relative;
   z-index: 1;
   transform: translateY(-24px);
