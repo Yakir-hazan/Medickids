@@ -383,7 +383,7 @@ body{
 /* ── DASH HEADER (replaces old .dash-header) ── */
 .dash-header-new {
   background: linear-gradient(150deg, #0d5f59 0%, #0f766e 100%);
-  padding: 16px 24px 84px;
+  padding: 16px 24px 72px;
   margin: -6px -18px 0;
   position: relative;
   overflow: hidden;
@@ -502,8 +502,8 @@ body{
   padding: 20px 18px 20px;
   position: relative;
   z-index: 1;
-  transform: translateY(-16px);
-  margin-bottom: -16px;
+  transform: translateY(-44px);
+  margin-bottom: -44px;
 }
 
 /* ── BOTTOM NAV (mockup style, overrides .navbar) ── */
@@ -1678,7 +1678,7 @@ body { background: var(--bg); }
 .dash-header-new {
   border-radius: 0;
   box-shadow: 0 8px 32px rgba(13,95,89,0.18);
-  padding-bottom: 84px;
+  padding-bottom: 48px;
 }
 
 /* ── Header top bar: כפתורים בשני קצוות ── */
