@@ -6,7 +6,7 @@ const App = (() => {
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.49 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
   const APP_VERSION = '1.0.0-beta.165';
-  const SPLASH_DURATION_RETURNING = 600; // ms — short splash for returning users
+  const SPLASH_DURATION_RETURNING = 2800; // ms — wait for thermo to reach 38°
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
   const AVATAR_GRADIENT = {
@@ -241,9 +241,9 @@ const App = (() => {
     if (!mercuryEl || !tempEl || !subEl) return;
     if (splashAnimId) cancelAnimationFrame(splashAnimId);
 
-    const MIN_TEMP = 34.0, MAX_TEMP = 38.5, FULL_RANGE = 8; // tube scale spans 34°–42°; mercury only rises to 38.5° on it
+    const MIN_TEMP = 34.0, MAX_TEMP = 38.0, FULL_RANGE = 8; // tube scale spans 34°–42°; mercury only rises to 38.5° on it
     const TUBE_BOTTOM = 250, TUBE_H = 236;
-    const DURATION = 1300; // finishes comfortably before the shortest auto-nav timeout (1500ms)
+    const DURATION = 2400; // thermo rises slowly to 38° before nav
     const messages = [[35.0, 'טוען נתונים...'], [36.2, 'בודק עדכונים...'], [37.4, 'כמעט מוכן...']];
     let msgIdx = 0;
     let startTime = null;
