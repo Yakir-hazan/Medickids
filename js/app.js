@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.49 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.164';
+  const APP_VERSION = '1.0.0-beta.165';
   const SPLASH_DURATION_RETURNING = 600; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -761,8 +761,21 @@ const App = (() => {
     }
 
     // ---------- child cards — שלב 2: מבוסס childStatusViewModel ----------
+    // מיון: הילד/ה שדורש/ת הכי הרבה תשומת לב תמיד למעלה (חום פעיל > טיפול תרופתי > הכל תקין),
+    // יציב בין ילדים באותה רמת דחיפות (סדר הוספה מקורי נשמר).
+    const _urgencyRank = (c) => {
+      const tags = childStatusViewModel(c.id).tags;
+      if (tags.some((t) => t.type === 'fever')) return 2;
+      if (tags.some((t) => t.type === 'treatment')) return 1;
+      return 0;
+    };
+    const sortedChildren = state.children
+      .map((c, idx) => ({ c, idx, rank: _urgencyRank(c) }))
+      .sort((a, b) => b.rank - a.rank || a.idx - b.idx)
+      .map((x) => x.c);
+
     const childCount = state.children.length;
-    wrap.innerHTML = state.children.map((c, idx) => {
+    wrap.innerHTML = sortedChildren.map((c, idx) => {
       const vm = childStatusViewModel(c.id);
       const isLastOdd = childCount % 2 !== 0 && idx === childCount - 1;
 
