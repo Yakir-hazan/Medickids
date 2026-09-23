@@ -383,11 +383,11 @@ body{
 /* ── DASH HEADER (replaces old .dash-header) ── */
 .dash-header-new {
   background: linear-gradient(150deg, #0d5f59 0%, #0f766e 100%);
-  padding: 16px 24px 130px;
+  padding: 16px 24px 180px;
   margin: -6px -18px 0;
   position: relative;
   overflow: hidden;
-  border-radius: 0 0 52px 52px;
+  border-radius: 0;
 }
 .dash-header-new .hdr-blob1 {
   position: absolute; top: -50px; left: -50px;
