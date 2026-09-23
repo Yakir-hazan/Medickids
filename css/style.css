@@ -2018,3 +2018,59 @@ body { background: var(--bg); }
   font-weight: 700;
   color: #475569;
 }
+
+/* ── פנקס חיסונים — UI בהשראת Stitch (שלב 2), מיושם על משתני העיצוב הקיימים ── */
+.vax-summary{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px;margin-bottom:12px;}
+.vax-summary-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;}
+.vax-summary-head h3{font-size:16.5px;font-weight:800;color:var(--ink);margin:0;}
+.vax-summary-badge{font-size:10.5px;font-weight:700;color:var(--mint);background:var(--tint);padding:4px 10px;border-radius:20px;white-space:nowrap;}
+.vax-progress-row{display:flex;align-items:center;gap:14px;background:var(--tint);border-radius:14px;padding:12px;}
+.vax-ring{flex-shrink:0;}
+.vax-ring-label{font-size:15px;font-weight:800;fill:var(--mint);font-family:'Rubik',sans-serif;}
+.vax-progress-text{flex:1;min-width:0;}
+.vax-progress-text b{font-size:14.5px;font-weight:800;color:var(--ink);display:block;}
+.vax-progress-text span{font-size:11.5px;color:var(--ink-soft);}
+.vax-stat-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px;}
+.vax-stat{background:var(--tint);border-radius:12px;padding:8px 4px;text-align:center;}
+.vax-stat.due{background:rgba(217,119,6,0.12);}
+.vax-stat b{display:block;font-size:15px;font-weight:800;color:var(--ink);}
+.vax-stat span{font-size:10.5px;color:var(--ink-soft);font-weight:600;}
+.vax-stat.due span{color:#b45309;}
+
+.vax-next-card{background:var(--card);border:1px solid rgba(217,119,6,0.35);border-radius:20px;padding:14px;margin-bottom:12px;}
+.vax-next-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
+.vax-next-left{display:flex;gap:10px;}
+.vax-next-icon{width:38px;height:38px;border-radius:50%;background:rgba(217,119,6,0.14);color:#b45309;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.vax-next-tag{font-size:11px;font-weight:800;color:#b45309;display:flex;align-items:center;gap:5px;}
+.vax-next-tag .dot{width:6px;height:6px;border-radius:50%;background:#d97706;}
+.vax-next-title{font-size:14.5px;font-weight:800;color:var(--ink);margin-top:2px;}
+.vax-next-pill{font-size:10.5px;font-weight:800;color:#b45309;background:rgba(217,119,6,0.14);padding:4px 9px;border-radius:20px;white-space:nowrap;flex-shrink:0;}
+.vax-next-date-row{display:flex;align-items:center;justify-content:space-between;background:var(--tint);border-radius:12px;padding:9px 12px;margin-top:10px;font-size:12.5px;color:var(--ink);}
+.vax-next-actions{display:flex;gap:8px;margin-top:10px;}
+.vax-btn-primary{flex:1;padding:11px;border-radius:14px;border:none;background:var(--mint);color:#fff;font-weight:700;font-size:13.5px;cursor:pointer;}
+.vax-btn-ghost{padding:11px 16px;border-radius:14px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font-weight:700;font-size:13.5px;cursor:pointer;}
+
+.vax-filters{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;}
+.vax-filter-chip{flex-shrink:0;padding:7px 14px;border-radius:20px;font-size:12.5px;font-weight:700;background:var(--card);border:1px solid var(--line);color:var(--ink-soft);cursor:pointer;}
+.vax-filter-chip.active{background:var(--mint);border-color:var(--mint);color:#fff;}
+
+.vax-stage-label{font-size:12px;font-weight:800;color:var(--ink);margin:14px 2px 6px;display:flex;justify-content:space-between;align-items:center;}
+.vax-stage-label span.status{font-size:10.5px;font-weight:700;}
+.vax-stage-label span.status.done{color:var(--mint);}
+.vax-stage-label span.status.due{color:#b45309;}
+.vax-stage-label span.status.future{color:var(--ink-muted);}
+
+.vax-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px;margin-bottom:8px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.vax-card.due{border-color:rgba(217,119,6,0.35);}
+.vax-card.future{opacity:.75;}
+.vax-card-name{font-size:13.5px;font-weight:700;color:var(--ink);}
+.vax-card-sub{font-size:11.5px;color:var(--ink-soft);margin-top:2px;}
+.vax-card-status{font-size:10.5px;font-weight:800;padding:4px 9px;border-radius:20px;white-space:nowrap;flex-shrink:0;}
+.vax-card-status.done{color:var(--mint);background:var(--tint);}
+.vax-card-status.due{color:#b45309;background:rgba(217,119,6,0.14);}
+.vax-card-status.future{color:var(--ink-muted);background:var(--line);}
+
+.vax-detail-icon{width:44px;height:44px;border-radius:50%;background:var(--tint);color:var(--mint);display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:10px;}
+.vax-detail-row{background:var(--tint);border-radius:12px;padding:10px 12px;margin-top:8px;}
+.vax-detail-row b{display:block;font-size:11px;color:var(--mint);margin-bottom:3px;}
+.vax-detail-row span{font-size:13.5px;color:var(--ink);line-height:1.5;}
