@@ -502,8 +502,8 @@ body{
   padding: 20px 18px 20px;
   position: relative;
   z-index: 1;
-  transform: translateY(-20px);
-  margin-bottom: -20px;
+  transform: translateY(-60px);
+  margin-bottom: -60px;
 }
 
 /* ── BOTTOM NAV (mockup style, overrides .navbar) ── */
