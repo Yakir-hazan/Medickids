@@ -438,7 +438,12 @@ body{
   flex-shrink: 0;
 }
 
-  justify-content: flex-start;
+/* ── HEADER TOP BAR ── */
+.hdr-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  direction: ltr;
   margin-bottom: 18px;
   position: relative;
 }
