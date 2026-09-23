@@ -3964,7 +3964,6 @@ const App = (() => {
       _landingActive = true;
       goto('screen-landing');
     }
-    renderDashboard();
     renderSettings();
     setInterval(renderDashboard, 60000); // keep "elapsed" times fresh
     setTimeout(_healSupplementReminders, 2000); // heal supplement pushes after app settles
