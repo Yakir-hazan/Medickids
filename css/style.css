@@ -494,14 +494,14 @@ body{
 .dash-body-offset {
   margin-top: 0;
   background: var(--bg, #f4f7fb);
-  border-radius: 28px 28px 0 0;
+  border-radius: 36px 36px 0 0;
   margin-left: -18px;
   margin-right: -18px;
   padding: 20px 18px 20px;
   position: relative;
   z-index: 1;
-  transform: translateY(-24px);
-  margin-bottom: -24px;
+  transform: translateY(-44px);
+  margin-bottom: -44px;
 }
 
 /* ── BOTTOM NAV (mockup style, overrides .navbar) ── */
