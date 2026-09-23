@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.49 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.163';
+  const APP_VERSION = '1.0.0-beta.164';
   const SPLASH_DURATION_RETURNING = 600; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -1738,7 +1738,7 @@ const App = (() => {
   /* ── שלב 2ב: תיקון — הפרדת "באיחור" מ"קרובים" ─────────────────────────────
      4 מצבים סופיים: done | overdue | due | future. חיסון שתאריך היעד שלו כבר
      עבר ולא בוצע = overdue, ולעולם לא נספר תחת due. */
-  let _vaxFilter = 'all'; // 'all' | 'done' | 'overdue' | 'due' | 'future'
+  let _vaxFilter = 'all'; // 'all' | 'done' | 'due' | 'future' — פילטר תצוגתי; overdue מוצג בתוך 'due'
   const DUE_SOON_MS = 45 * 24 * 60 * 60 * 1000; // "קרוב" = עד 45 יום קדימה (לא כולל עבר)
 
   /* מחלץ, עבור כל פריט לו"ז רלוונטי לילד, את הסטטוס האמיתי שלו מה-DB. */
@@ -1844,14 +1844,16 @@ const App = (() => {
       }
     }
 
-    // ── פילטרים ──
+    // ── פילטרים — 4 קטגוריות תצוגתיות בלבד (all/done/due/future). "באיחור" הוא
+    // סטטוס תצוגה בתוך הרשימה/כרטיס העליון בלבד, לא קטגוריית פילטר: חיסון overdue
+    // נספר ומוצג תחת פילטר "קרובים". ──
+    const filterDueCount = dueCount + overdueCount;
     const filtersEl = document.getElementById('vax-filters');
     if (filtersEl) {
       const defs = [
         ['all', `הכל (${total})`],
         ['done', `בוצעו (${doneCount})`],
-        ['due', `קרובים (${dueCount})`],
-        ['overdue', `באיחור (${overdueCount})`],
+        ['due', `קרובים (${filterDueCount})`],
         ['future', `בעתיד (${futureCount})`],
       ];
       filtersEl.innerHTML = defs.map(([key, label]) =>
@@ -1860,7 +1862,9 @@ const App = (() => {
     }
 
     // ── Timeline, מקובץ לפי שלב גיל ──
-    const visible = _vaxFilter === 'all' ? rows : rows.filter((r) => r.bucket === _vaxFilter);
+    const visible = _vaxFilter === 'all' ? rows
+      : _vaxFilter === 'due' ? rows.filter((r) => r.bucket === 'due' || r.bucket === 'overdue')
+      : rows.filter((r) => r.bucket === _vaxFilter);
     const groups = [];
     visible.forEach((r) => {
       const label = _vaxAgeLabel(r.item);
