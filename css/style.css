@@ -384,9 +384,10 @@ body{
 .dash-header-new {
   background: linear-gradient(150deg, #0d5f59 0%, #0f766e 100%);
   padding: 16px 24px 72px;
-  margin: -6px -18px 0;          /* cancel .scroll padding */
+  margin: -6px -18px 0;
   position: relative;
   overflow: hidden;
+  border-radius: 0;
 }
 .dash-header-new .hdr-blob1 {
   position: absolute; top: -50px; left: -50px;
@@ -1675,7 +1676,7 @@ body { background: var(--bg); }
 
 /* ── Header: rounded bottom + stronger shadow ── */
 .dash-header-new {
-  border-radius: 0 0 2.5rem 2.5rem;
+  border-radius: 0;
   box-shadow: 0 8px 32px rgba(13,95,89,0.18);
   padding-bottom: 48px;
 }
