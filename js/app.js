@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.49 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.161';
+  const APP_VERSION = '1.0.0-beta.162';
   const SPLASH_DURATION_RETURNING = 600; // ms — short splash for returning users
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
 
@@ -1733,48 +1733,177 @@ const App = (() => {
     _vaccinesChildId = null;
   }
 
+  /* ── שלב 2: UI בהשראת Stitch (רפרנס עיצובי בלבד — הנתונים למטה מגיעים כולם
+     מ-VACCINE_SCHEDULE / DB.vaccineRecords* / vaccineTargetDate שכבר קיימים). */
+  let _vaxFilter = 'all'; // 'all' | 'done' | 'due' | 'future'
+  const DUE_SOON_MS = 45 * 24 * 60 * 60 * 1000; // "קרוב" = עד 45 יום מהיום (לכל כיוון)
+
+  /* מחלץ, עבור כל פריט לו"ז רלוונטי לילד, את הסטטוס האמיתי שלו מה-DB. */
+  function _vaxItemsWithStatus(child) {
+    const now = Date.now();
+    return VACCINE_SCHEDULE.filter((item) => _vaccineAppliesTo(child, item)).map((item) => {
+      const rec = DB.vaccineRecordFor(child.id, item.id);
+      const targetAt = vaccineTargetDate(child, item);
+      let bucket;
+      if (rec) bucket = 'done';
+      else if (targetAt === null) bucket = 'future';
+      else bucket = Math.abs(targetAt - now) <= DUE_SOON_MS || targetAt <= now ? 'due' : 'future';
+      return { item, rec, targetAt, bucket };
+    });
+  }
+
+  function _vaxAgeLabel(item) {
+    if (item.gradeLabel) return item.gradeLabel;
+    if (item.ageMonths === 0) return 'לידה';
+    if (item.ageMonths % 12 === 0) return `גיל ${item.ageMonths / 12 === 1 ? 'שנה' : (item.ageMonths / 12) + ' שנים'}`;
+    return `גיל ${item.ageMonths} חודשים`;
+  }
+
+  function setVaxFilter(f) {
+    _vaxFilter = f;
+    renderVaccines();
+  }
+
   function renderVaccines() {
-    const titleEl = document.getElementById('vax-child-name');
-    const listEl  = document.getElementById('vax-list');
+    const nameEl = document.getElementById('vax-child-name');
+    const subEl  = document.getElementById('vax-child-sub');
+    const listEl = document.getElementById('vax-list');
     if (!listEl || !_vaccinesChildId) return;
     const child = childById(_vaccinesChildId);
     if (!child) return;
-    if (titleEl) titleEl.textContent = `פנקס חיסונים — ${child.name}`;
 
-    const items = VACCINE_SCHEDULE.filter((item) => _vaccineAppliesTo(child, item));
-    const now = Date.now();
+    if (nameEl) nameEl.textContent = 'פנקס חיסונים';
+    if (subEl)  subEl.textContent = `${child.name} • ${calcAgeMonths(child.birthDate)} חודשים`;
 
-    const rows = items.map((item) => {
-      const rec = DB.vaccineRecordFor(_vaccinesChildId, item.id);
-      const targetAt = vaccineTargetDate(child, item);
-      let statusHtml, actionHtml;
+    const rows = _vaxItemsWithStatus(child);
+    const doneCount  = rows.filter((r) => r.bucket === 'done').length;
+    const dueCount   = rows.filter((r) => r.bucket === 'due').length;
+    const futureCount = rows.filter((r) => r.bucket === 'future').length;
+    const total = rows.length;
+    const pct = total ? Math.round((doneCount / total) * 100) : 0;
 
-      if (rec) {
-        const when = new Date(rec.actualDate).toLocaleDateString('he-IL');
-        statusHtml = `<span class="scp-row-val scp-val-green">✓ ניתן ב-${when}</span>`;
-        actionHtml = '';
-      } else if (targetAt === null) {
-        statusHtml = `<span class="scp-row-val">${item.gradeLabel || 'עתידי'}</span>`;
-        actionHtml = `<button onclick="App.markVaccineDone('${item.id}')" class="scp-btn scp-btn-secondary" style="width:100%;margin-top:6px;">✓ סמן כבוצע</button>`;
-      } else {
-        const dateStr = new Date(targetAt).toLocaleDateString('he-IL');
-        const isDue = targetAt <= now;
-        statusHtml = isDue
-          ? `<span class="scp-row-val" style="color:var(--coral,#e57373);">יעד: ${dateStr}</span>`
-          : `<span class="scp-row-val">יעד: ${dateStr}</span>`;
-        actionHtml = `<button onclick="App.markVaccineDone('${item.id}')" class="scp-btn scp-btn-secondary" style="width:100%;margin-top:6px;">✓ סמן כבוצע</button>`;
-      }
-
-      return `<div class="scp-row scp-row-normal" style="flex-direction:column;align-items:stretch;gap:4px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
-          <span class="scp-row-lbl" style="flex:1;">💉 ${item.name}<br><span style="font-size:12px;color:var(--ink-soft);font-weight:400;">${item.doseLabel}</span></span>
-          ${statusHtml}
+    // ── כרטיס סיכום + progress ring ──
+    const R = 30, C = 2 * Math.PI * R;
+    const summaryEl = document.getElementById('vax-summary');
+    if (summaryEl) {
+      summaryEl.innerHTML = `
+        <div class="vax-summary-head"><h3>פנקס החיסונים של ${child.name}</h3><span class="vax-summary-badge">שגרת חיסונים</span></div>
+        <div class="vax-progress-row">
+          <svg class="vax-ring" width="64" height="64" viewBox="0 0 72 72">
+            <circle cx="36" cy="36" r="${R}" fill="none" stroke="var(--line)" stroke-width="6"/>
+            <circle cx="36" cy="36" r="${R}" fill="none" stroke="var(--mint)" stroke-width="6" stroke-linecap="round"
+              stroke-dasharray="${C}" stroke-dashoffset="${C - (C * pct / 100)}" transform="rotate(-90 36 36)"/>
+            <text x="36" y="40" text-anchor="middle" class="vax-ring-label">${pct}%</text>
+          </svg>
+          <div class="vax-progress-text"><b>${doneCount} מתוך ${total} חיסונים בוצעו</b><span>לפי לו"ז חיסוני השגרה, גיל ${calcAgeMonths(child.birthDate)} חודשים</span></div>
         </div>
-        ${actionHtml}
-      </div>`;
-    }).join('');
+        <div class="vax-stat-grid">
+          <div class="vax-stat"><b>${doneCount}</b><span>בוצעו</span></div>
+          <div class="vax-stat due"><b>${dueCount}</b><span>קרובים</span></div>
+          <div class="vax-stat"><b>${futureCount}</b><span>בעתיד</span></div>
+        </div>`;
+    }
 
-    listEl.innerHTML = rows || `<div class="empty-state"><div class="ic">💉</div><div class="t">אין נתוני חיסונים</div></div>`;
+    // ── כרטיס "החיסון הקרוב" — הפריט ה-due הכי קרוב לתאריך יעד (או overdue) ──
+    const nextEl = document.getElementById('vax-next');
+    const dueSorted = rows.filter((r) => r.bucket === 'due').sort((a, b) => (a.targetAt || 0) - (b.targetAt || 0));
+    if (nextEl) {
+      if (dueSorted.length) {
+        const r = dueSorted[0];
+        const dateStr = new Date(r.targetAt).toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' });
+        const overdue = r.targetAt <= Date.now();
+        nextEl.style.display = '';
+        nextEl.innerHTML = `
+          <div class="vax-next-top">
+            <div class="vax-next-left">
+              <div class="vax-next-icon">💉</div>
+              <div>
+                <div class="vax-next-tag"><span class="dot"></span>${overdue ? 'החיסון באיחור' : 'מתקרב למועד היעד'}</div>
+                <div class="vax-next-title">${r.item.name} — ${r.item.doseLabel}</div>
+              </div>
+            </div>
+            <span class="vax-next-pill">${overdue ? '🔴 באיחור' : '🟡 בקרוב'}</span>
+          </div>
+          <div class="vax-next-date-row"><span>📅 ${dateStr}</span><span>${_vaxAgeLabel(r.item)}</span></div>
+          <div class="vax-next-actions">
+            <button class="vax-btn-primary" onclick="App.markVaccineDone('${r.item.id}')">✓ סמן כבוצע</button>
+            <button class="vax-btn-ghost" onclick="App.openVaccineDetail('${r.item.id}')">פרטים</button>
+          </div>`;
+      } else {
+        nextEl.style.display = 'none';
+        nextEl.innerHTML = '';
+      }
+    }
+
+    // ── פילטרים ──
+    const filtersEl = document.getElementById('vax-filters');
+    if (filtersEl) {
+      const defs = [['all', `הכל (${total})`], ['done', `בוצעו (${doneCount})`], ['due', `קרובים (${dueCount})`], ['future', `בעתיד (${futureCount})`]];
+      filtersEl.innerHTML = defs.map(([key, label]) =>
+        `<button class="vax-filter-chip${_vaxFilter === key ? ' active' : ''}" onclick="App.setVaxFilter('${key}')">${label}</button>`
+      ).join('');
+    }
+
+    // ── Timeline, מקובץ לפי שלב גיל ──
+    const visible = _vaxFilter === 'all' ? rows : rows.filter((r) => r.bucket === _vaxFilter);
+    const groups = [];
+    visible.forEach((r) => {
+      const label = _vaxAgeLabel(r.item);
+      let g = groups.find((g) => g.label === label);
+      if (!g) { g = { label, rows: [] }; groups.push(g); }
+      g.rows.push(r);
+    });
+
+    const bucketMeta = {
+      done:  { cls: 'done',  chip: '✅ בוצע' },
+      due:   { cls: 'due',   chip: '🟡 קרוב' },
+      future:{ cls: 'future',chip: '⚪ בעתיד' },
+    };
+
+    listEl.innerHTML = groups.map((g) => {
+      const stageStatus = g.rows.every((r) => r.bucket === 'done') ? 'done' : g.rows.some((r) => r.bucket === 'due') ? 'due' : 'future';
+      const stageMeta = bucketMeta[stageStatus];
+      const cards = g.rows.map((r) => {
+        const meta = bucketMeta[r.bucket];
+        const dateLine = r.rec
+          ? `תאריך ביצוע: ${new Date(r.rec.actualDate).toLocaleDateString('he-IL')}`
+          : r.targetAt !== null
+            ? `מועד מומלץ: ${new Date(r.targetAt).toLocaleDateString('he-IL')}`
+            : (r.item.gradeLabel || 'ללא תאריך יעד');
+        return `<div class="vax-card ${meta.cls}" onclick="App.openVaccineDetail('${r.item.id}')">
+          <div><div class="vax-card-name">${r.item.name}</div><div class="vax-card-sub">${r.item.doseLabel} • ${dateLine}</div></div>
+          <span class="vax-card-status ${meta.cls}">${meta.chip}</span>
+        </div>`;
+      }).join('');
+      return `<div class="vax-stage-label">${g.label}<span class="status ${stageMeta.cls}">${stageMeta.chip}</span></div>${cards}`;
+    }).join('') || `<div class="empty-state"><div class="ic">💉</div><div class="t">אין פריטים להצגה</div></div>`;
+  }
+
+  /* Bottom sheet לפרטי חיסון בודד — מציג רק נתונים אמיתיים (blurb מ-VACCINE_SCHEDULE,
+     תאריך יעד/ביצוע אמיתי מה-DB). לא מציג המצאות (המלצות רופא, תופעות לוואי וכו'). */
+  function openVaccineDetail(scheduleId) {
+    if (!_vaccinesChildId) return;
+    const child = childById(_vaccinesChildId);
+    const item = VACCINE_SCHEDULE.find((v) => v.id === scheduleId);
+    if (!child || !item) return;
+    const rec = DB.vaccineRecordFor(child.id, item.id);
+    const targetAt = vaccineTargetDate(child, item);
+
+    document.getElementById('vax-detail-title').textContent = `${item.name} — ${item.doseLabel}`;
+    document.getElementById('vax-detail-purpose').textContent = item.blurb;
+    document.getElementById('vax-detail-date').textContent = rec
+      ? `בוצע ב-${new Date(rec.actualDate).toLocaleDateString('he-IL')}`
+      : targetAt !== null ? new Date(targetAt).toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' }) : (item.gradeLabel || '—');
+    document.getElementById('vax-detail-age').textContent = _vaxAgeLabel(item);
+
+    const btn = document.getElementById('vax-detail-action');
+    if (rec) {
+      btn.style.display = 'none';
+    } else {
+      btn.style.display = '';
+      btn.onclick = () => { markVaccineDone(item.id); closeSheet('sheet-vax-detail'); };
+    }
+    openSheet('sheet-vax-detail');
   }
 
   /* סימון חיסון כבוצע — actualDate = עכשיו. שומר ב-DB (localStorage + sync ל-Firestore
@@ -3978,7 +4107,7 @@ const App = (() => {
     setHistFilter, setTempFilter, openTempSheet, pickTempChild, saveTemp,
     openEditKid, saveKid, toggleNotif, init, selectChild, closeChildDetail, closeWelcomePopup,
     installNow, skipLanding, showInstallGuide, handleLandingCTA,
-    openVaccines, closeVaccines, markVaccineDone,
+    openVaccines, closeVaccines, markVaccineDone, openVaccineDetail, setVaxFilter,
     obPickParent, obPickAv, obHandlePhoto, obValidate2, obBirthChange, obValidate3, obNext, obBack,
     obActivateSupplements, obSkipSupplements, startOnboarding, obGetReturnTo: () => _obReturnTo,
     openDoseSheet, pickDoseChild, pickDoseMed, pickDoseConc, calcDose,
