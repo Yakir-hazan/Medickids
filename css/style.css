@@ -2074,3 +2074,10 @@ body { background: var(--bg); }
 .vax-detail-row{background:var(--tint);border-radius:12px;padding:10px 12px;margin-top:8px;}
 .vax-detail-row b{display:block;font-size:11px;color:var(--mint);margin-bottom:3px;}
 .vax-detail-row span{font-size:13.5px;color:var(--ink);line-height:1.5;}
+
+/* ── פנקס חיסונים — הפרדת "באיחור" מ"קרובים" (שלב 2ב) ── */
+.vax-stat.overdue{background:rgba(220,38,38,0.10);}
+.vax-stat.overdue span{color:#dc2626;}
+.vax-stage-label span.status.overdue{color:#dc2626;}
+.vax-card.overdue{border-color:rgba(220,38,38,0.35);}
+.vax-card-status.overdue{color:#dc2626;background:rgba(220,38,38,0.10);}
