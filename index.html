@@ -247,7 +247,6 @@
                     <button class="lnd-ni"><svg class="lnd-ni-svg" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="lnd-ni-lbl">היסטוריה</span></button>
                     <button class="lnd-ni"><svg class="lnd-ni-svg" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg><span class="lnd-ni-lbl">פרופיל</span></button>
                   </div>
-                  <div class="lnd-step-badge"><span class="lnd-step-lbl">הכל שקט 🟢</span></div>
                 </div>
 
                 <!-- S2: מדידת חום (sheet) -->
@@ -281,7 +280,6 @@
                     <button class="lnd-ni"><svg class="lnd-ni-svg" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="lnd-ni-lbl">היסטוריה</span></button>
                     <button class="lnd-ni"><svg class="lnd-ni-svg" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg><span class="lnd-ni-lbl">פרופיל</span></button>
                   </div>
-                  <div class="lnd-step-badge"><span class="lnd-step-lbl">נועה חמה — מודדים חום 🌡️</span></div>
                 </div>
 
                 <!-- S3: דשבורד חום פעיל -->
@@ -327,7 +325,6 @@
                     <button class="lnd-ni"><svg class="lnd-ni-svg" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="lnd-ni-lbl">היסטוריה</span></button>
                     <button class="lnd-ni"><svg class="lnd-ni-svg" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg><span class="lnd-ni-lbl">פרופיל</span></button>
                   </div>
-                  <div class="lnd-step-badge"><span class="lnd-step-lbl">חום גבוה 38.9° — מה עושים? 🔴</span></div>
                 </div>
 
                 <!-- S4: sheet מתן תרופה -->
@@ -362,7 +359,6 @@
                     <button class="lnd-ni"><svg class="lnd-ni-svg" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="lnd-ni-lbl">היסטוריה</span></button>
                     <button class="lnd-ni"><svg class="lnd-ni-svg" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg><span class="lnd-ni-lbl">פרופיל</span></button>
                   </div>
-                  <div class="lnd-step-badge"><span class="lnd-step-lbl">נותנים נובימול 5 מ״ל 💊</span></div>
                 </div>
 
                 <!-- S5: טיימר פעיל -->
@@ -425,7 +421,6 @@
                     <button class="lnd-ni"><svg class="lnd-ni-svg" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="lnd-ni-lbl">היסטוריה</span></button>
                     <button class="lnd-ni"><svg class="lnd-ni-svg" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg><span class="lnd-ni-lbl">פרופיל</span></button>
                   </div>
-                  <div class="lnd-step-badge"><span class="lnd-step-lbl">נובימול ניתן — הטיימר מתחיל ⏱️</span></div>
                 </div>
 
                 <!-- S6: push notification -->
@@ -443,7 +438,6 @@
                       <div style="font-size:11px;color:rgba(255,255,255,0.65);line-height:1.35;">עברו 6 שעות · מינון: 5 מ"ל · חום אחרון 38.9°</div>
                     </div>
                   </div>
-                  <div class="lnd-step-badge"><span class="lnd-step-lbl">6 שעות עברו — פוש מגיע 🔔</span></div>
                 </div>
 
                 <!-- progress dots -->
@@ -457,7 +451,11 @@
                 </div>
               </div>
 
-              <p style="font-size:11px;color:rgba(255,255,255,0.25);font-weight:500;text-align:center;">הקש על המסך למעבר ידני ←</p>
+              <!-- step label — below phone -->
+              <div style="min-height:28px;text-align:center;">
+                <span id="lnd-step-text" style="display:inline-block;background:rgba(13,95,89,0.12);color:#0d5f59;font-size:12px;font-weight:700;padding:5px 16px;border-radius:50px;transition:opacity 0.25s;">הכל שקט 🟢</span>
+              </div>
+              <p style="font-size:11px;color:#9ca3af;font-weight:500;text-align:center;margin-top:2px;">הקש על המסך למעבר ידני ←</p>
             </div>
           </section>
 
@@ -530,8 +528,7 @@
             .lnd-ni-lbl { font-size:9px;font-weight:600;color:#C0C4D4; }
             .lnd-ni-active .lnd-ni-lbl { color:#0f766e; }
             /* step badge */
-            .lnd-step-badge { position:absolute;bottom:64px;left:0;right:0;text-align:center;pointer-events:none;z-index:5; }
-            .lnd-step-lbl { display:inline-block;background:rgba(13,95,89,0.92);color:#fff;font-size:10px;font-weight:700;padding:4px 13px;border-radius:50px;backdrop-filter:blur(8px); }
+
             /* progress dots */
             .lnd-dot-prog { width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);transition:all .3s; }
             .lnd-dot-prog-active { background:#0f766e;width:16px;border-radius:4px; }
@@ -544,6 +541,7 @@
           <script>
           (function(){
             let lndCur=1, lndAutoT=null, lndTimerT=null, lndSecs=6*3600-98;
+            const lndLabels={1:'הכל שקט 🟢',2:'נועה חמה — מודדים חום 🌡️',3:'חום גבוה 38.9° — מה עושים? 🔴',4:'נותנים נובימול 5 מ״ל 💊',5:'נובימול ניתן — הטיימר מתחיל ⏱️',6:'6 שעות עברו — פוש מגיע 🔔'};
             function lndGoTo(n){
               clearTimeout(lndAutoT); clearInterval(lndTimerT);
               for(let i=1;i<=6;i++){
@@ -555,6 +553,8 @@
               document.getElementById('lnd-s'+n)?.classList.add('lnd-active');
               const dd=document.getElementById('lnd-d'+n);
               if(dd){dd.classList.add('lnd-dot-prog-active');dd.style.width='16px';}
+              const st=document.getElementById('lnd-step-text');
+              if(st){st.style.opacity='0';setTimeout(()=>{st.textContent=lndLabels[n];st.style.opacity='1';},200);}
               if(n===2) setTimeout(()=>document.getElementById('lnd-so2')?.classList.add('open'),250);
               if(n===4) setTimeout(()=>document.getElementById('lnd-so4')?.classList.add('open'),250);
               if(n===5) lndStartTimer();
