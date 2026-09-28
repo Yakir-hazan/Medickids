@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.49 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.169';
+  const APP_VERSION = '1.0.0-beta.170';
   const SPLASH_DURATION_RETURNING = 2800; // ms — wait for thermo to reach 38°
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
   const SERVER_CHECK_TIMEOUT      = 6000; // ms — max wait for the server "does this family have children?" check
@@ -3964,6 +3964,11 @@ const App = (() => {
     if (!isStandalone()) {
       _landingActive = true;
       goto('screen-landing');
+      // Browser = install-only gate. The hidden login/signup forms are only opacity:0 (still
+      // "visible" to Safari), which made iOS pop its saved-password autofill sheet over the
+      // Landing. display:none removes them from rendering; they stay untouched in the PWA.
+      const authScr = document.getElementById('screen-auth');
+      if (authScr) authScr.style.display = 'none';
     }
     renderSettings();
     setInterval(renderDashboard, 60000); // keep "elapsed" times fresh
