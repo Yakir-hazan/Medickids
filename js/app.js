@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.49 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.170';
+  const APP_VERSION = '1.0.0-beta.171';
   const SPLASH_DURATION_RETURNING = 2800; // ms — wait for thermo to reach 38°
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
   const SERVER_CHECK_TIMEOUT      = 6000; // ms — max wait for the server "does this family have children?" check
@@ -77,6 +77,11 @@ const App = (() => {
       installNow(); // Android + prompt ready → install directly
     } else {
       showInstallGuide(); // iOS or Android without prompt → show guide
+      // iOS has no install API — the closest is opening the native share sheet right away
+      // (must run synchronously inside this tap). The guide stays visible underneath.
+      if (isIOS() && navigator.share) {
+        navigator.share({ title: 'Medickids', url: location.href }).catch(() => {});
+      }
     }
   }
   function showInstallGuide() {
