@@ -2102,3 +2102,7 @@ body { background: var(--bg); }
 #landing-share-hint .material-symbols-outlined{font-size:32px;color:#0d5f59;animation:landing-arrow-bounce 1.1s ease-in-out infinite;}
 @keyframes landing-arrow-bounce{0%,100%{transform:translateY(-6px);}50%{transform:translateY(6px);}}
 @media(prefers-reduced-motion:reduce){#landing-share-hint .material-symbols-outlined{animation:none;}}
+
+/* Landing is browser-only (no fake status bar): drop the global .screen 52px top spacer that
+   left an empty band above the scrolling content. */
+#screen-landing{padding-top:0;}
