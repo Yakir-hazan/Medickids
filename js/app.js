@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.49 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.173';
+  const APP_VERSION = '1.0.0-beta.174';
   const SPLASH_DURATION_RETURNING = 2800; // ms — wait for thermo to reach 38°
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
   const SERVER_CHECK_TIMEOUT      = 6000; // ms — max wait for the server "does this family have children?" check
@@ -3958,6 +3958,32 @@ const App = (() => {
     goto('screen-onboarding');
   }
 
+  /* Browser only: on iOS Safari #app (position:fixed; inset:0) can end ~50pt above the bottom
+     toolbar, leaving an empty band that clips the Landing and keeps the share-arrow from
+     reaching Safari's toolbar. Size #app from the real visible viewport instead. */
+  function _fitAppToViewport() {
+    const app = document.getElementById('app');
+    if (!app) return;
+    const vv = window.visualViewport;
+    const h = Math.max(window.innerHeight || 0, vv ? vv.height : 0);
+    if (h > 0) { app.style.bottom = 'auto'; app.style.height = h + 'px'; }
+  }
+  /* Temporary diagnostics: open the site with ?debug=1 to see the viewport numbers. */
+  function _showViewportDebug() {
+    const d = document.createElement('div');
+    d.style.cssText = 'position:fixed;top:60px;left:6px;right:6px;z-index:99999;background:#000c;color:#0f0;font:11px/1.4 monospace;padding:6px;direction:ltr;pointer-events:none;';
+    const paint = () => {
+      const app = document.getElementById('app').getBoundingClientRect();
+      const vv = window.visualViewport;
+      d.textContent = 'innerH=' + window.innerHeight + ' vvH=' + (vv ? Math.round(vv.height) : '-') +
+        ' vvTop=' + (vv ? Math.round(vv.offsetTop) : '-') + ' appTop=' + Math.round(app.top) +
+        ' appBottom=' + Math.round(app.bottom) + ' screenH=' + screen.height + ' v1.0.0-beta.174';
+    };
+    paint();
+    setInterval(paint, 500);
+    document.body.appendChild(d);
+  }
+
   function init() {
     // Render all screens so they're ready before any transition
     renderLanding();
@@ -3972,6 +3998,11 @@ const App = (() => {
       // Landing. display:none removes them from rendering; they stay untouched in the PWA.
       const authScr = document.getElementById('screen-auth');
       if (authScr) authScr.style.display = 'none';
+      _fitAppToViewport();
+      window.addEventListener('resize', _fitAppToViewport);
+      window.addEventListener('orientationchange', _fitAppToViewport);
+      if (window.visualViewport) window.visualViewport.addEventListener('resize', _fitAppToViewport);
+      if (/[?&]debug=1/.test(location.search)) _showViewportDebug();
     }
     renderSettings();
     setInterval(renderDashboard, 60000); // keep "elapsed" times fresh
