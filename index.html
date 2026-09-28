@@ -255,44 +255,398 @@
           </section>
 
           <!-- REAL SITUATION TIMELINE -->
-          <section class="w-full px-margin-mobile py-space-xl bg-surface-container-low/60 flex flex-col items-center">
+          <!-- ═══ SCENARIO DEMO SECTION ═══ -->
+          <section class="w-full px-margin-mobile py-space-xl bg-surface-container-low/60 flex flex-col items-center" id="scenario-demo-section">
             <div class="w-full max-w-sm text-center mb-space-lg">
               <span class="inline-block px-space-sm py-1 rounded-full bg-secondary-container/40 text-secondary text-[11px] font-semibold mb-2">סימולציית לילה עם חום</span>
               <h2 class="text-[22px] leading-8 font-bold text-on-surface mb-2">אתם מטפלים בילד. Medickids זוכרת את השאר.</h2>
-              <p class="text-[14px] text-on-surface-variant">תרחיש אמיתי של לילה עם חום — איך Medickids שומרת על הסדר ומורידה לחץ:</p>
+              <p class="text-[14px] text-on-surface-variant mb-4">הקישו על המסך לצפייה בתרחיש אמיתי של לילה עם חום</p>
             </div>
-            <div class="relative w-full max-w-sm flex flex-col gap-space-md">
-              <div class="absolute right-6 top-6 bottom-6 w-0.5 bg-gradient-to-b from-primary via-secondary to-primary-container opacity-30"></div>
-              <div class="relative flex items-start gap-space-md">
-                <div class="relative z-10 flex-shrink-0 w-12 h-12 rounded-full bg-error-container text-on-error-container flex items-center justify-center shadow-md"><span class="material-symbols-outlined text-[22px]">device_thermostat</span></div>
-                <div class="flex-1 bg-surface-container-lowest rounded-2xl p-space-md shadow-sm">
-                  <div class="flex items-center justify-between mb-1"><span class="text-[15px] font-bold text-on-surface">מדידת חום גבוהה</span><span class="text-[11px] px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-semibold">02:15</span></div>
-                  <p class="text-[14px] text-on-surface-variant leading-relaxed"><span class="font-bold text-error">39.1°C</span> נרשם בלחיצה אחת ומוזן ישירות לגרף החום.</p>
+
+            <!-- Phone shell -->
+            <div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:12px;">
+              <div id="lnd-phone" style="width:300px;height:580px;background:#F5F6FA;border-radius:40px;overflow:hidden;position:relative;box-shadow:0 0 0 8px #1c1c24,0 0 0 10px #2e2e3a,0 24px 48px rgba(0,0,0,0.45);cursor:pointer;flex-shrink:0;">
+
+                <!-- S1: הכל תקין -->
+                <div class="lnd-scene lnd-active" id="lnd-s1">
+                  <div class="lnd-scroll">
+                    <div class="lnd-hdr">
+                      <div class="lnd-blob1"></div><div class="lnd-blob2"></div>
+                      <div style="display:flex;justify-content:flex-end;margin-bottom:14px;position:relative;">
+                        <div style="display:flex;gap:8px;"><button class="lnd-hdr-btn">🔔</button><button class="lnd-hdr-btn">❓</button></div>
+                      </div>
+                      <p style="color:rgba(255,255,255,0.82);font-size:12px;font-weight:500;margin-bottom:3px;position:relative;">שלום אמא 👋</p>
+                      <p style="color:#fff;font-size:17px;font-weight:800;position:relative;">מה קורה עכשיו?</p>
+                      <div class="lnd-date-pill">
+                        <svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:rgba(255,255,255,0.7);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        יום שני, 28 לספטמבר
+                      </div>
+                      <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(34,197,94,0.22);border:1px solid rgba(74,222,128,0.35);border-radius:50px;padding:5px 12px;color:#d1fae5;font-size:11px;font-weight:600;margin-top:8px;position:relative;">
+                        <span style="width:6px;height:6px;border-radius:50%;background:#4ade80;display:inline-block;"></span> כל הילדים בסדר
+                      </div>
+                    </div>
+                    <div class="lnd-body">
+                      <p class="lnd-sec-title">הילדים שלי</p>
+                      <div class="lnd-grid">
+                        <div class="lnd-card lnd-anim d1">
+                          <div class="lnd-card-hdr"><div class="lnd-avatar">👧</div><div class="lnd-child-name">נועה</div></div>
+                          <div class="lnd-pills"><div class="lnd-pill lnd-pill--ok"><span class="lnd-dot"></span>הכל תקין</div></div>
+                          <div class="lnd-rows">
+                            <div class="lnd-row">
+                              <div class="lnd-ic lnd-ic--green">😊</div>
+                              <div class="lnd-rb"><div class="lnd-rt">מרגישה טוב</div><div class="lnd-rs">אין טיפולים פעילים</div></div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="lnd-card lnd-anim d2">
+                          <div class="lnd-card-hdr"><div class="lnd-avatar">👦</div><div class="lnd-child-name">יונתן</div></div>
+                          <div class="lnd-pills"><div class="lnd-pill lnd-pill--ok"><span class="lnd-dot"></span>הכל תקין</div></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="lnd-nav">
+                    <button class="lnd-ni lnd-ni-active"><svg class="lnd-ni-svg" viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/><polyline points="9 21 9 12 15 12 15 21"/></svg><span class="lnd-ni-lbl">ראשי</span></button>
+                    <button class="lnd-ni"><svg class="lnd-ni-svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 5-7 13-7 13S5 14 5 9a7 7 0 0 1 7-7z"/><circle cx="12" cy="9" r="2.5"/></svg><span class="lnd-ni-lbl">חום</span></button>
+                    <button class="lnd-ni"><svg class="lnd-ni-svg" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="lnd-ni-lbl">היסטוריה</span></button>
+                    <button class="lnd-ni"><svg class="lnd-ni-svg" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg><span class="lnd-ni-lbl">פרופיל</span></button>
+                  </div>
+                  <div class="lnd-step-badge"><span class="lnd-step-lbl">הכל שקט 🟢</span></div>
+                </div>
+
+                <!-- S2: מדידת חום (sheet) -->
+                <div class="lnd-scene" id="lnd-s2">
+                  <div class="lnd-scroll">
+                    <div class="lnd-hdr">
+                      <div class="lnd-blob1"></div><div class="lnd-blob2"></div>
+                      <div style="display:flex;justify-content:flex-end;margin-bottom:14px;position:relative;"><button class="lnd-hdr-btn">🔔</button></div>
+                      <p style="color:rgba(255,255,255,0.82);font-size:12px;font-weight:500;margin-bottom:3px;position:relative;">שלום אמא 👋</p>
+                      <p style="color:#fff;font-size:17px;font-weight:800;position:relative;">מה קורה עכשיו?</p>
+                      <div class="lnd-date-pill">21:34</div>
+                    </div>
+                  </div>
+                  <div class="lnd-sheet-ov" id="lnd-so2">
+                    <div class="lnd-sheet">
+                      <div class="lnd-sh-handle"></div>
+                      <div class="lnd-sh-title">🌡️ מדידת חום</div>
+                      <div class="lnd-field-lbl">ילד/ה</div>
+                      <div class="lnd-chip-row"><div class="lnd-chip lnd-chip-sel">נועה</div><div class="lnd-chip">יונתן</div></div>
+                      <div class="lnd-field-lbl">טמפרטורה</div>
+                      <div style="background:#fff1f2;border:1.5px solid #fecdd3;border-radius:14px;padding:14px;text-align:center;margin-top:4px;">
+                        <div style="font-size:36px;font-weight:800;color:#e11d48;line-height:1;">38.9°</div>
+                        <div style="font-size:10px;color:#be123c;font-weight:600;margin-top:2px;">חום גבוה</div>
+                      </div>
+                      <button class="lnd-cta">✅ שמור מדידה</button>
+                    </div>
+                  </div>
+                  <div class="lnd-nav">
+                    <button class="lnd-ni lnd-ni-active"><svg class="lnd-ni-svg" viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/><polyline points="9 21 9 12 15 12 15 21"/></svg><span class="lnd-ni-lbl">ראשי</span></button>
+                    <button class="lnd-ni"><svg class="lnd-ni-svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 5-7 13-7 13S5 14 5 9a7 7 0 0 1 7-7z"/><circle cx="12" cy="9" r="2.5"/></svg><span class="lnd-ni-lbl">חום</span></button>
+                    <button class="lnd-ni"><svg class="lnd-ni-svg" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="lnd-ni-lbl">היסטוריה</span></button>
+                    <button class="lnd-ni"><svg class="lnd-ni-svg" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg><span class="lnd-ni-lbl">פרופיל</span></button>
+                  </div>
+                  <div class="lnd-step-badge"><span class="lnd-step-lbl">נועה חמה — מודדים חום 🌡️</span></div>
+                </div>
+
+                <!-- S3: דשבורד חום פעיל -->
+                <div class="lnd-scene" id="lnd-s3">
+                  <div class="lnd-scroll">
+                    <div class="lnd-hdr">
+                      <div class="lnd-blob1"></div><div class="lnd-blob2"></div>
+                      <div style="display:flex;justify-content:flex-end;margin-bottom:14px;position:relative;"><div style="display:flex;gap:8px;"><button class="lnd-hdr-btn">🔔</button><button class="lnd-hdr-btn">❓</button></div></div>
+                      <p style="color:rgba(255,255,255,0.82);font-size:12px;font-weight:500;margin-bottom:3px;position:relative;">שלום אמא 👋</p>
+                      <p style="color:#fff;font-size:17px;font-weight:800;position:relative;">מה קורה עכשיו?</p>
+                      <div class="lnd-date-pill">28.9 · 21:34</div>
+                    </div>
+                    <div class="lnd-body">
+                      <p class="lnd-sec-title">הילדים שלי</p>
+                      <div class="lnd-grid">
+                        <div class="lnd-card lnd-card-full lnd-anim d1">
+                          <div class="lnd-card-hdr"><div class="lnd-avatar">👧</div><div class="lnd-child-name">נועה</div></div>
+                          <div class="lnd-pills"><div class="lnd-pill lnd-pill--fever"><span class="lnd-dot"></span>חום פעיל</div></div>
+                          <div class="lnd-rows">
+                            <div class="lnd-row lnd-row--fever">
+                              <div class="lnd-ic lnd-ic--red">🌡️</div>
+                              <div class="lnd-rb"><div class="lnd-rt">חום גבוה</div><div class="lnd-rs">נמדד בשעה 21:34</div></div>
+                              <div style="text-align:left;"><div style="font-size:15px;font-weight:800;color:#e11d48;">38.9°</div></div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="lnd-card lnd-anim d2" style="grid-column:1">
+                          <div class="lnd-card-hdr"><div class="lnd-avatar">👦</div><div class="lnd-child-name">יונתן</div></div>
+                          <div class="lnd-pills"><div class="lnd-pill lnd-pill--ok"><span class="lnd-dot"></span>הכל תקין</div></div>
+                        </div>
+                      </div>
+                      <p class="lnd-sec-title" style="margin-top:16px;">פעולות מהירות</p>
+                      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:0;">
+                        <button class="lnd-qa-btn"><div style="font-size:16px;margin-bottom:4px;">💊</div><div style="font-size:9px;font-weight:700;color:#1A1A2E;">נתתי תרופה</div></button>
+                        <button class="lnd-qa-btn"><div style="font-size:16px;margin-bottom:4px;">🌡️</div><div style="font-size:9px;font-weight:700;color:#1A1A2E;">מדדתי חום</div></button>
+                        <button class="lnd-qa-btn"><div style="font-size:16px;margin-bottom:4px;">🧮</div><div style="font-size:9px;font-weight:700;color:#1A1A2E;">חישוב מינון</div></button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="lnd-nav">
+                    <button class="lnd-ni lnd-ni-active"><svg class="lnd-ni-svg" viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/><polyline points="9 21 9 12 15 12 15 21"/></svg><span class="lnd-ni-lbl">ראשי</span></button>
+                    <button class="lnd-ni"><svg class="lnd-ni-svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 5-7 13-7 13S5 14 5 9a7 7 0 0 1 7-7z"/><circle cx="12" cy="9" r="2.5"/></svg><span class="lnd-ni-lbl">חום</span></button>
+                    <button class="lnd-ni"><svg class="lnd-ni-svg" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="lnd-ni-lbl">היסטוריה</span></button>
+                    <button class="lnd-ni"><svg class="lnd-ni-svg" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg><span class="lnd-ni-lbl">פרופיל</span></button>
+                  </div>
+                  <div class="lnd-step-badge"><span class="lnd-step-lbl">חום גבוה 38.9° — מה עושים? 🔴</span></div>
+                </div>
+
+                <!-- S4: sheet מתן תרופה -->
+                <div class="lnd-scene" id="lnd-s4">
+                  <div class="lnd-scroll">
+                    <div class="lnd-hdr">
+                      <div class="lnd-blob1"></div><div class="lnd-blob2"></div>
+                      <div style="display:flex;justify-content:flex-end;margin-bottom:14px;position:relative;"><button class="lnd-hdr-btn">🔔</button></div>
+                      <p style="color:rgba(255,255,255,0.82);font-size:12px;font-weight:500;margin-bottom:3px;position:relative;">שלום אמא 👋</p>
+                      <p style="color:#fff;font-size:17px;font-weight:800;position:relative;">מה קורה עכשיו?</p>
+                      <div class="lnd-date-pill">21:34</div>
+                    </div>
+                  </div>
+                  <div class="lnd-sheet-ov" id="lnd-so4">
+                    <div class="lnd-sheet">
+                      <div class="lnd-sh-handle"></div>
+                      <div class="lnd-sh-title">💊 נתתי תרופה</div>
+                      <div class="lnd-field-lbl">ילד/ה</div>
+                      <div class="lnd-chip-row"><div class="lnd-chip lnd-chip-sel">נועה</div><div class="lnd-chip">יונתן</div></div>
+                      <div class="lnd-field-lbl">תרופה</div>
+                      <div class="lnd-chip-row"><div class="lnd-chip lnd-chip-sel">נובימול</div><div class="lnd-chip">אדוויל</div><div class="lnd-chip">אופן</div></div>
+                      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:12px;text-align:center;margin-top:10px;">
+                        <div style="font-size:28px;font-weight:800;color:#15803d;">5 מ"ל</div>
+                        <div style="font-size:10px;color:#16a34a;font-weight:600;margin-top:2px;">מינון לפי משקל · 18 ק"ג</div>
+                      </div>
+                      <button class="lnd-cta">✅ אישור מתן תרופה</button>
+                    </div>
+                  </div>
+                  <div class="lnd-nav">
+                    <button class="lnd-ni lnd-ni-active"><svg class="lnd-ni-svg" viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/><polyline points="9 21 9 12 15 12 15 21"/></svg><span class="lnd-ni-lbl">ראשי</span></button>
+                    <button class="lnd-ni"><svg class="lnd-ni-svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 5-7 13-7 13S5 14 5 9a7 7 0 0 1 7-7z"/><circle cx="12" cy="9" r="2.5"/></svg><span class="lnd-ni-lbl">חום</span></button>
+                    <button class="lnd-ni"><svg class="lnd-ni-svg" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="lnd-ni-lbl">היסטוריה</span></button>
+                    <button class="lnd-ni"><svg class="lnd-ni-svg" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg><span class="lnd-ni-lbl">פרופיל</span></button>
+                  </div>
+                  <div class="lnd-step-badge"><span class="lnd-step-lbl">נותנים נובימול 5 מ״ל 💊</span></div>
+                </div>
+
+                <!-- S5: טיימר פעיל -->
+                <div class="lnd-scene" id="lnd-s5">
+                  <div class="lnd-scroll">
+                    <div class="lnd-hdr">
+                      <div class="lnd-blob1"></div><div class="lnd-blob2"></div>
+                      <div style="display:flex;justify-content:flex-end;margin-bottom:14px;position:relative;"><div style="display:flex;gap:8px;"><button class="lnd-hdr-btn">🔔</button><button class="lnd-hdr-btn">❓</button></div></div>
+                      <p style="color:rgba(255,255,255,0.82);font-size:12px;font-weight:500;margin-bottom:3px;position:relative;">שלום אמא 👋</p>
+                      <p style="color:#fff;font-size:17px;font-weight:800;position:relative;">מה קורה עכשיו?</p>
+                      <div class="lnd-date-pill">21:38 · אחרי מנה</div>
+                    </div>
+                    <div class="lnd-body">
+                      <p class="lnd-sec-title">הילדים שלי</p>
+                      <div class="lnd-grid">
+                        <div class="lnd-card lnd-card-full lnd-anim d1">
+                          <div class="lnd-card-hdr"><div class="lnd-avatar">👧</div><div class="lnd-child-name">נועה</div></div>
+                          <div class="lnd-pills">
+                            <div class="lnd-pill lnd-pill--fever"><span class="lnd-dot"></span>חום פעיל</div>
+                            <div class="lnd-pill lnd-pill--treatment"><span class="lnd-dot lnd-dot--blue"></span>בטיפול</div>
+                          </div>
+                          <div class="lnd-rows">
+                            <div class="lnd-row lnd-row--fever">
+                              <div class="lnd-ic lnd-ic--red">🌡️</div>
+                              <div class="lnd-rb"><div class="lnd-rt">חום גבוה</div><div class="lnd-rs">נמדד ב-21:34</div></div>
+                              <div style="font-size:14px;font-weight:800;color:#e11d48;">38.9°</div>
+                            </div>
+                            <div class="lnd-row">
+                              <div class="lnd-ic lnd-ic--purple">💊</div>
+                              <div class="lnd-rb"><div class="lnd-rt">נובימול</div><div class="lnd-rs">ניתן ב-21:38 · 5 מ"ל</div></div>
+                              <div style="text-align:left;"><div style="font-size:14px;font-weight:800;color:#1e293b;" id="lnd-timer-hero">05:58</div><div style="font-size:9px;color:#8A8FA8;">שעות</div></div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="lnd-card lnd-anim d2" style="grid-column:1">
+                          <div class="lnd-card-hdr"><div class="lnd-avatar">👦</div><div class="lnd-child-name">יונתן</div></div>
+                          <div class="lnd-pills"><div class="lnd-pill lnd-pill--ok"><span class="lnd-dot"></span>הכל תקין</div></div>
+                        </div>
+                      </div>
+                      <!-- timer ring -->
+                      <div style="background:#fff;border-radius:16px;border:1px solid #ECEDF5;padding:14px;margin-top:10px;text-align:center;box-shadow:0 2px 10px rgba(15,118,110,0.05);">
+                        <div style="font-size:10px;font-weight:700;color:#8A8FA8;margin-bottom:10px;letter-spacing:.3px;">⏱️ מנה הבאה של נובימול לנועה</div>
+                        <div style="position:relative;width:96px;height:96px;margin:0 auto 6px;">
+                          <svg width="96" height="96" viewBox="0 0 96 96" style="transform:rotate(-90deg);">
+                            <circle cx="48" cy="48" r="40" fill="none" stroke="#dcfce7" stroke-width="7"/>
+                            <circle cx="48" cy="48" r="40" fill="none" stroke="#16a34a" stroke-width="7" stroke-dasharray="251.3" stroke-dashoffset="0" stroke-linecap="round" id="lnd-arc"/>
+                          </svg>
+                          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                            <div style="font-size:18px;font-weight:800;color:#15803d;direction:ltr;" id="lnd-digits">05:58:22</div>
+                            <div style="font-size:8px;font-weight:700;color:#16a34a;letter-spacing:.3px;text-transform:uppercase;">שעות נותרו</div>
+                          </div>
+                        </div>
+                        <div style="font-size:10px;color:#8A8FA8;font-weight:500;">מנה הבאה · 03:38 · 5 מ"ל</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="lnd-nav">
+                    <button class="lnd-ni lnd-ni-active"><svg class="lnd-ni-svg" viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/><polyline points="9 21 9 12 15 12 15 21"/></svg><span class="lnd-ni-lbl">ראשי</span></button>
+                    <button class="lnd-ni"><svg class="lnd-ni-svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 5-7 13-7 13S5 14 5 9a7 7 0 0 1 7-7z"/><circle cx="12" cy="9" r="2.5"/></svg><span class="lnd-ni-lbl">חום</span></button>
+                    <button class="lnd-ni"><svg class="lnd-ni-svg" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="lnd-ni-lbl">היסטוריה</span></button>
+                    <button class="lnd-ni"><svg class="lnd-ni-svg" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg><span class="lnd-ni-lbl">פרופיל</span></button>
+                  </div>
+                  <div class="lnd-step-badge"><span class="lnd-step-lbl">נובימול ניתן — הטיימר מתחיל ⏱️</span></div>
+                </div>
+
+                <!-- S6: push notification -->
+                <div class="lnd-scene" id="lnd-s6" style="background:linear-gradient(160deg,#1a1a3e,#0a1a2a);">
+                  <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;padding-top:70px;">
+                    <div style="font-size:11px;color:rgba(255,255,255,0.4);font-weight:600;margin-bottom:3px;">יום שלישי, 29 לספטמבר</div>
+                    <div style="font-size:52px;font-weight:200;color:#fff;line-height:1;direction:ltr;">03:38</div>
+                    <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:5px;">נעול</div>
+                  </div>
+                  <div class="lnd-push" id="lnd-push">
+                    <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#0d5f59,#0f766e);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">👶</div>
+                    <div>
+                      <div style="font-size:10px;color:rgba(255,255,255,0.45);font-weight:600;margin-bottom:1px;">Medickids · עכשיו</div>
+                      <div style="font-size:12px;color:#fff;font-weight:700;margin-bottom:1px;">💊 זמן לנובימול — נועה</div>
+                      <div style="font-size:11px;color:rgba(255,255,255,0.65);line-height:1.35;">עברו 6 שעות · מינון: 5 מ"ל · חום אחרון 38.9°</div>
+                    </div>
+                  </div>
+                  <div class="lnd-step-badge"><span class="lnd-step-lbl">6 שעות עברו — פוש מגיע 🔔</span></div>
+                </div>
+
+                <!-- progress dots -->
+                <div style="position:absolute;bottom:72px;left:0;right:0;display:flex;gap:5px;justify-content:center;z-index:30;pointer-events:none;">
+                  <div class="lnd-dot-prog lnd-dot-prog-active" id="lnd-d1"></div>
+                  <div class="lnd-dot-prog" id="lnd-d2"></div>
+                  <div class="lnd-dot-prog" id="lnd-d3"></div>
+                  <div class="lnd-dot-prog" id="lnd-d4"></div>
+                  <div class="lnd-dot-prog" id="lnd-d5"></div>
+                  <div class="lnd-dot-prog" id="lnd-d6"></div>
                 </div>
               </div>
-              <div class="relative flex items-start gap-space-md">
-                <div class="relative z-10 flex-shrink-0 w-12 h-12 rounded-full bg-primary-fixed text-on-primary-fixed flex items-center justify-center shadow-md"><span class="material-symbols-outlined text-[22px]">calculate</span></div>
-                <div class="flex-1 bg-surface-container-lowest rounded-2xl p-space-md shadow-sm">
-                  <div class="flex items-center justify-between mb-1"><span class="text-[15px] font-bold text-on-surface">מתן תרופה ובדיקת מינון</span><span class="text-[11px] px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-semibold">02:20</span></div>
-                  <p class="text-[14px] text-on-surface-variant leading-relaxed">ניתנו <strong class="text-on-surface">5 מ״ל נורופן</strong>. המינון חושב אוטומטית ומדויק למשקל הילד לפי הנחיות הרופא.</p>
-                </div>
-              </div>
-              <div class="relative flex items-start gap-space-md">
-                <div class="relative z-10 flex-shrink-0 w-12 h-12 rounded-full bg-tertiary-fixed text-on-tertiary-fixed flex items-center justify-center shadow-md"><span class="material-symbols-outlined text-[22px]">shield</span></div>
-                <div class="flex-1 bg-surface-container-lowest rounded-2xl p-space-md shadow-sm">
-                  <div class="flex items-center justify-between mb-1"><span class="text-[15px] font-bold text-on-surface">מרווח בטיחות אוטומטי</span><span class="text-[11px] px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-semibold">02:22</span></div>
-                  <p class="text-[14px] text-on-surface-variant leading-relaxed">נעילת מנה זהה ל-6 שעות. האפליקציה מציגה חלון אלטרנטיבי אם החום יעלה שוב בטרם עת.</p>
-                </div>
-              </div>
-              <div class="relative flex items-start gap-space-md">
-                <div class="relative z-10 flex-shrink-0 w-12 h-12 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center shadow-md"><span class="material-symbols-outlined text-[22px]">sync</span></div>
-                <div class="flex-1 bg-surface-container-lowest rounded-2xl p-space-md shadow-sm">
-                  <div class="flex items-center justify-between mb-1"><span class="text-[15px] font-bold text-on-surface">סנכרון מיידי בין ההורים</span><span class="text-[11px] px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-semibold">07:00</span></div>
-                  <p class="text-[14px] text-on-surface-variant leading-relaxed">בן/בת הזוג פותח/ת את הטלפון ורואה בדיוק מה ניתן ומתי. <span class="text-primary font-semibold">אפס בלבול, בלי להעיר אף אחד.</span></p>
-                </div>
-              </div>
+
+              <p style="font-size:11px;color:rgba(255,255,255,0.25);font-weight:500;text-align:center;">הקש על המסך למעבר ידני ←</p>
             </div>
           </section>
+
+          <style>
+            /* ── Scoped landing demo styles (prefix: lnd-) ── */
+            #scenario-demo-section { font-family:'Heebo',sans-serif; }
+            .lnd-scene { position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity 0.35s;background:#F5F6FA;overflow:hidden; }
+            .lnd-active { opacity:1!important;pointer-events:all!important; }
+            .lnd-scroll { position:absolute;top:0;left:0;right:0;bottom:58px;overflow-y:auto;overflow-x:hidden; }
+            .lnd-scroll::-webkit-scrollbar { display:none; }
+            /* header */
+            .lnd-hdr { background:linear-gradient(150deg,#0d5f59 0%,#0f766e 100%);padding:14px 16px 44px;position:relative;overflow:hidden; }
+            .lnd-blob1 { position:absolute;top:-30px;left:-30px;width:140px;height:140px;background:rgba(255,255,255,0.08);border-radius:50%; }
+            .lnd-blob2 { position:absolute;bottom:-15px;right:24px;width:96px;height:96px;background:rgba(255,255,255,0.05);border-radius:50%; }
+            .lnd-hdr-btn { background:rgba(255,255,255,0.18);border:none;border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer; }
+            .lnd-date-pill { display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,0.14);border-radius:50px;padding:4px 10px;font-size:10px;color:rgba(255,255,255,0.88);font-weight:600;margin-top:8px;position:relative; }
+            /* body */
+            .lnd-body { background:#F5F6FA;border-radius:28px 28px 0 0;margin-left:-14px;margin-right:-14px;padding:14px 14px 14px;position:relative;z-index:1;transform:translateY(-16px);margin-bottom:-16px; }
+            .lnd-sec-title { font-size:9px;font-weight:800;color:#A0A4B8;letter-spacing:.07em;text-transform:uppercase;margin-bottom:10px;margin-top:4px; }
+            /* grid / cards */
+            .lnd-grid { display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px; }
+            .lnd-card { border-radius:16px;background:#fff;border:1px solid #f1f5f9;box-shadow:0 3px 14px -2px rgba(15,118,110,0.08);overflow:hidden; }
+            .lnd-card-full { grid-column:1/-1; }
+            .lnd-card-hdr { display:flex;align-items:center;gap:7px;padding:8px 10px 5px; }
+            .lnd-avatar { width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;background:#f0fdf4;flex-shrink:0; }
+            .lnd-child-name { font-size:11px;font-weight:800;color:#1A1A2E; }
+            .lnd-pills { display:flex;flex-wrap:wrap;gap:3px;padding:0 10px 5px; }
+            .lnd-pill { display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:9px;font-weight:700;border:1px solid; }
+            .lnd-dot { width:4px;height:4px;border-radius:50%;background:#fff;display:inline-block; }
+            .lnd-dot--blue { background:#38bdf8; }
+            .lnd-pill--ok { background:#22c55e;color:#fff;border-color:#22c55e; }
+            .lnd-pill--fever { background:#fff1f2;color:#be123c;border-color:#fecdd3;animation:lndPulseFever 2.5s infinite; }
+            .lnd-pill--fever .lnd-dot { background:#f43f5e; }
+            .lnd-pill--treatment { background:#f0f9ff;color:#0369a1;border-color:#bae6fd; }
+            @keyframes lndPulseFever { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.85;transform:scale(1.03)} }
+            /* rows */
+            .lnd-rows { padding:3px 5px 7px;display:flex;flex-direction:column;gap:0; }
+            .lnd-row { display:flex;align-items:center;gap:7px;padding:6px;border-radius:8px;direction:rtl; }
+            .lnd-row--fever { background:rgba(255,241,242,0.6);border:1px solid rgba(252,165,165,0.4); }
+            .lnd-ic { width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;border:1px solid transparent; }
+            .lnd-ic--red { background:#fff1f2;border-color:#fecdd3; }
+            .lnd-ic--purple { background:#eef2ff;border-color:#c7d2fe; }
+            .lnd-ic--green { background:#f0fdf4;border-color:#bbf7d0; }
+            .lnd-rb { flex:1;min-width:0; }
+            .lnd-rt { font-size:11px;font-weight:700;color:#1e293b; }
+            .lnd-rs { font-size:9px;margin-top:1px;color:#8A8FA8; }
+            /* quick actions */
+            .lnd-qa-btn { background:#fff;border:1px solid #ECEDF5;border-radius:12px;padding:9px 4px;text-align:center;cursor:pointer;font-family:'Heebo',sans-serif;box-shadow:0 2px 8px rgba(15,118,110,0.06); }
+            /* sheet */
+            .lnd-sheet-ov { position:absolute;inset:0;background:rgba(40,30,70,.35);display:flex;align-items:flex-end;z-index:10;opacity:0;pointer-events:none;transition:opacity 280ms ease; }
+            .lnd-sheet-ov.open { opacity:1;pointer-events:all; }
+            .lnd-sheet-ov .lnd-sheet { transform:translateY(100%);transition:transform 480ms cubic-bezier(0.34,1.56,0.64,1); }
+            .lnd-sheet-ov.open .lnd-sheet { transform:translateY(0); }
+            .lnd-sheet { width:100%;background:#fff;border-radius:20px 20px 0 0;padding:16px 16px 28px;position:relative; }
+            .lnd-sh-handle { width:30px;height:3px;border-radius:2px;background:#ECEDF5;margin:0 auto 12px; }
+            .lnd-sh-title { font-size:15px;font-weight:800;margin-bottom:12px;color:#1A1A2E; }
+            .lnd-field-lbl { font-size:10px;color:#8A8FA8;margin-bottom:5px;margin-top:11px;font-weight:600; }
+            .lnd-chip-row { display:flex;gap:6px;flex-wrap:wrap; }
+            .lnd-chip { padding:7px 12px;border-radius:12px;font-size:11px;font-weight:600;background:rgba(15,118,110,0.08);color:#1A1A2E;cursor:pointer;border:none;font-family:'Heebo',sans-serif; }
+            .lnd-chip-sel { background:#0d5f59;color:#fff; }
+            .lnd-cta { width:100%;padding:13px;border-radius:14px;border:none;font-weight:700;font-size:13px;margin-top:16px;background:linear-gradient(135deg,#0f766e,#0d5f59);color:#fff;font-family:'Heebo',sans-serif;cursor:pointer; }
+            /* push */
+            .lnd-push { position:absolute;top:14px;left:10px;right:10px;background:#1c1c1e;border-radius:14px;padding:10px 12px;display:flex;gap:8px;align-items:flex-start;box-shadow:0 8px 28px rgba(0,0,0,0.5);z-index:20;transform:translateY(-120%);transition:transform 0.45s cubic-bezier(0.22,1,0.36,1); }
+            .lnd-push.show { transform:translateY(0); }
+            /* navbar */
+            .lnd-nav { position:absolute;bottom:0;left:0;right:0;height:58px;background:rgba(255,255,255,0.95);backdrop-filter:blur(10px);border-top:1px solid #ECEDF5;padding:8px 0 12px;display:flex;justify-content:space-around;align-items:flex-start;z-index:2; }
+            .lnd-ni { display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;background:none;border:none;cursor:pointer;font-family:inherit;padding:0; }
+            .lnd-ni-svg { width:20px;height:20px;fill:none;stroke:#C0C4D4;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;border-radius:999px;box-sizing:content-box;padding:4px 10px; }
+            .lnd-ni-active .lnd-ni-svg { stroke:#0f766e;background:rgba(13,148,136,0.12); }
+            .lnd-ni-lbl { font-size:9px;font-weight:600;color:#C0C4D4; }
+            .lnd-ni-active .lnd-ni-lbl { color:#0f766e; }
+            /* step badge */
+            .lnd-step-badge { position:absolute;bottom:64px;left:0;right:0;text-align:center;pointer-events:none;z-index:5; }
+            .lnd-step-lbl { display:inline-block;background:rgba(13,95,89,0.92);color:#fff;font-size:10px;font-weight:700;padding:4px 13px;border-radius:50px;backdrop-filter:blur(8px); }
+            /* progress dots */
+            .lnd-dot-prog { width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2);transition:all .3s; }
+            .lnd-dot-prog-active { background:#0f766e;width:16px;border-radius:4px; }
+            /* anim */
+            @keyframes lndFadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+            .lnd-anim { animation:lndFadeUp 0.4s ease both; }
+            .d1{animation-delay:.05s} .d2{animation-delay:.15s} .d3{animation-delay:.28s}
+          </style>
+
+          <script>
+          (function(){
+            let lndCur=1, lndAutoT=null, lndTimerT=null, lndSecs=6*3600-98;
+            function lndGoTo(n){
+              clearTimeout(lndAutoT); clearInterval(lndTimerT);
+              for(let i=1;i<=6;i++){
+                document.getElementById('lnd-s'+i)?.classList.remove('lnd-active');
+                const d=document.getElementById('lnd-d'+i);
+                if(d){d.classList.remove('lnd-dot-prog-active');d.style.width='';}
+              }
+              lndCur=n;
+              document.getElementById('lnd-s'+n)?.classList.add('lnd-active');
+              const dd=document.getElementById('lnd-d'+n);
+              if(dd){dd.classList.add('lnd-dot-prog-active');dd.style.width='16px';}
+              if(n===2) setTimeout(()=>document.getElementById('lnd-so2')?.classList.add('open'),250);
+              if(n===4) setTimeout(()=>document.getElementById('lnd-so4')?.classList.add('open'),250);
+              if(n===5) lndStartTimer();
+              if(n===6) setTimeout(()=>document.getElementById('lnd-push')?.classList.add('show'),700);
+              const delays={1:3000,2:3500,3:3000,4:3200,5:5000,6:4500};
+              lndAutoT=setTimeout(()=>lndGoTo(n<6?n+1:1),delays[n]);
+            }
+            function lndStartTimer(){
+              lndSecs=6*3600-98; lndRender();
+              lndTimerT=setInterval(()=>{ lndSecs-=45; if(lndSecs<0)lndSecs=6*3600; lndRender(); },120);
+            }
+            function lndRender(){
+              const h=Math.floor(lndSecs/3600),m=Math.floor((lndSecs%3600)/60),s=lndSecs%60;
+              const str=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+              const hm=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+              const el=document.getElementById('lnd-digits'); if(el)el.textContent=str;
+              const eh=document.getElementById('lnd-timer-hero'); if(eh)eh.textContent=hm;
+              const arc=document.getElementById('lnd-arc');
+              if(arc){const c=251.3;arc.style.strokeDashoffset=c*(1-lndSecs/(6*3600));}
+            }
+            document.getElementById('lnd-phone')?.addEventListener('click',e=>{
+              if(e.target.closest('.lnd-cta')) return;
+              clearTimeout(lndAutoT);
+              lndGoTo(lndCur<6?lndCur+1:1);
+            });
+            lndGoTo(1);
+          })();
+          </script>
 
           <!-- FOUR PILLARS -->
           <section class="w-full px-margin-mobile py-space-xl flex flex-col items-center">
