@@ -67,10 +67,10 @@ const App = (() => {
     const btnIcon = document.getElementById('btn-main-cta-icon');
     if (btnText && btnIcon) {
       if (isIOS()) {
-        btnText.textContent = 'הוספה למסך הבית — חינם';
+        btnText.textContent = 'התחילו עכשיו!';
         btnIcon.textContent = 'add_to_home_screen';
       } else {
-        btnText.textContent = 'הורדה חינם';
+        btnText.textContent = 'התחילו עכשיו!';
         btnIcon.textContent = 'download';
       }
     }
