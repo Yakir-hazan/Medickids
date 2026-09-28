@@ -5,9 +5,10 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.49 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.168';
+  const APP_VERSION = '1.0.0-beta.169';
   const SPLASH_DURATION_RETURNING = 2800; // ms — wait for thermo to reach 38°
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
+  const SERVER_CHECK_TIMEOUT      = 6000; // ms — max wait for the server "does this family have children?" check
 
   const AVATAR_GRADIENT = {
     a1: 'linear-gradient(135deg,#FFB6A3,#FF9F6B)',
@@ -3993,6 +3994,7 @@ const App = (() => {
   function _continueAuthRouting(user) {
     if (!user) {
       _authRouted = false; // reset so re-login works
+      const _rr = document.getElementById('route-retry'); if (_rr) _rr.remove(); // signed out while retry overlay was up
       DB.stopSync(); // Real Family Sync — no signed-in uid to authorize listeners for
       if (splashAnimId) { cancelAnimationFrame(splashAnimId); splashAnimId = null; }
       goto('screen-auth');
@@ -4059,16 +4061,79 @@ const App = (() => {
   /* Called after auth is confirmed (user is signed in). The A2HS landing decision is now
      owned up-front by init()/skipLanding() — by the time we get here, if we're not
      standalone, the user has already explicitly chosen to continue in the browser. */
-  function _routeAfterAuth() {
-    const isReturningUser = DB.get().children.length > 0;
+  let _routeToken = 0; // invalidates a stale server check if routing restarts or the user signs out
 
-    if (isReturningUser) {
-      showSplash();
-      setTimeout(() => goto('screen-dash'), SPLASH_DURATION_RETURNING);
-    } else {
-      showSplash();
-      setTimeout(() => startOnboarding(), SPLASH_DURATION_NEW);
+  /* Asks the SERVER (never the local cache) whether this user's family already has children.
+     Returns 'has' | 'none' | 'unknown'. 'unknown' = offline / timeout / error — the caller must
+     NOT treat that as "new user" (would let an existing user create a duplicate child). */
+  function _serverHasChildren(uid) {
+    const check = (async () => {
+      if (!uid || !window.firebase || !firebase.apps.length) return 'unknown';
+      try {
+        const userSnap = await firebase.firestore().doc(`users/${uid}`).get({ source: 'server' });
+        const familyId = userSnap.exists ? userSnap.data().familyId : null;
+        if (!familyId) return 'none';
+        const kids = await firebase.firestore()
+          .collection('families').doc(familyId).collection('children')
+          .get({ source: 'server' });
+        return kids.docs.some((d) => !d.data().deletedAt) ? 'has' : 'none';
+      } catch (e) {
+        return 'unknown';
+      }
+    })();
+    const timeout = new Promise((resolve) => setTimeout(() => resolve('unknown'), SERVER_CHECK_TIMEOUT));
+    return Promise.race([check, timeout]);
+  }
+
+  function _showRouteRetry() {
+    if (splashAnimId) { cancelAnimationFrame(splashAnimId); splashAnimId = null; }
+    let el = document.getElementById('route-retry');
+    if (el) el.remove();
+    el = document.createElement('div');
+    el.id = 'route-retry';
+    el.dir = 'rtl';
+    el.style.cssText = 'position:fixed;inset:0;z-index:9500;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:32px;text-align:center;font-family:inherit;';
+    el.innerHTML =
+      '<div style="font-size:44px;">📡</div>' +
+      '<div style="font-size:18px;font-weight:700;color:#0d5f59;">לא הצלחנו לבדוק את הנתונים שלך</div>' +
+      '<div style="font-size:14px;color:#555;max-width:280px;line-height:1.5;">בדקו את החיבור לאינטרנט ונסו שוב.</div>' +
+      '<button type="button" class="btn-primary" id="route-retry-btn" style="max-width:280px;">נסה שוב</button>';
+    document.body.appendChild(el);
+    document.getElementById('route-retry-btn').addEventListener('click', () => {
+      el.remove();
+      _routeAfterAuth();
+    });
+  }
+
+  function _routeAfterAuth() {
+    const token = ++_routeToken;
+    const uid = Auth.currentUid();
+    const startedAt = Date.now();
+    showSplash();
+
+    // Local children exist → returning user on a device that already has its data.
+    if (DB.get().children.length > 0) {
+      setTimeout(() => { if (token === _routeToken) goto('screen-dash'); }, SPLASH_DURATION_RETURNING);
+      return;
     }
+
+    // No local children: fresh install / cleared storage / genuinely new user. Local state can't
+    // tell these apart (Family Sync hasn't delivered yet), so ask the server before deciding.
+    _serverHasChildren(uid).then((result) => {
+      if (token !== _routeToken || Auth.currentUid() !== uid) return; // stale (re-routed / signed out)
+      // Sync may have delivered the children while we were waiting.
+      if (DB.get().children.length > 0) result = 'has';
+
+      if (result === 'unknown') { _showRouteRetry(); return; }
+
+      const minMs = result === 'has' ? SPLASH_DURATION_RETURNING : SPLASH_DURATION_NEW;
+      const wait = Math.max(0, minMs - (Date.now() - startedAt));
+      setTimeout(() => {
+        if (token !== _routeToken) return;
+        if (result === 'has') goto('screen-dash');
+        else startOnboarding();
+      }, wait);
+    });
   }
 
 
