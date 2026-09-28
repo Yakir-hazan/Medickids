@@ -2092,3 +2092,13 @@ body { background: var(--bg); }
 .vax-stage-label span.status.overdue{color:#dc2626;}
 .vax-card.overdue{border-color:rgba(220,38,38,0.35);}
 .vax-card-status.overdue{color:#dc2626;background:rgba(220,38,38,0.10);}
+
+
+/* Landing (iOS Safari): bouncing arrow pointing at the browser's share button */
+#landing-share-hint{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 6px);z-index:5;
+  flex-direction:column;align-items:center;gap:2px;pointer-events:none;}
+#landing-share-hint > span:first-child{background:#0d5f59;color:#fff;font-size:12px;font-weight:700;
+  padding:6px 14px;border-radius:999px;box-shadow:0 6px 16px rgba(13,95,89,.35);}
+#landing-share-hint .material-symbols-outlined{font-size:32px;color:#0d5f59;animation:landing-arrow-bounce 1.1s ease-in-out infinite;}
+@keyframes landing-arrow-bounce{0%,100%{transform:translateY(-6px);}50%{transform:translateY(6px);}}
+@media(prefers-reduced-motion:reduce){#landing-share-hint .material-symbols-outlined{animation:none;}}

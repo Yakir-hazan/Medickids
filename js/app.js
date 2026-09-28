@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.49 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.172';
+  const APP_VERSION = '1.0.0-beta.173';
   const SPLASH_DURATION_RETURNING = 2800; // ms — wait for thermo to reach 38°
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
   const SERVER_CHECK_TIMEOUT      = 6000; // ms — max wait for the server "does this family have children?" check
@@ -59,6 +59,9 @@ const App = (() => {
 
   function renderLanding() {
     if (isStandalone()) { return; }
+    // Animated arrow toward Safari's share button — iOS browser only
+    const shareHint = document.getElementById('landing-share-hint');
+    if (shareHint) shareHint.style.display = isIOS() ? 'flex' : 'none';
     // Set CTA button text + icon by platform
     const btnText = document.getElementById('btn-main-cta-text');
     const btnIcon = document.getElementById('btn-main-cta-icon');
