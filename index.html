@@ -375,6 +375,66 @@
             <div class="w-full max-w-sm bg-surface-container-lowest rounded-3xl p-space-lg shadow-[0_4px_20px_rgba(15,118,110,0.06)]">
               <!-- iOS instructions -->
               <div id="landing-ios" style="display:none;">
+                <!-- Animated walkthrough (looping CSS animation, 4 scenes x 3s) -->
+                <div class="a2hs-demo" aria-hidden="true">
+                  <div class="a2hs-phone">
+                    <!-- 1: tap Safari's share button -->
+                    <div class="a2hs-scene a2hs-s1">
+                      <div class="a2hs-url">medickids.vercel.app</div>
+                      <div class="a2hs-sk h"></div><div class="a2hs-sk"></div><div class="a2hs-sk" style="width:60%"></div><div class="a2hs-btn"></div>
+                      <div class="a2hs-toolbar">
+                        <span class="material-symbols-outlined">filter_none</span>
+                        <span class="material-symbols-outlined">menu_book</span>
+                        <span class="material-symbols-outlined a2hs-share">ios_share</span>
+                        <span class="material-symbols-outlined dim">arrow_back_ios_new</span>
+                        <span class="material-symbols-outlined dim">arrow_forward_ios</span>
+                      </div>
+                      <div class="a2hs-tap" style="left:calc(50% - 17px);bottom:8px;"></div>
+                    </div>
+                    <!-- 2: pick "Add to Home Screen" in the share sheet -->
+                    <div class="a2hs-scene a2hs-s2">
+                      <div class="a2hs-url">medickids.vercel.app</div>
+                      <div class="a2hs-sk h"></div><div class="a2hs-sk"></div>
+                      <div class="a2hs-dim"></div>
+                      <div class="a2hs-sheet">
+                        <div class="a2hs-sheet-head"><span class="a2hs-mini">🌡️</span><b>Medickids</b></div>
+                        <div class="a2hs-row"><span>העתקה</span><span class="material-symbols-outlined">content_copy</span></div>
+                        <div class="a2hs-row"><span>הוספה לסימניות</span><span class="material-symbols-outlined">bookmark_add</span></div>
+                        <div class="a2hs-row hl"><span>הוספה למסך הבית</span><span class="material-symbols-outlined">add_box</span></div>
+                        <div class="a2hs-row"><span>חיפוש בדף</span><span class="material-symbols-outlined">search</span></div>
+                      </div>
+                      <div class="a2hs-tap" style="left:58%;top:284px;"></div>
+                    </div>
+                    <!-- 3: confirm with "Add" -->
+                    <div class="a2hs-scene a2hs-s3 a2hs-addbg">
+                      <div class="a2hs-addbar"><span class="a2hs-blue">ביטול</span><b>הוספה למסך הבית</b><span class="a2hs-blue b">הוספה</span></div>
+                      <div class="a2hs-addcard">
+                        <div class="a2hs-appicon">🌡️</div>
+                        <div class="a2hs-addtxt"><b>Medickids</b><small>medickids.vercel.app</small></div>
+                      </div>
+                      <div class="a2hs-tap" style="left:8px;top:1px;"></div>
+                    </div>
+                    <!-- 4: the app is on the home screen -->
+                    <div class="a2hs-scene a2hs-s4 a2hs-home">
+                      <div class="a2hs-grid">
+                        <div class="a2hs-it"><i class="a2hs-ic"></i><i class="a2hs-lb"></i></div>
+                        <div class="a2hs-it"><i class="a2hs-ic"></i><i class="a2hs-lb"></i></div>
+                        <div class="a2hs-it"><i class="a2hs-ic"></i><i class="a2hs-lb"></i></div>
+                        <div class="a2hs-it"><i class="a2hs-ic"></i><i class="a2hs-lb"></i></div>
+                        <div class="a2hs-it"><i class="a2hs-ic"></i><i class="a2hs-lb"></i></div>
+                        <div class="a2hs-it"><i class="a2hs-ic"></i><i class="a2hs-lb"></i></div>
+                        <div class="a2hs-it"><i class="a2hs-ic"></i><i class="a2hs-lb"></i></div>
+                        <div class="a2hs-it a2hs-new"><i class="a2hs-ic a2hs-mk">🌡️</i><span>Medickids</span></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="a2hs-cap">
+                    <span class="a2hs-s1">1. לחצו על כפתור השיתוף</span>
+                    <span class="a2hs-s2">2. בחרו "הוספה למסך הבית"</span>
+                    <span class="a2hs-s3">3. לחצו "הוספה"</span>
+                    <span class="a2hs-s4">האפליקציה במסך הבית 🎉</span>
+                  </div>
+                </div>
                 <div class="a2hs-step"><div class="a2hs-num">1</div><div>הקישו על כפתור השיתוף <span class="a2hs-ic">⬆️</span> בתחתית מסך ה־Safari</div></div>
                 <div class="a2hs-step"><div class="a2hs-num">2</div><div>גללו למטה ובחרו <b>"הוספה למסך הבית"</b> <span class="a2hs-ic">➕</span></div></div>
                 <div class="a2hs-step"><div class="a2hs-num">3</div><div>לחצו <b>"הוספה"</b> — והאייקון יופיע כמו כל אפליקציה אחרת 🎉</div></div>
