@@ -1,8 +1,8 @@
 # Project Progress — Medickids
 
 ## Current Version
-- **App Version:** 1.0.0-beta.180
-- **Cache Version:** madhomv242
+- **App Version:** 1.0.0-beta.181
+- **Cache Version:** madhomv243
 - **Branch:** main
 - **Last Commit:** 549c91526423 (js/app.js), 0987546eb966 (js/db.js), 3bf4931cedc5 (sw.js)
 
@@ -176,8 +176,13 @@ Step 3B — Auto-remove completed courses + manual delete + history entries
 ### Numbers Game Integration ✅
 - **Files:** `games/numbers.html` (new), `index.html`, `js/app.js`, `sw.js`
 - **What:** Hebrew numbers-learning game embedded via iframe in `screen-game`; dashboard button below quick actions; `App.openGame()` / `App.closeGame()` (additive exports); in-game back button exits to dashboard via postMessage; SW precaches the game and serves `/games/` network-first
-- **Version:** beta.180 / madhomv242
+- **Version:** beta.180 / madhomv243
 - **Note:** game uses Tailwind CDN + Google Fonts — first load needs network, cached afterwards
+
+### Days-of-Week Game Integration ✅
+- **Files:** `games/days-of-week.html` (new), `index.html`, `js/app.js`, `sw.js`
+- **What:** second game on the same iframe screen; `App.openGame(key)` now takes `'numbers'` | `'days'` (whitelist map); dashboard shows two game buttons in a 2-column row; SW precaches the new file
+- **Version:** beta.181 / madhomv243
 
 ---
 
