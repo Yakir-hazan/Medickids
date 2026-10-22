@@ -914,10 +914,6 @@
           <button class="qa-btn" onclick="App.openVaccines(DB.get().children[0]?.id,'screen-dash')"><div class="qa-ic qa-ic--green">💉</div><div class="qa-lbl">פנקס חיסונים</div></button>
           <button class="qa-btn" onclick="App.openCourseSheet()"><div class="qa-ic qa-ic--teal">🗓️</div><div class="qa-lbl">התחל טיפול</div></button>
         </div>
-        <div class="qa-grid" style="grid-template-columns:1fr 1fr;">
-          <button class="qa-btn" onclick="App.openGame('numbers')"><div class="qa-ic qa-ic--amber">🔢</div><div class="qa-lbl">משחק המספרים</div></button>
-          <button class="qa-btn" onclick="App.openGame('days')"><div class="qa-ic qa-ic--teal">📅</div><div class="qa-lbl">משחק ימי השבוע</div></button>
-        </div>
 
         <!-- timeline -->
         <p class="section-title" style="margin-top:20px;">אירועים אחרונים</p>
@@ -1453,10 +1449,6 @@
     </div>
 
     <!-- CHILDREN MANAGEMENT -->
-    <div class="screen" id="screen-game" style="padding-top:0;">
-      <iframe id="game-frame" title="משחק המספרים" style="flex:1;width:100%;border:0;background:#FFF5E4;" allow="autoplay"></iframe>
-    </div>
-
     <div class="screen" id="screen-kids">
       <div class="scr-head">
         <button class="back-btn" onclick="App.goto('screen-settings')">→</button>
