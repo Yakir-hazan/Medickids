@@ -5,7 +5,7 @@ const App = (() => {
      together). This value is shown to the user in Settings and is what "בדוק אם יש עדכון"
      relies on to prove a new version actually loaded. Forgetting to bump it breaks both.
      Beta scheme: 1.0.0-beta.49 → 1.0.0-beta.47 → ... → 1.0.0 once out of beta. */
-  const APP_VERSION = '1.0.0-beta.179';
+  const APP_VERSION = '1.0.0-beta.180';
   const SPLASH_DURATION_RETURNING = 2800; // ms — wait for thermo to reach 38°
   const SPLASH_DURATION_NEW       = 2200; // ms — slightly longer for new users
   const SERVER_CHECK_TIMEOUT      = 6000; // ms — max wait for the server "does this family have children?" check
@@ -3406,6 +3406,21 @@ const App = (() => {
     }
   }
 
+  /* ---------- numbers game (iframe screen) ---------- */
+  function openGame() {
+    const f = document.getElementById('game-frame');
+    if (f) f.src = './games/numbers.html';
+    goto('screen-game');
+  }
+  function closeGame() {
+    const f = document.getElementById('game-frame');
+    if (f) f.src = 'about:blank';
+    tab('screen-dash');
+  }
+  window.addEventListener('message', (e) => {
+    if (e.origin === location.origin && e.data && e.data.type === 'game-exit') closeGame();
+  });
+
   function openHelp() {
     const el = document.getElementById('help-overlay');
     if (el) el.style.display = 'flex';
@@ -4218,7 +4233,7 @@ const App = (() => {
 
   return {
     goto, tab, openSheet, closeSheet,
-    openHelp, closeHelp,
+    openHelp, closeHelp, openGame, closeGame,
     openMedSheet, pickMedChild, pickMedMedicine, addCustomMedicine, saveMed, pickReminderMode, toggleDailyReminder,
     setHistFilter, setTempFilter, openTempSheet, pickTempChild, saveTemp,
     openEditKid, saveKid, toggleNotif, init, selectChild, closeChildDetail, closeWelcomePopup,

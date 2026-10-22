@@ -5,7 +5,7 @@ importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js');
    (increment the -vNN suffix here whenever APP_VERSION changes there, e.g. 'v17' here when
    APP_VERSION becomes '1.0.0-beta.2'). Without this bump, users' devices keep serving old
    cached files and "בדוק אם יש עדכון" in Settings will report "already up to date" even when it isn't. */
-const CACHE_NAME = 'madhomv241';
+const CACHE_NAME = 'madhomv242';
 const APP_SHELL = [
   './',
   './index.html',
@@ -14,6 +14,7 @@ const APP_SHELL = [
   './js/db.js',
   './js/auth.js',
   './js/app.js',
+  './games/numbers.html',
   './manifest.json',
   './icons/icon-192.png',
   './icons/icon-512.png'
@@ -75,7 +76,7 @@ self.addEventListener('message', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   const url = event.request.url;
-  const isAppFile = url.includes('/js/') || url.includes('/css/') || url.endsWith('index.html') || url.endsWith('/');
+  const isAppFile = url.includes('/js/') || url.includes('/css/') || url.includes('/games/') || url.endsWith('index.html') || url.endsWith('/');
 
   if (isAppFile) {
     // Network-first: always try network, fall back to cache

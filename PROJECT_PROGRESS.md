@@ -1,8 +1,8 @@
 # Project Progress — Medickids
 
 ## Current Version
-- **App Version:** 1.0.0-beta.55
-- **Cache Version:** madhom-v83
+- **App Version:** 1.0.0-beta.180
+- **Cache Version:** madhomv242
 - **Branch:** main
 - **Last Commit:** 549c91526423 (js/app.js), 0987546eb966 (js/db.js), 3bf4931cedc5 (sw.js)
 
@@ -172,6 +172,12 @@ Step 3B — Auto-remove completed courses + manual delete + history entries
 | `deletePrescription` is hard delete | Simplicity; completed courses go to history via `renderHistory` synthetic entries | Don't soft-delete or archive — keep it simple |
 | `_dosesTodayCount` uses calendar day (00:00) not 24h rolling window | Matches parent mental model ("did I give the morning dose today") | Don't switch to rolling 24h without explicit request |
 | Developer Center frozen | Avoid scope creep during Active Treatments phase | No new Dev Center features until phase complete |
+
+### Numbers Game Integration ✅
+- **Files:** `games/numbers.html` (new), `index.html`, `js/app.js`, `sw.js`
+- **What:** Hebrew numbers-learning game embedded via iframe in `screen-game`; dashboard button below quick actions; `App.openGame()` / `App.closeGame()` (additive exports); in-game back button exits to dashboard via postMessage; SW precaches the game and serves `/games/` network-first
+- **Version:** beta.180 / madhomv242
+- **Note:** game uses Tailwind CDN + Google Fonts — first load needs network, cached afterwards
 
 ---
 
